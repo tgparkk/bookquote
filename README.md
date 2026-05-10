@@ -26,14 +26,39 @@ cp .env.json.example .env.json
 - `SUPABASE_URL` — Supabase 프로젝트 URL
 - `SUPABASE_ANON_KEY` — Supabase anon public 키 (RLS로 보호)
 
-### 3. Supabase 마이그레이션·설정
+### 3. Supabase 마이그레이션·Edge Function·설정
 
 #### 3-1. SQL 마이그레이션 적용
 
 `supabase/migrations/` 안의 .sql 파일들을 Supabase Dashboard
 > SQL Editor에서 순서대로 붙여 실행한다 (또는 Supabase CLI `supabase db push`).
 
-#### 3-2. Auth 설정
+현재 마이그레이션:
+- `001_profiles.sql` — profiles 테이블 + 회원가입 트리거 + RLS
+- `002_handle_new_user_oauth.sql` — OAuth 사용자(이메일 null 케이스) 호환
+- `003_books.sql` — books 글로벌 카탈로그 + `upsert_book` RPC
+
+#### 3-2. Edge Function 배포
+
+`supabase/functions/aladin-search/`가 알라딘 OpenAPI 호출을 프록시한다 (클라이언트
+키 노출 회피 + 5,000건/일 한도 보호). 배포 두 가지 방법:
+
+**Supabase CLI** (권장):
+```sh
+supabase login
+supabase link --project-ref ndbvptxwznogcuuumzzh
+supabase secrets set ALADIN_TTB_KEY=<TTB키>
+supabase functions deploy aladin-search
+```
+
+**Dashboard** (CLI 없을 때):
+1. Edge Functions 메뉴 > **Create function** > 이름 `aladin-search`
+2. `supabase/functions/aladin-search/index.ts`와 `_shared/aladin.ts`,
+   `_shared/cors.ts` 내용 그대로 붙여넣기
+3. **Settings > Secrets**에서 `ALADIN_TTB_KEY` 추가
+4. Deploy
+
+#### 3-3. Auth 설정
 
 Dashboard > Authentication > URL Configuration:
 - **Site URL**: `http://localhost:8080` (개발 기본)
@@ -63,6 +88,7 @@ flutter analyze
 flutter test
 ```
 
-> **보안**: 위 키들은 컴파일된 바이너리에 박힌다. 실서비스 단계에선
-> 알라딘 API 호출을 Supabase Edge Function 등 백엔드 프록시로 옮길 것
-> (Stage 4 이후 과제).
+> **보안**: 환경 키는 컴파일된 바이너리에 박힌다. `ALADIN_TTB_KEY`는 이제
+> Edge Function이 대신 호출하므로 클라이언트에는 더 이상 필요 없음 — `.env.json`
+> 항목과 `Env.aladinTtbKey` 상수는 다음 정리 PR에서 삭제 예정. `SUPABASE_*` 두
+> 키는 클라이언트가 직접 사용 (RLS로 보호되는 anon/publishable 키라 노출 OK).

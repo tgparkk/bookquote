@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/tokens.dart';
+import '../book/presentation/book_search_sheet.dart';
 
-class LibraryScreen extends StatelessWidget {
+class LibraryScreen extends ConsumerWidget {
   const LibraryScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -22,6 +25,15 @@ class LibraryScreen extends StatelessWidget {
                 style: textTheme.bodyMedium),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final book = await showBookSearchSheet(context);
+          if (book == null || !context.mounted) return;
+          context.push('/book/${book.id}');
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('책 추가'),
       ),
     );
   }

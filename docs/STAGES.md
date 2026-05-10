@@ -46,15 +46,15 @@
 - [x] `AppTheme` (ThemeData·TextTheme) 본격 구성 (`lib/core/theme/app_theme.dart`, `app_text_styles.dart`)
 - [x] 폰트 번들링 — Pretendard 정적(R/M/SB) + NotoSerifKR 가변 단일 파일 (`assets/fonts/`, pubspec.yaml fonts 섹션)
 - [x] go_router 셋업 (`lib/app/router.dart`) — `StatefulShellRoute` 4탭 + auth gate(`refreshListenable`) + `/splash` cold-start, placeholder 화면 7개. 위젯 테스트는 cold boot → /auth/login 자동 이동 검증
-- [ ] `cached_network_image` 도입 (이미지 렌더 시작 시점, 알라딘 표지 URL 캐싱)
-- [ ] 알라딘 API Supabase Edge Function 프록시 (책 검색 화면과 동시 — 클라이언트 키 노출 회피)
+- [x] `cached_network_image` 도입 — `lib/features/book/presentation/widgets/book_cover.dart` 일원화 wrapper
+- [x] 알라딘 API Supabase Edge Function 프록시 — `supabase/functions/aladin-search/`, JWT 강제, 통일 에러 envelope
 - [x] 알라딘 OpenAPI 키 발급 — `.env.json` (gitignored)에 저장, `lib/core/config/env.dart`로 로드. 빌드 시 `--dart-define-from-file=.env.json` 필요
 - [x] Supabase 프로젝트 생성 (Northeast Asia / Seoul, 프로젝트 ID `ndbvptxwznogcuuumzzh`). 초기 스키마는 별도 작업
 - [x] `supabase_flutter` 초기화 (`lib/core/supabase/supabase_init.dart`, `main()`에서 호출, 키 누락 시 graceful skip)
 - [x] Auth — 이메일 매직링크 (`lib/features/auth/`, `supabase/migrations/001~002`). 카카오는 V1.5로 미룸 — Supabase GoTrue가 `account_email` scope를 강제 요청하는데 카카오 개인 앱은 비즈 인증 없이 받을 수 없음 (DECISIONS 2026-05-10 항목)
-- [ ] 책 검색 화면 (알라딘 API)
-- [ ] 책 상세 화면
-- [ ] 내 서재 추가/조회
+- [x] 책 검색 화면 (알라딘 API) — `BookSearchSheet`(BottomSheet), 캐시 사전조회 + Edge Function, 400ms debounce, 자동 ISBN 분기 토대
+- [x] 책 상세 화면 — `bookByIdProvider`로 실제 데이터 fetch, BookCover 위젯
+- [~] 내 서재 추가/조회 — 추가 흐름은 `LibraryScreen` FAB → 검색 시트 → upsert → 책 상세 동작. 사용자별 서재 목록(`user_books` 테이블 + 조회 UI)은 별도 작업
 
 ## Stage 2 — 인용구 입력 (2–3주)
 
