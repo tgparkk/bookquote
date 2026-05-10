@@ -36,7 +36,7 @@
 
 **Gate**: 카드 5개를 인스타에 올렸을 때 본인이 부끄럽지 않은 수준
 
-## Stage 1 — 기반 (3–4주, 셋업 완료)
+## Stage 1 — 기반 (3–4주, **완료** — 세션 로그: [`sessions/2026-05-10-stage1.md`](sessions/2026-05-10-stage1.md))
 
 - [x] Flutter 프로젝트 초기화 (`C:\GIT\bookquote`, Bundle ID `io.github.tgparkk.bookquote`)
 - [x] 의존성 설치 (Riverpod / Supabase / freezed / build_runner / palette_generator / go_router)

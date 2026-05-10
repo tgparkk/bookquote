@@ -21,6 +21,7 @@
 | [PLAN.md](PLAN.md) | 마스터 플랜 — 컨셉, MVP 범위, 스택, 로드맵, GTM |
 | [STAGES.md](STAGES.md) | Stage 0a/0b/1~5 진행 체크리스트 |
 | [DECISIONS.md](DECISIONS.md) | 결정 대장 (날짜 역순 단일 파일) |
+| [sessions/](sessions/) | 작업 세션 로그 (날짜별, 그날 무엇·왜·함정 정리) |
 | [discovery/](discovery/) | Validation 단계 산출물 — 인터뷰, 경쟁사 평가, 아키텍처 초안, 랜딩페이지 |
 | [design/](design/) | 디자인 시스템·토큰·카드 템플릿 5종·색추출 알고리즘·mockup |
 
