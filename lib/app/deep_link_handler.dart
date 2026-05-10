@@ -57,7 +57,13 @@ class DeepLinkHandler {
       return;
     }
     try {
-      await supabase.auth.getSessionFromUrl(uri);
+      final res = await supabase.auth.getSessionFromUrl(uri);
+      if (kDebugMode) {
+        final s = res.session;
+        debugPrint(
+          '[deep-link] session set. user=${s.user.email} expires=${DateTime.fromMillisecondsSinceEpoch((s.expiresAt ?? 0) * 1000)}',
+        );
+      }
     } catch (e) {
       debugPrint('[deep-link] getSessionFromUrl failed: $e');
     }

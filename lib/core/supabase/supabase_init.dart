@@ -35,6 +35,13 @@ Future<bool> initSupabase() async {
     anonKey: Env.supabaseAnonKey,
   );
   _ready = true;
+
+  if (kDebugMode) {
+    final s = Supabase.instance.client.auth.currentSession;
+    debugPrint(
+      '[supabase] initialized. session=${s == null ? "null" : "present (user=${s.user.email}, expires=${DateTime.fromMillisecondsSinceEpoch((s.expiresAt ?? 0) * 1000)})"}',
+    );
+  }
   return true;
 }
 
