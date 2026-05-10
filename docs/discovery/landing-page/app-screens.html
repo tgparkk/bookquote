@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>책귀 (가칭) — 앱 화면 모형</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=Noto+Serif+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Pretendard', system-ui, sans-serif;
+      background: #ebe5d6;
+      padding: 60px 24px;
+      color: #1a1a1a;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page-header {
+      text-align: center;
+      margin-bottom: 60px;
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .page-header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .page-header p {
+      font-size: 16px;
+      color: #555;
+      line-height: 1.6;
+    }
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 56px 40px;
+      justify-content: center;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .screen-wrap { display: flex; flex-direction: column; align-items: center; }
+    .phone {
+      width: 320px;
+      height: 660px;
+      background: #1a1a1a;
+      border-radius: 44px;
+      padding: 12px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.08);
+      position: relative;
+    }
+    .phone::before {
+      content: "";
+      position: absolute;
+      top: 18px; left: 50%; transform: translateX(-50%);
+      width: 100px; height: 24px;
+      background: #1a1a1a; border-radius: 14px;
+      z-index: 10;
+    }
+    .screen {
+      width: 100%; height: 100%;
+      background: #faf8f3;
+      border-radius: 32px;
+      overflow: hidden;
+      position: relative;
+      font-size: 13px;
+    }
+    .statusbar {
+      height: 44px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 24px 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .statusbar-icons { display: flex; gap: 4px; }
+    .screen-content {
+      height: calc(100% - 44px - 64px);
+      overflow-y: auto;
+      padding: 0 16px;
+    }
+    .screen-content.no-tabbar { height: calc(100% - 44px); padding-bottom: 16px; }
+
+    /* Header */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0 16px;
+    }
+    .app-header h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+    .app-header-right { display: flex; gap: 14px; font-size: 18px; color: #666; }
+    .app-header-left { display: flex; align-items: center; gap: 10px; font-size: 16px; }
+
+    /* Tab bar */
+    .tabbar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 64px;
+      background: rgba(255,255,255,0.94);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid #ece7da;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding-bottom: 8px;
+    }
+    .tab {
+      flex: 1; text-align: center;
+      font-size: 10px; color: #999;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .tab .icon { font-size: 18px; line-height: 1; }
+    .tab.active { color: #2a2a2a; font-weight: 600; }
+    .tab.add .icon {
+      width: 36px; height: 36px;
+      background: #2a2a2a; color: white;
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto;
+      font-size: 18px;
+    }
+    .tab.add .icon-text { display: none; }
+
+    /* Quote card (timeline / detail) */
+    .quote-card {
+      background: white;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid #ece7da;
+    }
+    .quote-card-header {
+      display: flex; align-items: center;
+      gap: 10px; margin-bottom: 12px;
+    }
+    .avatar {
+      width: 28px; height: 28px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #d8c5a0, #b8a070);
+      color: white; font-size: 12px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .author-line { font-size: 12px; }
+    .author-line .name { font-weight: 600; color: #2a2a2a; }
+    .author-line .time { color: #999; margin-left: 6px; }
+    .quote-text {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 14px; line-height: 1.7;
+      color: #2a2a2a;
+      margin-bottom: 14px;
+    }
+    .book-row {
+      display: flex; align-items: center;
+      gap: 10px;
+      padding-top: 12px;
+      border-top: 1px solid #f0ebe0;
+    }
+    .book-cover-mini {
+      width: 32px; height: 44px;
+      border-radius: 2px;
+      background: linear-gradient(135deg, #f0e6d2, #d4c4a4);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1), inset -1px 0 2px rgba(0,0,0,0.06);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 5px; color: #5a4a2a; font-weight: 600;
+      text-align: center; line-height: 1.1;
+      padding: 3px 2px;
+      position: relative;
+      overflow: hidden;
+    }
+    .book-cover-mini img,
+    .book-cover-lg img,
+    .book-cover-hero img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 2;
+    }
+    .book-cover-mini.c2 { background: linear-gradient(135deg, #e8d4b0, #c4a878); }
+    .book-cover-mini.c3 { background: linear-gradient(135deg, #d8c4d8, #a890b0); }
+    .book-cover-mini.c4 { background: linear-gradient(135deg, #c8d8e0, #8aa8c0); }
+    .book-info { font-size: 11px; line-height: 1.3; }
+    .book-info .title { color: #2a2a2a; font-weight: 500; }
+    .book-info .author { color: #999; }
+    .quote-actions {
+      display: flex; gap: 14px;
+      margin-top: 12px; padding-top: 10px;
+      border-top: 1px solid #f0ebe0;
+      font-size: 12px; color: #888;
+    }
+
+    /* Library grid */
+    .library-stats {
+      display: flex; gap: 16px;
+      padding: 8px 0 16px;
+      font-size: 12px; color: #666;
+    }
+    .library-stats strong { color: #2a2a2a; font-weight: 600; }
+    .book-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .book-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .book-cover-lg {
+      width: 100%; aspect-ratio: 2/3;
+      border-radius: 4px;
+      background: linear-gradient(135deg, #f0e6d2, #d4c4a4);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12), inset -2px 0 4px rgba(0,0,0,0.06);
+      display: flex; align-items: center; justify-content: center;
+      padding: 8px 6px; text-align: center;
+      font-size: 9px; color: #5a4a2a; font-weight: 600; line-height: 1.2;
+      position: relative;
+      overflow: hidden;
+    }
+    .book-cover-lg.c2 { background: linear-gradient(135deg, #e8d4b0, #c4a878); }
+    .book-cover-lg.c3 { background: linear-gradient(135deg, #d8c4d8, #a890b0); }
+    .book-cover-lg.c4 { background: linear-gradient(135deg, #c8d8e0, #8aa8c0); color: #2a4060; }
+    .book-cover-lg.c5 { background: linear-gradient(135deg, #d4e0c8, #88a878); color: #2a4020; }
+    .book-cover-lg.c6 { background: linear-gradient(135deg, #f0d4c0, #c47868); color: #5a2010; }
+    .book-cell .label { font-size: 10px; color: #2a2a2a; text-align: center; line-height: 1.3; }
+    .book-cell .count { font-size: 9px; color: #999; }
+
+    /* Book detail */
+    .book-hero {
+      display: flex; gap: 14px;
+      padding: 16px 0;
+    }
+    .book-cover-hero {
+      width: 88px; aspect-ratio: 2/3;
+      border-radius: 4px;
+      background: linear-gradient(135deg, #f0e6d2, #d4c4a4);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      display: flex; align-items: center; justify-content: center;
+      padding: 10px 6px; text-align: center;
+      font-size: 12px; color: #5a4a2a; font-weight: 600; line-height: 1.2;
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .book-meta h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; line-height: 1.3; }
+    .book-meta .by { font-size: 12px; color: #888; margin-bottom: 8px; }
+    .book-meta .stat { font-size: 11px; color: #666; padding: 4px 8px; background: #f0ebe0; border-radius: 6px; display: inline-block; }
+    .section-label {
+      font-size: 12px; font-weight: 600; color: #666;
+      margin: 8px 0 8px;
+    }
+
+    /* OCR screen */
+    .ocr-screen { background: #1a1a1a; height: 100%; position: relative; }
+    .ocr-page-photo {
+      width: 100%; height: 320px;
+      background: linear-gradient(180deg, #f5efe0 0%, #e8dcc4 100%);
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .ocr-overlay-text {
+      position: absolute;
+      inset: 30px 28px;
+      font-family: 'Noto Serif KR', serif;
+      font-size: 11px;
+      line-height: 1.85;
+      color: #3a3024;
+      opacity: 0.9;
+    }
+    .ocr-detection-box {
+      position: absolute;
+      border: 2px solid #f5d76e;
+      background: rgba(245, 215, 110, 0.15);
+      border-radius: 3px;
+    }
+    .ocr-detection-box.b1 { top: 80px; left: 28px; right: 28px; height: 38px; }
+    .ocr-detected-panel {
+      padding: 16px;
+      background: #1a1a1a;
+      color: white;
+    }
+    .ocr-status {
+      font-size: 11px; color: #f5d76e;
+      margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ocr-status::before {
+      content: ""; width: 6px; height: 6px;
+      background: #f5d76e; border-radius: 3px;
+    }
+    .ocr-extracted {
+      background: #2a2a2a;
+      padding: 12px; border-radius: 8px;
+      font-family: 'Noto Serif KR', serif;
+      font-size: 13px; line-height: 1.6;
+      color: #f0ebe0;
+      margin-bottom: 16px;
+    }
+    .ocr-buttons {
+      display: flex; gap: 8px;
+    }
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px; font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+    }
+    .btn-primary { background: #f5d76e; color: #1a1a1a; }
+    .btn-secondary { background: #2a2a2a; color: white; border: 1px solid #444; }
+
+    /* Card editor */
+    .editor-preview {
+      height: 280px;
+      margin: 8px 0 16px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f0e6d2, #d4c4a4);
+      padding: 28px 24px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      position: relative;
+    }
+    .editor-preview-quote {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 15px; line-height: 1.7;
+      color: #3a2a14;
+      font-weight: 500;
+    }
+    .editor-preview-meta {
+      font-size: 10px;
+      color: #5a4a24;
+      border-top: 1px solid rgba(58, 42, 20, 0.2);
+      padding-top: 8px;
+    }
+    .editor-tabs {
+      display: flex; gap: 6px;
+      margin-bottom: 12px;
+    }
+    .editor-tab {
+      padding: 6px 12px;
+      border-radius: 14px;
+      font-size: 11px; font-weight: 500;
+      background: white;
+      border: 1px solid #ece7da;
+      color: #666;
+    }
+    .editor-tab.active { background: #2a2a2a; color: white; border-color: #2a2a2a; }
+    .template-row {
+      display: flex; gap: 8px;
+      margin-bottom: 14px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .template-thumb {
+      width: 56px; height: 56px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      border: 2px solid transparent;
+    }
+    .template-thumb.t1 { background: linear-gradient(135deg, #f0e6d2, #d4c4a4); border-color: #2a2a2a; }
+    .template-thumb.t2 { background: white; border-color: #ece7da; }
+    .template-thumb.t3 { background: #1a1a1a; }
+    .template-thumb.t4 { background: linear-gradient(135deg, #c8d8e0, #8aa8c0); }
+    .template-thumb.t5 { background: linear-gradient(135deg, #f0d4c0, #c47868); }
+    .palette-label { font-size: 10px; color: #888; margin-bottom: 6px; }
+    .palette-row { display: flex; gap: 6px; margin-bottom: 14px; }
+    .swatch { width: 24px; height: 24px; border-radius: 12px; border: 2px solid white; box-shadow: 0 0 0 1px #ece7da; }
+    .editor-share {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 12px 16px 16px;
+      background: white;
+      border-top: 1px solid #ece7da;
+      display: flex; gap: 8px;
+    }
+
+    /* Share screen */
+    .share-card {
+      margin: 16px 0;
+      padding: 36px 28px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #f0e6d2, #d4c4a4);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+    .share-card-quote {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 16px; line-height: 1.7;
+      color: #3a2a14;
+      font-weight: 500;
+      margin-bottom: 24px;
+    }
+    .share-card-book {
+      display: flex; align-items: center; gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(58, 42, 20, 0.2);
+    }
+    .share-card-watermark {
+      position: absolute;
+      bottom: 8px; right: 12px;
+      font-size: 8px;
+      color: rgba(58, 42, 20, 0.4);
+    }
+    .share-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 20px;
+    }
+    .share-icon {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 6px;
+      font-size: 10px; color: #555;
+    }
+    .share-icon .ic {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      background: white;
+      border: 1px solid #ece7da;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .share-toggle {
+      margin-top: 18px; padding: 12px 14px;
+      background: white; border: 1px solid #ece7da; border-radius: 10px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px;
+    }
+    .toggle-pill {
+      width: 36px; height: 20px;
+      background: #2a2a2a; border-radius: 10px;
+      position: relative;
+    }
+    .toggle-pill::after {
+      content: ""; position: absolute;
+      top: 2px; right: 2px;
+      width: 16px; height: 16px;
+      background: white; border-radius: 8px;
+    }
+
+    /* Friends screen */
+    .search-bar {
+      margin: 8px 0 16px;
+      padding: 12px 14px;
+      background: white;
+      border: 1px solid #ece7da;
+      border-radius: 10px;
+      font-size: 13px; color: #999;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .friend-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0ebe0;
+    }
+    .avatar.lg { width: 40px; height: 40px; border-radius: 20px; font-size: 14px; }
+    .avatar.c2 { background: linear-gradient(135deg, #c8d8e0, #8aa8c0); }
+    .avatar.c3 { background: linear-gradient(135deg, #d8c4d8, #a890b0); }
+    .avatar.c4 { background: linear-gradient(135deg, #d4e0c8, #88a878); }
+    .friend-info { flex: 1; }
+    .friend-info .name { font-size: 13px; font-weight: 600; }
+    .friend-info .sub { font-size: 11px; color: #888; }
+    .btn-follow {
+      padding: 6px 14px;
+      background: #2a2a2a; color: white;
+      border-radius: 14px; font-size: 11px; font-weight: 600;
+    }
+    .btn-follow.following {
+      background: white; color: #2a2a2a;
+      border: 1px solid #ece7da;
+    }
+
+    /* Login */
+    .login-container {
+      height: 100%;
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding: 60px 24px 40px;
+    }
+    .login-hero { text-align: center; }
+    .login-logo {
+      font-size: 32px; font-weight: 800;
+      letter-spacing: -0.04em;
+      margin-bottom: 12px;
+    }
+    .login-tag { font-size: 13px; color: #666; line-height: 1.6; }
+    .login-buttons { display: flex; flex-direction: column; gap: 10px; }
+    .login-btn {
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 13px; font-weight: 600;
+      text-align: center;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .login-btn.kakao { background: #fee500; color: #2a1a00; }
+    .login-btn.email { background: white; border: 1px solid #ece7da; color: #2a2a2a; }
+
+    /* Library — Stacked books */
+    .stack-section { margin-bottom: 18px; }
+    .stack-section .label {
+      font-size: 11px; font-weight: 600;
+      color: #888;
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+    .stack-books {
+      display: flex; flex-direction: column;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.1));
+    }
+    .stack-book {
+      height: 26px;
+      border-radius: 1px 3px 3px 1px;
+      display: flex; align-items: center;
+      padding: 0 12px 0 14px;
+      font-size: 10px; font-weight: 600;
+      color: #5a4a2a;
+      box-shadow: inset 0 -1px 1px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.4);
+      position: relative;
+      letter-spacing: -0.01em;
+    }
+    .stack-book::before {
+      content: ""; position: absolute;
+      left: 0; top: 0; bottom: 0; width: 4px;
+      background: rgba(0,0,0,0.18);
+      border-radius: 1px 0 0 1px;
+    }
+    .stack-book .pages { margin-left: auto; font-size: 9px; color: rgba(90,74,42,0.7); font-weight: 500; }
+    .sb-c1 { background: linear-gradient(180deg, #f0e6d2, #d4c4a4); }
+    .sb-c2 { background: linear-gradient(180deg, #e8d4b0, #c4a878); }
+    .sb-c3 { background: linear-gradient(180deg, #d8c4d8, #a890b0); color: #4a2a4a; }
+    .sb-c4 { background: linear-gradient(180deg, #c8d8e0, #8aa8c0); color: #2a4060; }
+    .sb-c5 { background: linear-gradient(180deg, #d4e0c8, #88a878); color: #2a4020; }
+    .sb-c6 { background: linear-gradient(180deg, #f0d4c0, #c47868); color: #5a2010; }
+    .sb-c7 { background: linear-gradient(180deg, #2a2a2a, #1a1a1a); color: #f0ebe0; }
+    .sb-c7::before { background: rgba(255,255,255,0.2); }
+
+    /* Library — Bookshelf (vertical spines) */
+    .shelf-section { margin-bottom: 0; }
+    .shelf {
+      display: flex; align-items: flex-end;
+      gap: 2px;
+      padding: 8px 6px 0;
+      min-height: 110px;
+      background: linear-gradient(180deg, transparent 0%, transparent 92%, rgba(90,58,30,0.08) 92%);
+      border-bottom: 6px solid;
+      border-image: linear-gradient(180deg, #6a4828, #4a2818) 1;
+      box-shadow: 0 4px 0 -1px #8a6840, 0 6px 8px -2px rgba(0,0,0,0.18);
+      margin-bottom: 16px;
+      border-radius: 1px;
+    }
+    .shelf-book {
+      flex: 1; min-width: 0;
+      border-radius: 2px 2px 0 0;
+      box-shadow: inset -1px 0 1px rgba(0,0,0,0.1), inset 1px 0 0 rgba(255,255,255,0.2);
+      position: relative;
+      cursor: pointer;
+    }
+    .shelf-book .spine {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) rotate(-90deg);
+      font-size: 7px; font-weight: 600;
+      white-space: nowrap;
+      color: #5a4a2a;
+      letter-spacing: -0.02em;
+    }
+    .shelf-book.dark .spine { color: #f0ebe0; }
+    .sb-h1 { height: 88px; }
+    .sb-h2 { height: 96px; }
+    .sb-h3 { height: 80px; }
+    .sb-h4 { height: 102px; }
+    .sb-h5 { height: 92px; }
+
+    /* Library — Rotating bookshelf (Cover Flow style) */
+    .rotating-shelf-stage {
+      perspective: 800px;
+      padding: 24px 0 16px;
+    }
+    .rotating-shelf-frame {
+      display: flex; justify-content: center; align-items: center;
+      gap: 4px;
+      transform-style: preserve-3d;
+    }
+    .rs-side {
+      width: 36px; height: 130px;
+      background: linear-gradient(135deg, #d4c4a4, #b8a070);
+      border-radius: 4px;
+      transform: rotateY(50deg);
+      transform-origin: right center;
+      opacity: 0.55;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center;
+      gap: 2px; padding: 4px;
+    }
+    .rs-side.right {
+      transform: rotateY(-50deg);
+      transform-origin: left center;
+    }
+    .rs-side .mini-spine {
+      width: 100%; height: 4px;
+      border-radius: 1px;
+      background: rgba(90,74,42,0.6);
+    }
+    .rs-center {
+      width: 200px; height: 160px;
+      background: linear-gradient(135deg, #f0e6d2, #d4c4a4);
+      border-radius: 6px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.22);
+      padding: 14px 12px 12px;
+      position: relative;
+    }
+    .rs-center .category {
+      font-size: 11px; font-weight: 700;
+      color: #5a4a2a;
+      text-align: center;
+      margin-bottom: 10px;
+      letter-spacing: 0.02em;
+    }
+    .rs-center .mini-shelf {
+      display: flex; gap: 1px; align-items: flex-end;
+      padding: 4px 2px 0;
+      border-bottom: 3px solid #6a4828;
+    }
+    .rs-center .mini-shelf-book {
+      flex: 1;
+      border-radius: 1px 1px 0 0;
+      min-width: 0;
+    }
+    .rs-controls {
+      display: flex; justify-content: center; align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+      font-size: 12px; color: #666;
+    }
+    .rs-control-btn {
+      width: 32px; height: 32px;
+      border-radius: 16px;
+      background: white;
+      border: 1px solid #ece7da;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+    .rs-dots {
+      display: flex; justify-content: center; gap: 5px;
+      margin-top: 10px;
+    }
+    .rs-dot {
+      width: 5px; height: 5px;
+      border-radius: 3px;
+      background: #d4c4a4;
+    }
+    .rs-dot.active { background: #5a4a2a; width: 12px; }
+
+    /* Library — Stack v2 (list with cover thumbs) */
+    .stack-list-section { margin-bottom: 18px; }
+    .stack-list-section > .label {
+      font-size: 11px; font-weight: 600;
+      color: #888;
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+    .stack-list {
+      background: white;
+      border: 1px solid #ece7da;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .stack-row {
+      display: flex; align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid #f5f0e4;
+    }
+    .stack-row:last-child { border-bottom: none; }
+    .stack-thumb {
+      width: 32px; height: 44px;
+      border-radius: 2px;
+      background: linear-gradient(135deg, #f0e6d2, #d4c4a4);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 5px; color: #5a4a2a; font-weight: 600;
+      text-align: center; line-height: 1.1;
+      padding: 2px;
+    }
+    .stack-thumb img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 2;
+    }
+    .stack-info { flex: 1; min-width: 0; }
+    .stack-info .t {
+      font-size: 13px; font-weight: 600;
+      color: #2a2a2a;
+      letter-spacing: -0.01em;
+      margin-bottom: 1px;
+    }
+    .stack-info .s { font-size: 11px; color: #888; }
+    .stack-count {
+      font-size: 10px;
+      color: #666;
+      font-weight: 500;
+      padding: 3px 8px;
+      background: #f5f0e4;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    /* Library — Face-out shelf */
+    .face-shelf-display { padding: 4px 0; }
+    .face-shelf-section { margin-bottom: 12px; }
+    .face-shelf-section .label {
+      font-size: 11px; font-weight: 600;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .face-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 0 4px 8px;
+    }
+    .face-cover {
+      aspect-ratio: 2/3;
+      background: linear-gradient(135deg, #f0e6d2, #d4c4a4);
+      border-radius: 3px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2), inset -1px 0 2px rgba(0,0,0,0.06);
+      position: relative;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      padding: 4px;
+      font-size: 6px;
+      color: #5a4a2a;
+      font-weight: 600;
+      line-height: 1.15;
+      text-align: center;
+    }
+    .face-cover img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 2;
+    }
+    .shelf-wood-bar {
+      height: 8px;
+      background: linear-gradient(180deg, #7a5838 0%, #5a3818 50%, #3a1808 100%);
+      border-radius: 1px;
+      margin: -2px -4px 14px;
+      box-shadow: 0 4px 6px -2px rgba(0,0,0,0.25);
+      position: relative;
+    }
+    .shelf-wood-bar::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: rgba(255,255,255,0.15);
+    }
+
+    /* Rotating shelf — cover grid in center */
+    .rs-cover-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      padding: 4px 2px 0;
+      border-bottom: 3px solid #6a4828;
+      padding-bottom: 6px;
+    }
+    .rs-cover {
+      aspect-ratio: 2/3;
+      background: linear-gradient(135deg, #f0e6d2, #d4c4a4);
+      border-radius: 2px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    .rs-cover img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+
+    /* Library — view mode toggle */
+    .view-toggle {
+      display: flex; gap: 4px;
+      background: white;
+      border: 1px solid #ece7da;
+      border-radius: 10px;
+      padding: 3px;
+      margin: 4px 0 14px;
+    }
+    .view-btn {
+      flex: 1;
+      padding: 6px 4px;
+      border-radius: 7px;
+      font-size: 10px; font-weight: 500;
+      color: #888;
+      text-align: center;
+    }
+    .view-btn.active { background: #2a2a2a; color: white; }
+
+    /* Simple input screen */
+    .input-area {
+      background: white;
+      border: 1px solid #ece7da;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+      min-height: 140px;
+    }
+    .input-placeholder {
+      font-family: 'Noto Serif KR', serif;
+      font-size: 14px; line-height: 1.7;
+      color: #2a2a2a;
+    }
+    .input-hint {
+      font-size: 11px; color: #999;
+      margin-bottom: 6px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .input-actions {
+      display: flex; gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .input-chip {
+      padding: 8px 12px;
+      background: white;
+      border: 1px solid #ece7da;
+      border-radius: 18px;
+      font-size: 11px; color: #555;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .book-picker {
+      background: white;
+      border: 1px solid #ece7da;
+      border-radius: 12px;
+      padding: 14px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .book-picker-empty {
+      flex: 1;
+      font-size: 12px; color: #999;
+    }
+    .ocr-tip {
+      background: #fff8e0;
+      border: 1px solid #f0e0a0;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 11px; color: #6a5a20;
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+
+    /* Caption */
+    .screen-caption {
+      margin-top: 18px;
+      text-align: center;
+      max-width: 320px;
+    }
+    .screen-caption h3 {
+      font-size: 15px; font-weight: 700;
+      color: #2a2a2a;
+      margin-bottom: 4px;
+    }
+    .screen-caption p {
+      font-size: 13px; color: #666;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 30px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <h1>책귀 (가칭) — 앱 화면 모형</h1>
+    <p>코딩 시작 전 디자인 단계의 와이어프레임 — 각 화면이 어떤 정보·동작을 가질지 시각화한 초안입니다. 실제 디자인은 별도 Claude designer 세션에서 정밀화 예정.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- ==================== SCREEN 1: 홈 (Timeline) ==================== -->
+    <div class="screen-wrap">
+      <div class="phone"><div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="statusbar-icons">📶 🔋</span>
+        </div>
+        <div class="screen-content">
+          <div class="app-header">
+            <h2>책귀</h2>
+            <div class="app-header-right"><span>🔍</span><span>🔔</span></div>
+          </div>
+
+          <div class="quote-card">
+            <div class="quote-card-header">
+              <div class="avatar">수</div>
+              <div class="author-line">
+                <span class="name">수연</span>
+                <span class="time">2시간 전</span>
+              </div>
+            </div>
+            <p class="quote-text">"우리는 누군가의 가장 좋은 시절을 잘 모르는 채로도, 그 사람을 사랑할 수 있다."</p>
+            <div class="book-row">
+              <div class="book-cover-mini">작별하지<br/>않는다<img src="https://covers.openlibrary.org/b/isbn/9780593834153-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="book-info">
+                <div class="title">작별하지 않는다</div>
+                <div class="author">한강</div>
+              </div>
+            </div>
+            <div class="quote-actions">
+              <span>♡ 12</span>
+              <span>💬 3</span>
+              <span style="margin-left: auto;">↗</span>
+            </div>
+          </div>
+
+          <div class="quote-card">
+            <div class="quote-card-header">
+              <div class="avatar" style="background: linear-gradient(135deg, #c8d8e0, #8aa8c0);">지</div>
+              <div class="author-line">
+                <span class="name">지영</span>
+                <span class="time">5시간 전</span>
+              </div>
+            </div>
+            <p class="quote-text">"매일 아침을 살아야 한다. 어제는 어제의 일이고, 오늘은 오늘의 몫이 있다."</p>
+            <div class="book-row">
+              <div class="book-cover-mini c2">데미안<img src="https://covers.openlibrary.org/b/isbn/9780553208849-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="book-info">
+                <div class="title">데미안</div>
+                <div class="author">헤르만 헤세</div>
+              </div>
+            </div>
+            <div class="quote-actions">
+              <span>♡ 5</span>
+              <span>💬 1</span>
+            </div>
+          </div>
+
+          <div class="quote-card">
+            <div class="quote-card-header">
+              <div class="avatar" style="background: linear-gradient(135deg, #d4e0c8, #88a878);">민</div>
+              <div class="author-line">
+                <span class="name">민지</span>
+                <span class="time">어제</span>
+              </div>
+            </div>
+            <p class="quote-text">"모든 위대한 일은 단순함 속에 있다."</p>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab active"><span class="icon">🏠</span>홈</div>
+          <div class="tab"><span class="icon">📚</span>서재</div>
+          <div class="tab add"><span class="icon">+</span></div>
+          <div class="tab"><span class="icon">👥</span>친구</div>
+          <div class="tab"><span class="icon">⚙</span>나</div>
+        </div>
+      </div></div>
+      <div class="screen-caption">
+        <h3>① 홈 (친구 타임라인)</h3>
+        <p>친구들이 저장한 인용구 카드가 시간순으로. 가운데 + 버튼으로 새 인용구 추가</p>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 2: 내 서재 ==================== -->
+    <div class="screen-wrap">
+      <div class="phone"><div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="statusbar-icons">📶 🔋</span>
+        </div>
+        <div class="screen-content">
+          <div class="app-header">
+            <h2>내 서재</h2>
+            <div class="app-header-right"><span>🔍</span><span>⋯</span></div>
+          </div>
+          <div class="library-stats">
+            <span><strong>24권</strong> 등록</span>
+            <span><strong>87개</strong> 인용구</span>
+          </div>
+          <div class="view-toggle">
+            <div class="view-btn active">▦ 격자</div>
+            <div class="view-btn">≡ 쌓기</div>
+            <div class="view-btn">║║ 책장</div>
+            <div class="view-btn">◐ 회전</div>
+          </div>
+          <div class="book-grid">
+            <div class="book-cell">
+              <div class="book-cover-lg">작별하지<br/>않는다<img src="https://covers.openlibrary.org/b/isbn/9780593834153-L.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="label">작별하지 않는다</div>
+              <div class="count">12개</div>
+            </div>
+            <div class="book-cell">
+              <div class="book-cover-lg c2">데미안<img src="https://covers.openlibrary.org/b/isbn/9780553208849-L.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="label">데미안</div>
+              <div class="count">8개</div>
+            </div>
+            <div class="book-cell">
+              <div class="book-cover-lg c3">소년이<br/>온다<img src="https://covers.openlibrary.org/b/isbn/9781846275968-L.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="label">소년이 온다</div>
+              <div class="count">7개</div>
+            </div>
+            <div class="book-cell">
+              <div class="book-cover-lg c4">코스모스<img src="https://covers.openlibrary.org/b/isbn/9780345539434-L.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="label">코스모스</div>
+              <div class="count">5개</div>
+            </div>
+            <div class="book-cell">
+              <div class="book-cover-lg c5">총·균·쇠<img src="https://covers.openlibrary.org/b/isbn/9780393317558-L.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="label">총·균·쇠</div>
+              <div class="count">9개</div>
+            </div>
+            <div class="book-cell">
+              <div class="book-cover-lg c6">달과<br/>6펜스<img src="https://covers.openlibrary.org/b/isbn/9780486446028-L.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="label">달과 6펜스</div>
+              <div class="count">4개</div>
+            </div>
+            <div class="book-cell">
+              <div class="book-cover-lg c2">멋진<br/>신세계<img src="https://covers.openlibrary.org/b/isbn/9780060850524-L.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="label">멋진 신세계</div>
+              <div class="count">3개</div>
+            </div>
+            <div class="book-cell">
+              <div class="book-cover-lg c4">사피엔스<img src="https://covers.openlibrary.org/b/isbn/9780062316110-L.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="label">사피엔스</div>
+              <div class="count">11개</div>
+            </div>
+            <div class="book-cell">
+              <div class="book-cover-lg">미움받을<br/>용기<img src="https://covers.openlibrary.org/b/isbn/9781501197277-L.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="label">미움받을 용기</div>
+              <div class="count">6개</div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><span class="icon">🏠</span>홈</div>
+          <div class="tab active"><span class="icon">📚</span>서재</div>
+          <div class="tab add"><span class="icon">+</span></div>
+          <div class="tab"><span class="icon">👥</span>친구</div>
+          <div class="tab"><span class="icon">⚙</span>나</div>
+        </div>
+      </div></div>
+      <div class="screen-caption">
+        <h3>②-a 내 서재 — 격자</h3>
+        <p>표지 그리드. 가장 표준적·검색 친화적. Goodreads/Storygraph 결</p>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 2-b: 내 서재 — 쌓기 ==================== -->
+    <div class="screen-wrap">
+      <div class="phone"><div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="statusbar-icons">📶 🔋</span>
+        </div>
+        <div class="screen-content">
+          <div class="app-header">
+            <h2>내 서재</h2>
+            <div class="app-header-right"><span>🔍</span><span>⋯</span></div>
+          </div>
+          <div class="library-stats">
+            <span><strong>24권</strong> 등록</span>
+            <span><strong>87개</strong> 인용구</span>
+          </div>
+          <div class="view-toggle">
+            <div class="view-btn">▦ 격자</div>
+            <div class="view-btn active">≡ 쌓기</div>
+            <div class="view-btn">║║ 책장</div>
+            <div class="view-btn">◐ 회전</div>
+          </div>
+
+          <div class="stack-list-section">
+            <div class="label">📚 최근에 읽은 책</div>
+            <div class="stack-list">
+              <div class="stack-row">
+                <div class="stack-thumb">작별하지<br/>않는다<img src="https://covers.openlibrary.org/b/isbn/9780593834153-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                <div class="stack-info"><div class="t">작별하지 않는다</div><div class="s">한강</div></div>
+                <div class="stack-count">12개</div>
+              </div>
+              <div class="stack-row">
+                <div class="stack-thumb">코스모스<img src="https://covers.openlibrary.org/b/isbn/9780345539434-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                <div class="stack-info"><div class="t">코스모스</div><div class="s">칼 세이건</div></div>
+                <div class="stack-count">5개</div>
+              </div>
+              <div class="stack-row">
+                <div class="stack-thumb">데미안<img src="https://covers.openlibrary.org/b/isbn/9780553208849-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                <div class="stack-info"><div class="t">데미안</div><div class="s">헤르만 헤세</div></div>
+                <div class="stack-count">8개</div>
+              </div>
+              <div class="stack-row">
+                <div class="stack-thumb">총·균·쇠<img src="https://covers.openlibrary.org/b/isbn/9780393317558-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                <div class="stack-info"><div class="t">총·균·쇠</div><div class="s">재레드 다이아몬드</div></div>
+                <div class="stack-count">9개</div>
+              </div>
+              <div class="stack-row">
+                <div class="stack-thumb">소년이<br/>온다<img src="https://covers.openlibrary.org/b/isbn/9781846275968-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                <div class="stack-info"><div class="t">소년이 온다</div><div class="s">한강</div></div>
+                <div class="stack-count">7개</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack-list-section">
+            <div class="label">⭐ 즐겨찾기</div>
+            <div class="stack-list">
+              <div class="stack-row">
+                <div class="stack-thumb">달과<br/>6펜스<img src="https://covers.openlibrary.org/b/isbn/9780486446028-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                <div class="stack-info"><div class="t">달과 6펜스</div><div class="s">서머싯 몸</div></div>
+                <div class="stack-count">4개</div>
+              </div>
+              <div class="stack-row">
+                <div class="stack-thumb">멋진<br/>신세계<img src="https://covers.openlibrary.org/b/isbn/9780060850524-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                <div class="stack-info"><div class="t">멋진 신세계</div><div class="s">올더스 헉슬리</div></div>
+                <div class="stack-count">3개</div>
+              </div>
+              <div class="stack-row">
+                <div class="stack-thumb">사피엔스<img src="https://covers.openlibrary.org/b/isbn/9780062316110-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                <div class="stack-info"><div class="t">사피엔스</div><div class="s">유발 하라리</div></div>
+                <div class="stack-count">11개</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack-list-section">
+            <div class="label">📖 읽는 중</div>
+            <div class="stack-list">
+              <div class="stack-row">
+                <div class="stack-thumb">미움받을<br/>용기<img src="https://covers.openlibrary.org/b/isbn/9781501197277-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                <div class="stack-info"><div class="t">미움받을 용기</div><div class="s">기시미 이치로</div></div>
+                <div class="stack-count">6개</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><span class="icon">🏠</span>홈</div>
+          <div class="tab active"><span class="icon">📚</span>서재</div>
+          <div class="tab add"><span class="icon">+</span></div>
+          <div class="tab"><span class="icon">👥</span>친구</div>
+          <div class="tab"><span class="icon">⚙</span>나</div>
+        </div>
+      </div></div>
+      <div class="screen-caption">
+        <h3>②-b 내 서재 — 쌓기</h3>
+        <p>책을 옆으로 쌓아놓은 듯한 뷰. 카테고리별 묶음. 인용구 개수 한눈에</p>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 2-c: 내 서재 — 책장 ==================== -->
+    <div class="screen-wrap">
+      <div class="phone"><div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="statusbar-icons">📶 🔋</span>
+        </div>
+        <div class="screen-content">
+          <div class="app-header">
+            <h2>내 서재</h2>
+            <div class="app-header-right"><span>🔍</span><span>⋯</span></div>
+          </div>
+          <div class="library-stats">
+            <span><strong>24권</strong> 등록</span>
+            <span><strong>87개</strong> 인용구</span>
+          </div>
+          <div class="view-toggle">
+            <div class="view-btn">▦ 격자</div>
+            <div class="view-btn">≡ 쌓기</div>
+            <div class="view-btn active">║║ 책장</div>
+            <div class="view-btn">◐ 회전</div>
+          </div>
+
+          <div class="face-shelf-display">
+            <div class="face-row">
+              <div class="face-cover">작별하지<br/>않는다<img src="https://covers.openlibrary.org/b/isbn/9780593834153-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="face-cover">데미안<img src="https://covers.openlibrary.org/b/isbn/9780553208849-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="face-cover">소년이<br/>온다<img src="https://covers.openlibrary.org/b/isbn/9781846275968-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="face-cover">코스모스<img src="https://covers.openlibrary.org/b/isbn/9780345539434-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+            </div>
+            <div class="shelf-wood-bar"></div>
+
+            <div class="face-row">
+              <div class="face-cover">총·균·쇠<img src="https://covers.openlibrary.org/b/isbn/9780393317558-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="face-cover">사피엔스<img src="https://covers.openlibrary.org/b/isbn/9780062316110-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="face-cover">멋진<br/>신세계<img src="https://covers.openlibrary.org/b/isbn/9780060850524-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="face-cover">1984<img src="https://covers.openlibrary.org/b/isbn/9780451524935-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+            </div>
+            <div class="shelf-wood-bar"></div>
+
+            <div class="face-row">
+              <div class="face-cover">달과<br/>6펜스<img src="https://covers.openlibrary.org/b/isbn/9780486446028-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="face-cover">미움받을<br/>용기<img src="https://covers.openlibrary.org/b/isbn/9781501197277-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="face-cover">호밀밭의<br/>파수꾼<img src="https://covers.openlibrary.org/b/isbn/9780316769174-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div class="face-cover">변신<img src="https://covers.openlibrary.org/b/isbn/9780805210576-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+            </div>
+            <div class="shelf-wood-bar"></div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><span class="icon">🏠</span>홈</div>
+          <div class="tab active"><span class="icon">📚</span>서재</div>
+          <div class="tab add"><span class="icon">+</span></div>
+          <div class="tab"><span class="icon">👥</span>친구</div>
+          <div class="tab"><span class="icon">⚙</span>나</div>
+        </div>
+      </div></div>
+      <div class="screen-caption">
+        <h3>②-c 내 서재 — 책장</h3>
+        <p>실제 책장처럼 책등이 보이는 뷰. 가장 감성적·소장 욕구 자극. 카테고리별 칸으로 구분</p>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 2-d: 내 서재 — 회전책장 ==================== -->
+    <div class="screen-wrap">
+      <div class="phone"><div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="statusbar-icons">📶 🔋</span>
+        </div>
+        <div class="screen-content">
+          <div class="app-header">
+            <h2>내 서재</h2>
+            <div class="app-header-right"><span>🔍</span><span>⋯</span></div>
+          </div>
+          <div class="library-stats">
+            <span><strong>24권</strong> 등록</span>
+            <span><strong>87개</strong> 인용구</span>
+          </div>
+          <div class="view-toggle">
+            <div class="view-btn">▦ 격자</div>
+            <div class="view-btn">≡ 쌓기</div>
+            <div class="view-btn">║║ 책장</div>
+            <div class="view-btn active">◐ 회전</div>
+          </div>
+
+          <div class="rotating-shelf-stage">
+            <div class="rotating-shelf-frame">
+              <div class="rs-side">
+                <div class="mini-spine"></div>
+                <div class="mini-spine" style="background: rgba(170,90,90,0.6);"></div>
+                <div class="mini-spine"></div>
+                <div class="mini-spine" style="background: rgba(90,90,140,0.6);"></div>
+                <div class="mini-spine"></div>
+                <div class="mini-spine" style="background: rgba(60,80,40,0.6);"></div>
+                <div class="mini-spine"></div>
+              </div>
+
+              <div class="rs-center">
+                <div class="category">한국 문학 · 6권</div>
+                <div class="rs-cover-grid">
+                  <div class="rs-cover"><img src="https://covers.openlibrary.org/b/isbn/9780593834153-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                  <div class="rs-cover"><img src="https://covers.openlibrary.org/b/isbn/9781846275968-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                  <div class="rs-cover"><img src="https://covers.openlibrary.org/b/isbn/9781631496714-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                  <div class="rs-cover"><img src="https://covers.openlibrary.org/b/isbn/9780062961372-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                  <div class="rs-cover"><img src="https://covers.openlibrary.org/b/isbn/9780553208849-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                  <div class="rs-cover"><img src="https://covers.openlibrary.org/b/isbn/9780375704024-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+                </div>
+              </div>
+
+              <div class="rs-side right">
+                <div class="mini-spine"></div>
+                <div class="mini-spine" style="background: rgba(70,90,140,0.6);"></div>
+                <div class="mini-spine"></div>
+                <div class="mini-spine" style="background: rgba(140,90,140,0.6);"></div>
+                <div class="mini-spine"></div>
+                <div class="mini-spine" style="background: rgba(140,110,60,0.6);"></div>
+              </div>
+            </div>
+
+            <div class="rs-controls">
+              <div class="rs-control-btn">←</div>
+              <div style="font-size: 11px; color: #888;">스와이프해서 칸 바꾸기</div>
+              <div class="rs-control-btn">→</div>
+            </div>
+
+            <div class="rs-dots">
+              <div class="rs-dot"></div>
+              <div class="rs-dot"></div>
+              <div class="rs-dot active"></div>
+              <div class="rs-dot"></div>
+              <div class="rs-dot"></div>
+              <div class="rs-dot"></div>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 20px; font-size: 11px; color: #888;">
+            카테고리: 자기계발 · <strong style="color:#2a2a2a;">한국 문학</strong> · 인문학 · 과학 · 외국 문학 · 에세이
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><span class="icon">🏠</span>홈</div>
+          <div class="tab active"><span class="icon">📚</span>서재</div>
+          <div class="tab add"><span class="icon">+</span></div>
+          <div class="tab"><span class="icon">👥</span>친구</div>
+          <div class="tab"><span class="icon">⚙</span>나</div>
+        </div>
+      </div></div>
+      <div class="screen-caption">
+        <h3>②-d 내 서재 — 회전책장</h3>
+        <p>카테고리별 책장이 회전하듯 좌우로 넘어감. 한 화면 = 한 분야. 가장 인터랙티브</p>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 3: 책 상세 ==================== -->
+    <div class="screen-wrap">
+      <div class="phone"><div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="statusbar-icons">📶 🔋</span>
+        </div>
+        <div class="screen-content">
+          <div class="app-header">
+            <div class="app-header-left"><span>←</span></div>
+            <div class="app-header-right"><span>↗</span><span>⋯</span></div>
+          </div>
+
+          <div class="book-hero">
+            <div class="book-cover-hero">작별하지<br/>않는다<img src="https://covers.openlibrary.org/b/isbn/9780593834153-L.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+            <div class="book-meta">
+              <h3>작별하지 않는다</h3>
+              <div class="by">한강 · 문학동네 · 2021</div>
+              <span class="stat">📌 12개 인용구</span>
+            </div>
+          </div>
+
+          <div class="section-label">내가 모은 인용구 12개</div>
+
+          <div class="quote-card">
+            <p class="quote-text" style="margin: 0;">"우리는 누군가의 가장 좋은 시절을 잘 모르는 채로도, 그 사람을 사랑할 수 있다."</p>
+            <div class="quote-actions" style="border-top: none; padding-top: 8px; margin-top: 8px;">
+              <span style="color:#999;">p. 142</span>
+              <span style="margin-left: auto;">↗ 카드 만들기</span>
+            </div>
+          </div>
+
+          <div class="quote-card">
+            <p class="quote-text" style="margin: 0;">"눈송이 하나하나는 가볍지만, 쌓이면 나뭇가지를 부러뜨린다."</p>
+            <div class="quote-actions" style="border-top: none; padding-top: 8px; margin-top: 8px;">
+              <span style="color:#999;">p. 89</span>
+              <span style="margin-left: auto;">↗ 카드 만들기</span>
+            </div>
+          </div>
+
+          <div class="quote-card">
+            <p class="quote-text" style="margin: 0;">"기억은 사라지는 게 아니라, 어딘가에 잠시 비켜서 있을 뿐이다."</p>
+            <div class="quote-actions" style="border-top: none; padding-top: 8px; margin-top: 8px;">
+              <span style="color:#999;">p. 56</span>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><span class="icon">🏠</span>홈</div>
+          <div class="tab active"><span class="icon">📚</span>서재</div>
+          <div class="tab add"><span class="icon">+</span></div>
+          <div class="tab"><span class="icon">👥</span>친구</div>
+          <div class="tab"><span class="icon">⚙</span>나</div>
+        </div>
+      </div></div>
+      <div class="screen-caption">
+        <h3>③ 책 상세</h3>
+        <p>책 정보 + 그 책에서 내가 모은 인용구 리스트. 각 인용구는 1탭으로 카드 만들기</p>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 4: 인용구 추가 (텍스트 입력) ==================== -->
+    <div class="screen-wrap">
+      <div class="phone"><div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="statusbar-icons">📶 🔋</span>
+        </div>
+        <div class="screen-content no-tabbar">
+          <div class="app-header">
+            <div class="app-header-left"><span>✕</span><span style="font-size: 14px; font-weight: 600;">인용구 추가</span></div>
+            <div class="app-header-right" style="font-size: 13px; color: #999;">저장</div>
+          </div>
+
+          <div class="ocr-tip">
+            💡 폰 카메라로 책 사진을 찍으면 자동으로 텍스트를 인식해요. 그 결과를 여기에 붙여넣기만 하면 됩니다.
+          </div>
+
+          <div class="input-hint">📝 인용구 (직접 입력 · 붙여넣기)</div>
+          <div class="input-area">
+            <p class="input-placeholder">우리는 누군가의 가장 좋은 시절을 잘 모르는 채로도, 그 사람을 사랑할 수 있다.</p>
+          </div>
+
+          <div class="input-actions">
+            <div class="input-chip">📷 사진 첨부</div>
+            <div class="input-chip">🎤 음성 입력</div>
+            <div class="input-chip"># 태그</div>
+          </div>
+
+          <div class="input-hint">📕 책 선택</div>
+          <div class="book-picker">
+            <div class="book-cover-mini">작별하지<br/>않는다<img src="https://covers.openlibrary.org/b/isbn/9780593834153-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+            <div style="flex:1;">
+              <div style="font-size: 12px; font-weight: 600; color: #2a2a2a;">작별하지 않는다</div>
+              <div style="font-size: 10px; color: #888;">한강 · 문학동네</div>
+            </div>
+            <div style="font-size: 11px; color: #999;">변경</div>
+          </div>
+
+          <div style="margin-top: 14px;">
+            <div class="input-hint">📍 페이지 (선택)</div>
+            <div style="background: white; border: 1px solid #ece7da; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #2a2a2a;">142</div>
+          </div>
+        </div>
+        <div class="editor-share">
+          <div class="btn btn-secondary" style="flex: 0 0 auto; padding: 12px 16px;">초안 저장</div>
+          <div class="btn btn-primary" style="background: #2a2a2a; color: white;">카드 만들기 →</div>
+        </div>
+      </div></div>
+      <div class="screen-caption">
+        <h3>④ 인용구 추가 (텍스트 입력)</h3>
+        <p>OCR은 폰 자체 기능 사용 → 추출된 텍스트만 붙여넣기. 사진 첨부·음성 입력 옵션 추가. 저장하면 바로 카드 편집기로</p>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 5: 카드 편집기 (★ 핵심) ==================== -->
+    <div class="screen-wrap">
+      <div class="phone"><div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="statusbar-icons">📶 🔋</span>
+        </div>
+        <div class="screen-content no-tabbar">
+          <div class="app-header">
+            <div class="app-header-left"><span>←</span><span style="font-size: 14px; font-weight: 600;">카드 만들기</span></div>
+            <div class="app-header-right" style="font-size: 13px; color: #2a2a2a; font-weight: 600;">미리보기 →</div>
+          </div>
+
+          <div class="editor-preview">
+            <p class="editor-preview-quote">"우리는 누군가의 가장 좋은 시절을 잘 모르는 채로도, 그 사람을 사랑할 수 있다."</p>
+            <div class="editor-preview-meta">한강 · 작별하지 않는다</div>
+          </div>
+
+          <div class="editor-tabs">
+            <div class="editor-tab active">템플릿</div>
+            <div class="editor-tab">색</div>
+            <div class="editor-tab">폰트</div>
+            <div class="editor-tab">여백</div>
+          </div>
+
+          <div class="template-row">
+            <div class="template-thumb t1"></div>
+            <div class="template-thumb t2"></div>
+            <div class="template-thumb t3"></div>
+            <div class="template-thumb t4"></div>
+            <div class="template-thumb t5"></div>
+          </div>
+
+          <div class="palette-label">📕 표지에서 자동 추출된 팔레트</div>
+          <div class="palette-row">
+            <div class="swatch" style="background: #f0e6d2;"></div>
+            <div class="swatch" style="background: #d4c4a4;"></div>
+            <div class="swatch" style="background: #5a4a2a;"></div>
+            <div class="swatch" style="background: #3a2a14;"></div>
+            <div class="swatch" style="background: white;"></div>
+          </div>
+        </div>
+        <div class="editor-share">
+          <div class="btn btn-secondary" style="flex: 0 0 auto; padding: 12px 16px;">저장</div>
+          <div class="btn btn-primary" style="background: #2a2a2a; color: white;">공유하기</div>
+        </div>
+      </div></div>
+      <div class="screen-caption">
+        <h3>⑤ 카드 편집기 ★ 핵심 화면</h3>
+        <p>책 표지에서 추출한 색 팔레트 자동 제공. 템플릿 5개 + 폰트·여백 미세 조정. 가장 공들일 화면</p>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 6: 공유 ==================== -->
+    <div class="screen-wrap">
+      <div class="phone"><div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="statusbar-icons">📶 🔋</span>
+        </div>
+        <div class="screen-content no-tabbar">
+          <div class="app-header">
+            <div class="app-header-left"><span>←</span><span style="font-size: 14px; font-weight: 600;">공유하기</span></div>
+            <div class="app-header-right"><span>⋯</span></div>
+          </div>
+
+          <div class="share-card" style="position: relative;">
+            <p class="share-card-quote">"우리는 누군가의 가장 좋은 시절을 잘 모르는 채로도, 그 사람을 사랑할 수 있다."</p>
+            <div class="share-card-book">
+              <div class="book-cover-mini" style="width: 28px; height: 38px;">작별<img src="https://covers.openlibrary.org/b/isbn/9780593834153-M.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+              <div style="font-size: 11px; color: #5a4a2a;">
+                <div style="font-weight: 600;">작별하지 않는다</div>
+                <div>한강</div>
+              </div>
+            </div>
+            <div class="share-card-watermark">책귀</div>
+          </div>
+
+          <div class="share-grid">
+            <div class="share-icon">
+              <div class="ic" style="background: linear-gradient(135deg, #ffd54f, #f57c00); color: white;">📷</div>
+              <span>인스타<br/>스토리</span>
+            </div>
+            <div class="share-icon">
+              <div class="ic" style="background: #fee500; color: #2a1a00;">💬</div>
+              <span>카카오톡</span>
+            </div>
+            <div class="share-icon">
+              <div class="ic">⬇</div>
+              <span>다운로드</span>
+            </div>
+            <div class="share-icon">
+              <div class="ic">🔗</div>
+              <span>링크<br/>복사</span>
+            </div>
+          </div>
+
+          <div class="share-toggle">
+            <div>
+              <div style="font-weight: 600;">'책귀' 워터마크 포함</div>
+              <div style="font-size: 10px; color: #999;">친구가 출처를 보고 앱을 알 수 있어요</div>
+            </div>
+            <div class="toggle-pill"></div>
+          </div>
+        </div>
+      </div></div>
+      <div class="screen-caption">
+        <h3>⑥ 카드 미리보기·공유</h3>
+        <p>인스타 스토리·카톡으로 한 탭 공유. 워터마크 ON/OFF 옵션이 viral 메커닉의 핵심</p>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 7: 친구 ==================== -->
+    <div class="screen-wrap">
+      <div class="phone"><div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="statusbar-icons">📶 🔋</span>
+        </div>
+        <div class="screen-content">
+          <div class="app-header">
+            <h2>친구</h2>
+            <div class="app-header-right"><span>👤+</span></div>
+          </div>
+
+          <div class="search-bar">🔍 이름·이메일로 검색</div>
+
+          <div class="section-label">📒 카톡 친구 중 사용자</div>
+
+          <div class="friend-row">
+            <div class="avatar lg">수</div>
+            <div class="friend-info">
+              <div class="name">수연</div>
+              <div class="sub">23권 · 87개 인용구</div>
+            </div>
+            <div class="btn-follow following">팔로잉</div>
+          </div>
+
+          <div class="friend-row">
+            <div class="avatar lg c2">지</div>
+            <div class="friend-info">
+              <div class="name">지영</div>
+              <div class="sub">31권 · 156개 인용구</div>
+            </div>
+            <div class="btn-follow following">팔로잉</div>
+          </div>
+
+          <div class="friend-row">
+            <div class="avatar lg c3">민</div>
+            <div class="friend-info">
+              <div class="name">민지</div>
+              <div class="sub">12권 · 34개 인용구</div>
+            </div>
+            <div class="btn-follow">팔로우</div>
+          </div>
+
+          <div class="section-label" style="margin-top: 16px;">✨ 추천</div>
+
+          <div class="friend-row">
+            <div class="avatar lg c4">은</div>
+            <div class="friend-info">
+              <div class="name">은지</div>
+              <div class="sub">취향 비슷 · 한강 7권</div>
+            </div>
+            <div class="btn-follow">팔로우</div>
+          </div>
+
+          <div class="friend-row">
+            <div class="avatar lg">현</div>
+            <div class="friend-info">
+              <div class="name">현우</div>
+              <div class="sub">취향 비슷 · 인문 위주</div>
+            </div>
+            <div class="btn-follow">팔로우</div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><span class="icon">🏠</span>홈</div>
+          <div class="tab"><span class="icon">📚</span>서재</div>
+          <div class="tab add"><span class="icon">+</span></div>
+          <div class="tab active"><span class="icon">👥</span>친구</div>
+          <div class="tab"><span class="icon">⚙</span>나</div>
+        </div>
+      </div></div>
+      <div class="screen-caption">
+        <h3>⑦ 친구 검색·팔로우</h3>
+        <p>카톡 연락처 매칭으로 자연스러운 친구 추가. 추천은 독서 취향 기반</p>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 8: 로그인 ==================== -->
+    <div class="screen-wrap">
+      <div class="phone"><div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="statusbar-icons">📶 🔋</span>
+        </div>
+        <div class="login-container">
+          <div class="login-hero">
+            <div class="login-logo">책귀</div>
+            <p class="login-tag">책의 좋은 문장을<br/>카드 한 장으로.</p>
+          </div>
+
+          <div style="text-align: center;">
+            <div class="book-cover-hero" style="margin: 0 auto; width: 120px; box-shadow: 0 12px 30px rgba(0,0,0,0.18);">작별하지<br/>않는다<img src="https://covers.openlibrary.org/b/isbn/9780593834153-L.jpg?default=false" alt="" loading="lazy" onerror="this.remove()"></div>
+          </div>
+
+          <div class="login-buttons">
+            <div class="login-btn kakao">💬 카카오로 시작하기</div>
+            <div class="login-btn email">이메일로 가입</div>
+            <p style="text-align: center; font-size: 11px; color: #999; margin-top: 8px;">이미 계정이 있어요? <span style="color: #2a2a2a; font-weight: 600;">로그인</span></p>
+          </div>
+        </div>
+      </div></div>
+      <div class="screen-caption">
+        <h3>⑧ 로그인·회원가입</h3>
+        <p>카카오 로그인 우선 (한국 시장), 이메일 가입은 보조</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="text-align: center; margin-top: 80px; font-size: 13px; color: #888;">
+    이 모형은 와이어프레임 수준의 초안입니다. 정밀 디자인은 별도 Claude designer 세션에서 진행 예정.
+  </div>
+</body>
+</html>
