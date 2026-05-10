@@ -58,6 +58,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/auth/callback',
         builder: (_, _) => const AuthCallbackScreen(),
       ),
+      // 모바일 deep link `io.github.tgparkk.bookquote://auth/callback?code=...`는
+      // Dart URI 파서가 host=auth, path=/callback으로 쪼갠다 → 별도 매핑.
+      GoRoute(
+        path: '/callback',
+        builder: (_, _) => const AuthCallbackScreen(),
+      ),
       GoRoute(
         path: '/book/:id',
         builder: (_, state) =>
@@ -112,8 +118,9 @@ String? _redirect(BuildContext context, GoRouterState state) {
   final session = isSupabaseReady ? supabase.auth.currentSession : null;
   final loggedIn = session != null;
 
-  // 게스트 허용: 인증 화면 + 책 상세 미리보기
-  if (loc.startsWith('/auth')) {
+  // 게스트 허용: 인증 화면 + 모바일 callback path + 책 상세 미리보기
+  final isAuthPath = loc.startsWith('/auth') || loc == '/callback';
+  if (isAuthPath) {
     if (loggedIn) return state.uri.queryParameters['from'] ?? '/';
     return null;
   }
