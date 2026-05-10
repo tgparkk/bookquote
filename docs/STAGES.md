@@ -51,7 +51,7 @@
 - [x] 알라딘 OpenAPI 키 발급 — `.env.json` (gitignored)에 저장, `lib/core/config/env.dart`로 로드. 빌드 시 `--dart-define-from-file=.env.json` 필요
 - [x] Supabase 프로젝트 생성 (Northeast Asia / Seoul, 프로젝트 ID `ndbvptxwznogcuuumzzh`). 초기 스키마는 별도 작업
 - [x] `supabase_flutter` 초기화 (`lib/core/supabase/supabase_init.dart`, `main()`에서 호출, 키 누락 시 graceful skip)
-- [ ] Auth (이메일 또는 카카오)
+- [~] Auth — 이메일 매직링크 구현 완료(`lib/features/auth/`, `supabase/migrations/20260510_001_profiles.sql`). 카카오 OAuth 별도 PR (Kakao Developer Console + Supabase Dashboard 설정 후)
 - [ ] 책 검색 화면 (알라딘 API)
 - [ ] 책 상세 화면
 - [ ] 내 서재 추가/조회

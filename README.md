@@ -26,19 +26,37 @@ cp .env.json.example .env.json
 - `SUPABASE_URL` — Supabase 프로젝트 URL
 - `SUPABASE_ANON_KEY` — Supabase anon public 키 (RLS로 보호)
 
-### 3. 실행
+### 3. Supabase 마이그레이션·설정
 
-`--dart-define-from-file` 플래그가 필수다.
+#### 3-1. SQL 마이그레이션 적용
+
+`supabase/migrations/` 안의 .sql 파일들을 Supabase Dashboard
+> SQL Editor에서 순서대로 붙여 실행한다 (또는 Supabase CLI `supabase db push`).
+
+#### 3-2. Auth 설정
+
+Dashboard > Authentication > URL Configuration:
+- **Site URL**: `http://localhost:8080` (개발 기본)
+- **Redirect URLs**: 다음 항목들을 추가
+  - `http://localhost:**`  (모든 로컬 dev 포트 허용)
+  - 향후 배포 도메인
+
+Dashboard > Authentication > Providers:
+- **Email**: 기본 ON. 매직링크가 이 provider로 발송됨
+
+### 4. 실행
+
+`--dart-define-from-file` 플래그가 필수. 매직링크 redirect를 안정적으로 처리하려면 `--web-port=8080`도 함께.
 
 ```sh
-flutter run --dart-define-from-file=.env.json
+flutter run -d chrome --dart-define-from-file=.env.json --web-port=8080
 flutter build apk --dart-define-from-file=.env.json
 ```
 
-IDE에서는 launch configuration에 같은 인자를 추가한다 (Android Studio/IntelliJ:
-Run/Debug Configurations → Additional run args).
+IDE에서는 launch configuration의 "Additional run args"에 동일한 인자 추가
+(Android Studio/IntelliJ: Run/Debug Configurations → Additional run args).
 
-### 4. 검증
+### 5. 검증
 
 ```sh
 flutter analyze
