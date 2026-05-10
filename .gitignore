@@ -47,3 +47,7 @@ app.*.map.json
 # Tool local state
 .omc/
 .claude/
+
+# Secrets (실 키는 .env.json — example 파일만 커밋)
+.env.json
+.env.local.json
