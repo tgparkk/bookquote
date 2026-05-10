@@ -5,6 +5,17 @@
 
 ---
 
+## 2026-05-10 — 카카오 OAuth는 V1.5로 미룸 (개인 앱 + Supabase GoTrue 충돌)
+
+- **결정**: V1 출시까지 인증은 이메일 매직링크 단일. LoginScreen의 카카오 버튼은 비활성 placeholder ("카카오로 시작 (V1.5)"). 코드 인프라(`AuthController.signInWithKakao`, Supabase Dashboard의 Kakao provider 키, `handle_new_user` OAuth 호환 트리거)는 그대로 유지 — V1.5 활성화 시 LoginScreen의 OutlinedButton에 `_signInKakao` 다시 연결만 하면 됨
+- **이유**: Supabase GoTrue가 Kakao OAuth 흐름에서 `account_email` scope를 클라이언트 인자와 무관하게 **하드코딩으로 요청**한다 (Supabase issue #36878). 그런데 카카오 **개인 앱**은 비즈니스 인증 없이는 `account_email` scope를 동의항목에 등록할 수 없어 KOE205 ("설정하지 않은 동의 항목") 에러로 실패. 매직링크는 정상 동작
+- **대안 검토**:
+  - (a) 카카오 "개인 개발자 등록" 우회 → 추가 본인 인증 절차 필요, V1 timeline 흔들기 싫음
+  - (b) `kakao_flutter_sdk_user` + `signInWithIdToken`로 GoTrue OAuth 우회 → 30~60분 + 네이티브 설정. V1.5에 평가
+  - (c) 매직링크만 → 채택. PLAN의 "이메일 또는 카카오" 명세 준수, 로그인 마찰 적음
+- **재검토 트리거**: 베타 사용자 5명 중 2명 이상이 카카오 로그인 명시 요청 시 (b) 도입. 또는 비즈 인증 받게 되는 시점에 (a)
+- **현재 상태의 외부 자원**: Kakao Developer Console 앱(ID 1453058)·동의항목·Redirect URI·Supabase Dashboard Kakao provider 키 모두 등록된 채로 둠 — V1.5 활성화 시 재설정 비용 0
+
 ## 2026-05-10 — go_router 구조 (`StatefulShellRoute` + auth gate) + 비용 정책
 
 - **결정 (라우터)**: `StatefulShellRoute.indexedStack` 4 슬롯 BottomNav (홈/서재/[+]/내정보), `[+]`는 sentinel이라 `/quote/new` 풀스크린 push. 카드 편집기·인용구 입력은 `parentNavigatorKey: rootKey`로 셸 외부. `/book/:id`만 게스트 미리보기 허용. `/splash` initialLocation으로 cold-start 세션 hydrate 경합 회피

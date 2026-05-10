@@ -52,22 +52,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Future<void> _signInKakao() async {
-    await ref.read(authControllerProvider.notifier).signInWithKakao(
-          redirectTo: _redirectUrl(),
-        );
-
-    final state = ref.read(authControllerProvider);
-    if (!mounted) return;
-    state.whenOrNull(
-      error: (e, _) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(SnackBar(content: Text(authErrorMessage(e))));
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -143,10 +127,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.s6),
+                      // V1.5 재활성화: onPressed에 _signInKakao 연결.
+                      // 현재 카카오 OAuth는 Supabase GoTrue가 account_email scope를
+                      // 강제 요청하는데 카카오 개인 앱은 비즈니스 인증 없이 이 scope를
+                      // 받을 수 없어 KOE205 발생. 비즈 인증 또는 kakao_flutter_sdk
+                      // 우회(signInWithIdToken) 둘 중 하나 도입 시 활성화.
                       OutlinedButton.icon(
-                        onPressed: isLoading ? null : _signInKakao,
-                        icon: const Icon(Icons.chat_bubble),
-                        label: const Text('카카오로 시작'),
+                        onPressed: null,
+                        icon: const Icon(Icons.chat_bubble_outline),
+                        label: const Text('카카오로 시작 (V1.5)'),
                       ),
                     ],
                   ),

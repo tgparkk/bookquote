@@ -51,7 +51,7 @@
 - [x] 알라딘 OpenAPI 키 발급 — `.env.json` (gitignored)에 저장, `lib/core/config/env.dart`로 로드. 빌드 시 `--dart-define-from-file=.env.json` 필요
 - [x] Supabase 프로젝트 생성 (Northeast Asia / Seoul, 프로젝트 ID `ndbvptxwznogcuuumzzh`). 초기 스키마는 별도 작업
 - [x] `supabase_flutter` 초기화 (`lib/core/supabase/supabase_init.dart`, `main()`에서 호출, 키 누락 시 graceful skip)
-- [x] Auth — 이메일 매직링크 + 카카오 OAuth (`lib/features/auth/`, `supabase/migrations/20260510_001_profiles.sql`, `_002_handle_new_user_oauth.sql`). 카카오는 OAuth 흐름이라 Kakao Developer Console + Supabase Dashboard에 키 등록 필요 (README 미포함, 본인 계정에 종속)
+- [x] Auth — 이메일 매직링크 (`lib/features/auth/`, `supabase/migrations/001~002`). 카카오는 V1.5로 미룸 — Supabase GoTrue가 `account_email` scope를 강제 요청하는데 카카오 개인 앱은 비즈 인증 없이 받을 수 없음 (DECISIONS 2026-05-10 항목)
 - [ ] 책 검색 화면 (알라딘 API)
 - [ ] 책 상세 화면
 - [ ] 내 서재 추가/조회
