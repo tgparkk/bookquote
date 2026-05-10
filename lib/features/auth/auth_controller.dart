@@ -37,6 +37,9 @@ class AuthController extends AsyncNotifier<void> {
 
   /// Kakao OAuth로 로그인. 웹에선 같은 창에서 Kakao 로그인 페이지로
   /// 리다이렉트되며, 인증 후 [redirectTo]로 돌아온다.
+  ///
+  /// scope 제한: 카카오 개인 앱은 비즈니스 인증 없이 `account_email`을
+  /// 받을 수 없다. 명시적으로 nickname/image만 요청해야 KOE205를 피한다.
   Future<void> signInWithKakao({required String redirectTo}) async {
     if (!isSupabaseReady) {
       throw const AuthException('Supabase 환경이 설정되지 않았습니다.');
@@ -46,6 +49,7 @@ class AuthController extends AsyncNotifier<void> {
       await supabase.auth.signInWithOAuth(
         OAuthProvider.kakao,
         redirectTo: redirectTo,
+        scopes: 'profile_nickname profile_image',
       );
     });
   }
