@@ -52,6 +52,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  Future<void> _signInKakao() async {
+    await ref.read(authControllerProvider.notifier).signInWithKakao(
+          redirectTo: _redirectUrl(),
+        );
+
+    final state = ref.read(authControllerProvider);
+    if (!mounted) return;
+    state.whenOrNull(
+      error: (e, _) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(content: Text(authErrorMessage(e))));
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -128,9 +144,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: AppSpacing.s6),
                       OutlinedButton.icon(
-                        onPressed: null, // V1.5에 활성화
-                        icon: const Icon(Icons.chat_bubble_outline),
-                        label: const Text('카카오로 시작 (곧 지원)'),
+                        onPressed: isLoading ? null : _signInKakao,
+                        icon: const Icon(Icons.chat_bubble),
+                        label: const Text('카카오로 시작'),
                       ),
                     ],
                   ),

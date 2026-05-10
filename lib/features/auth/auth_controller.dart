@@ -35,6 +35,21 @@ class AuthController extends AsyncNotifier<void> {
     });
   }
 
+  /// Kakao OAuth로 로그인. 웹에선 같은 창에서 Kakao 로그인 페이지로
+  /// 리다이렉트되며, 인증 후 [redirectTo]로 돌아온다.
+  Future<void> signInWithKakao({required String redirectTo}) async {
+    if (!isSupabaseReady) {
+      throw const AuthException('Supabase 환경이 설정되지 않았습니다.');
+    }
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await supabase.auth.signInWithOAuth(
+        OAuthProvider.kakao,
+        redirectTo: redirectTo,
+      );
+    });
+  }
+
   Future<void> signOut() async {
     if (!isSupabaseReady) return;
     state = const AsyncLoading();
