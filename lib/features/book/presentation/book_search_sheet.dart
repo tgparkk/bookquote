@@ -40,6 +40,7 @@ class _SheetBody extends ConsumerStatefulWidget {
 class _SheetBodyState extends ConsumerState<_SheetBody> {
   final _controller = TextEditingController();
   Timer? _debounce;
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -57,7 +58,11 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
   }
 
   Future<void> _onPick(BuildContext sheetCtx, _PickInput input) async {
+    if (_saving) return;
     final repo = ref.read(bookRepositoryProvider);
+    final messenger = ScaffoldMessenger.of(sheetCtx);
+    setState(() => _saving = true);
+
     Book? book;
     try {
       if (input.cached != null) {
@@ -67,13 +72,25 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
       }
     } on BookRepositoryException catch (e) {
       if (!sheetCtx.mounted) return;
-      ScaffoldMessenger.of(sheetCtx)
+      setState(() => _saving = false);
+      messenger
         ..clearSnackBars()
         ..showSnackBar(SnackBar(content: Text('책 저장 실패: ${e.message}')));
       return;
     }
 
     if (!sheetCtx.mounted) return;
+    setState(() => _saving = false);
+    if (book != null) {
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('"${book.title}"을(를) 서재에 추가했어요'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+    }
     Navigator.of(sheetCtx).pop(book);
   }
 
@@ -86,36 +103,50 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
       padding: EdgeInsets.only(bottom: viewInsets.bottom),
       child: SizedBox(
         height: MediaQuery.sizeOf(context).height * 0.9,
-        child: Column(
+        child: Stack(
           children: [
-            const _DragHandle(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.s4,
-                0,
-                AppSpacing.s4,
-                AppSpacing.s3,
-              ),
-              child: TextField(
-                controller: _controller,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: '책 제목, 저자, ISBN',
-                  prefixIcon: Icon(Icons.search),
+            Column(
+              children: [
+                const _DragHandle(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.s4,
+                    0,
+                    AppSpacing.s4,
+                    AppSpacing.s3,
+                  ),
+                  child: TextField(
+                    controller: _controller,
+                    autofocus: true,
+                    enabled: !_saving,
+                    decoration: const InputDecoration(
+                      hintText: '책 제목, 저자, ISBN',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    textInputAction: TextInputAction.search,
+                    onChanged: _onChanged,
+                  ),
                 ),
-                textInputAction: TextInputAction.search,
-                onChanged: _onChanged,
-              ),
+                Expanded(
+                  child: result.when(
+                    data: (data) => _Results(
+                      result: data,
+                      onPick: (i) => _onPick(context, i),
+                    ),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => _ErrorView(error: e),
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: result.when(
-                data: (data) =>
-                    _Results(result: data, onPick: (i) => _onPick(context, i)),
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
-                error: (e, _) => _ErrorView(error: e),
+            if (_saving)
+              const ColoredBox(
+                color: Color(0x66000000),
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
               ),
-            ),
           ],
         ),
       ),
