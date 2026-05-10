@@ -18,3 +18,10 @@ final bookByIsbnProvider =
   final repo = ref.read(bookRepositoryProvider);
   return repo.getByIsbn(isbn13);
 });
+
+/// 내 서재 책 목록 (added_at desc). `ref.invalidate(myLibraryProvider)`로
+/// 추가/삭제 후 갱신.
+final myLibraryProvider = FutureProvider.autoDispose<List<Book>>((ref) async {
+  final repo = ref.read(bookRepositoryProvider);
+  return repo.listMyLibrary();
+});

@@ -32,6 +32,7 @@ class BookRepository {
 
   static const _searchFn = 'aladin-search';
   static const _booksTable = 'books';
+  static const _userBooksTable = 'user_books';
 
   /// 알라딘 검색 (Edge Function 경유).
   Future<AladinSearchResponse> searchBooks({
@@ -99,6 +100,58 @@ class BookRepository {
       return Book.fromJson(row);
     } on PostgrestException catch (e) {
       throw BookRepositoryException('FETCH_FAILED', e.message);
+    }
+  }
+
+  // ── 내 서재 ──────────────────────────────────────────
+
+  /// 현재 로그인 사용자의 서재에 책을 추가한다. 이미 있으면 idempotent.
+  /// 비로그인 상태면 [BookRepositoryException] 'NOT_AUTHENTICATED'.
+  Future<void> addToLibrary(String bookId) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) {
+      throw BookRepositoryException('NOT_AUTHENTICATED', '로그인이 필요해요.');
+    }
+    try {
+      await _client
+          .from(_userBooksTable)
+          .upsert({'user_id': uid, 'book_id': bookId}, onConflict: 'user_id,book_id');
+    } on PostgrestException catch (e) {
+      throw BookRepositoryException('ADD_LIBRARY_FAILED', e.message);
+    }
+  }
+
+  /// 서재에서 제거.
+  Future<void> removeFromLibrary(String bookId) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      await _client
+          .from(_userBooksTable)
+          .delete()
+          .eq('user_id', uid)
+          .eq('book_id', bookId);
+    } on PostgrestException catch (e) {
+      throw BookRepositoryException('REMOVE_LIBRARY_FAILED', e.message);
+    }
+  }
+
+  /// 내 서재 책 목록. added_at desc.
+  Future<List<Book>> listMyLibrary({int limit = 50}) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return const [];
+    try {
+      final rows = await _client
+          .from(_userBooksTable)
+          .select('book:books(*)')
+          .eq('user_id', uid)
+          .order('added_at', ascending: false)
+          .limit(limit);
+      return rows
+          .map((r) => Book.fromJson(r['book'] as Map<String, dynamic>))
+          .toList();
+    } on PostgrestException catch (e) {
+      throw BookRepositoryException('LIST_LIBRARY_FAILED', e.message);
     }
   }
 

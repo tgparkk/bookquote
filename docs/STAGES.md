@@ -54,7 +54,7 @@
 - [x] Auth — 이메일 매직링크 (`lib/features/auth/`, `supabase/migrations/*profiles*` + `*handle_new_user_oauth*`). 카카오는 V1.5로 미룸 — Supabase GoTrue가 `account_email` scope를 강제 요청하는데 카카오 개인 앱은 비즈 인증 없이 받을 수 없음 (DECISIONS 2026-05-10 항목)
 - [x] 책 검색 화면 (알라딘 API) — `BookSearchSheet`(BottomSheet), 캐시 사전조회 + Edge Function, 400ms debounce, 자동 ISBN 분기 토대
 - [x] 책 상세 화면 — `bookByIdProvider`로 실제 데이터 fetch, BookCover 위젯
-- [~] 내 서재 추가/조회 — 추가 흐름은 `LibraryScreen` FAB → 검색 시트 → upsert → 책 상세 동작. 사용자별 서재 목록(`user_books` 테이블 + 조회 UI)은 별도 작업
+- [x] 내 서재 추가/조회 — `user_books` 테이블 + RLS, `LibraryScreen`이 책 카드 리스트 + pull-to-refresh + FAB → 검색 시트 → addToLibrary + SnackBar 피드백 + invalidate
 - [x] 모바일 native 셋업 — Android `AndroidManifest.xml` deep-link intent filter (`io.github.tgparkk.bookquote://auth/callback`) + iOS `Info.plist` URL Types + `app_links` + `lib/app/deep_link_handler.dart`. 첫 debug APK 빌드 검증
 - [x] Supabase CLI 배포 파이프라인 — `supabase init` + `link` + `db push` + `secrets set ALADIN_TTB_KEY` + `functions deploy aladin-search` 모두 통과. 마이그레이션은 `YYYYMMDDHHMMSS` 14자리 timestamp로 표준 명명
 
