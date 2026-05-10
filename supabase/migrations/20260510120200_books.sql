@@ -23,6 +23,7 @@ create table if not exists public.books (
 
 comment on table public.books is '글로벌 책 카탈로그. 알라딘 검색 결과 + 사용자 활동 시 자동 채워짐.';
 
+drop trigger if exists books_updated_at on public.books;
 create trigger books_updated_at
   before update on public.books
   for each row execute function public.set_updated_at();

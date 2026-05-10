@@ -33,10 +33,12 @@ cp .env.json.example .env.json
 `supabase/migrations/` 안의 .sql 파일들을 Supabase Dashboard
 > SQL Editor에서 순서대로 붙여 실행한다 (또는 Supabase CLI `supabase db push`).
 
-현재 마이그레이션:
-- `001_profiles.sql` — profiles 테이블 + 회원가입 트리거 + RLS
-- `002_handle_new_user_oauth.sql` — OAuth 사용자(이메일 null 케이스) 호환
-- `003_books.sql` — books 글로벌 카탈로그 + `upsert_book` RPC
+현재 마이그레이션 (timestamp 14자리 명명):
+- `..120000_profiles.sql` — profiles 테이블 + 회원가입 트리거 + RLS
+- `..120100_handle_new_user_oauth.sql` — OAuth 사용자(이메일 null 케이스) 호환
+- `..120200_books.sql` — books 글로벌 카탈로그 + `upsert_book` RPC
+
+> Supabase CLI 셋업: `supabase login --token <PAT>` → `supabase init` → `supabase link --project-ref ndbvptxwznogcuuumzzh` → `supabase db push`
 
 #### 3-2. Edge Function 배포
 
@@ -64,6 +66,7 @@ Dashboard > Authentication > URL Configuration:
 - **Site URL**: `http://localhost:8080` (개발 기본)
 - **Redirect URLs**: 다음 항목들을 추가
   - `http://localhost:**`  (모든 로컬 dev 포트 허용)
+  - **`io.github.tgparkk.bookquote://**`** (Android/iOS 매직링크 deep link)
   - 향후 배포 도메인
 
 Dashboard > Authentication > Providers:

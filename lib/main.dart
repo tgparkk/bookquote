@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 
+import 'app/deep_link_handler.dart';
 import 'app/router.dart';
 import 'core/supabase/supabase_init.dart';
 import 'core/theme/app_theme.dart';
@@ -12,6 +13,9 @@ Future<void> main() async {
   // 매직링크 redirect URL과 정확히 일치해야 SDK·라우터 둘 다 안 깨진다.
   usePathUrlStrategy();
   await initSupabase();
+  // 모바일에서 매직링크/OAuth 콜백을 받으려면 app_links 스트림을 구독해야 함.
+  // 웹은 SDK가 URL을 자동 감지하므로 핸들러는 no-op.
+  await DeepLinkHandler().start();
   runApp(const ProviderScope(child: BookquoteApp()));
 }
 
