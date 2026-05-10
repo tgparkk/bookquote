@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/theme/app_text_styles.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/tokens.dart';
 
@@ -42,6 +43,11 @@ class _PlaceholderHome extends StatelessWidget {
             Text(
               'AppTheme · TextTheme · ColorScheme 적용 확인',
               style: textTheme.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.s8),
+            const Text(
+              '"우리는 누구나, 자기가 모르는 자기의 문장을 가지고 있다."',
+              style: AppTextStyles.quoteBase,
             ),
             const SizedBox(height: AppSpacing.s8),
             Wrap(

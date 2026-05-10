@@ -96,30 +96,22 @@ abstract final class AppColors {
 // 폰트 패밀리
 // ─────────────────────────────────────────────
 
-/// 폰트 패밀리 이름 상수
-/// pubspec.yaml의 fonts 섹션과 google_fonts 패키지에서 로드
+/// 폰트 패밀리 이름 상수.
+///
+/// pubspec.yaml의 fonts 섹션과 1:1 매칭. 굵기는 family에 박지 않고
+/// `TextStyle.fontWeight`로 지정한다 — NotoSerifKR은 가변 폰트 단일 파일,
+/// Pretendard는 weight별 정적 파일 3종이 family 하나에 묶여 있다.
+///
+/// V1 번들 weight:
+/// - NotoSerifKR: w400 / w500 / w700 (가변 axis로 보간)
+/// - Pretendard: w400 / w500 / w600 (정적 파일)
+/// - Libre Baskerville: 보류 (V1 사용 경로 없음)
 abstract final class AppFonts {
-  /// Noto Serif KR — 인용구 전용
-  /// google_fonts 패키지 또는 assets/fonts/ 직접 번들
-  /// 라이선스: OFL (상업용 무료)
-  static const String quote       = 'NotoSerifKR-Regular';
-  static const String quoteMedium = 'NotoSerifKR-Medium';
-  static const String quoteBold   = 'NotoSerifKR-Bold';
+  /// Noto Serif KR — 인용구 본문. 라이선스: OFL.
+  static const String quote = 'NotoSerifKR';
 
-  /// Pretendard — UI 전용
-  /// assets/fonts/ 폴더에 번들, pubspec.yaml fonts 섹션 등록
-  /// 라이선스: OFL (상업용 무료)
-  static const String ui         = 'Pretendard-Regular';
-  static const String uiMedium   = 'Pretendard-Medium';
-  static const String uiSemiBold = 'Pretendard-SemiBold';
-  static const String uiBold     = 'Pretendard-Bold';
-
-  /// Libre Baskerville — 영문 인용구 보조
-  /// google_fonts 패키지로 로드
-  /// 라이선스: OFL (상업용 무료)
-  static const String enSerif       = 'LibreBaskerville-Regular';
-  static const String enSerifItalic = 'LibreBaskerville-Italic';
-  static const String enSerifBold   = 'LibreBaskerville-Bold';
+  /// Pretendard — UI 전반. 라이선스: OFL.
+  static const String ui = 'Pretendard';
 }
 
 // ─────────────────────────────────────────────
@@ -348,7 +340,7 @@ abstract final class AppWatermark {
     fontSize: AppFontSize.xs,    // 11px
     opacity: 0.70,
     position: WatermarkPosition.bottomCenter,
-    fontFamily: AppFonts.uiMedium,
+    fontFamily: AppFonts.ui,
     showIcon: true,
   );
 }

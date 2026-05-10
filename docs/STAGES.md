@@ -44,7 +44,7 @@
 - [x] `ProviderScope` + placeholder 화면, Chrome 빌드 sanity check
 - [x] git init + 첫 커밋 (https://github.com/tgparkk/bookquote, public)
 - [x] `AppTheme` (ThemeData·TextTheme) 본격 구성 (`lib/core/theme/app_theme.dart`, `app_text_styles.dart`)
-- [ ] 폰트 번들링 (`assets/fonts/Pretendard-*`, `NotoSerifKR-*`, pubspec.yaml fonts 섹션)
+- [x] 폰트 번들링 — Pretendard 정적(R/M/SB) + NotoSerifKR 가변 단일 파일 (`assets/fonts/`, pubspec.yaml fonts 섹션)
 - [ ] go_router 셋업 (`lib/core/routing/app_router.dart`)
 - [ ] 알라딘 OpenAPI 키 발급
 - [ ] Supabase 프로젝트 생성 (리전, 초기 스키마)
