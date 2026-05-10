@@ -47,8 +47,8 @@
 - [x] 폰트 번들링 — Pretendard 정적(R/M/SB) + NotoSerifKR 가변 단일 파일 (`assets/fonts/`, pubspec.yaml fonts 섹션)
 - [ ] go_router 셋업 (`lib/core/routing/app_router.dart`)
 - [x] 알라딘 OpenAPI 키 발급 — `.env.json` (gitignored)에 저장, `lib/core/config/env.dart`로 로드. 빌드 시 `--dart-define-from-file=.env.json` 필요
-- [ ] Supabase 프로젝트 생성 (리전, 초기 스키마)
-- [ ] `supabase_flutter` 초기화 (`lib/core/supabase/`)
+- [x] Supabase 프로젝트 생성 (Northeast Asia / Seoul, 프로젝트 ID `ndbvptxwznogcuuumzzh`). 초기 스키마는 별도 작업
+- [x] `supabase_flutter` 초기화 (`lib/core/supabase/supabase_init.dart`, `main()`에서 호출, 키 누락 시 graceful skip)
 - [ ] Auth (이메일 또는 카카오)
 - [ ] 책 검색 화면 (알라딘 API)
 - [ ] 책 상세 화면

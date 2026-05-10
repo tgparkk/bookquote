@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/supabase/supabase_init.dart';
 import 'core/theme/app_text_styles.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/tokens.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initSupabase();
   runApp(const ProviderScope(child: BookquoteApp()));
 }
 
@@ -43,6 +46,23 @@ class _PlaceholderHome extends StatelessWidget {
             Text(
               'AppTheme · TextTheme · ColorScheme 적용 확인',
               style: textTheme.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.s2),
+            Row(
+              children: [
+                Icon(
+                  isSupabaseReady ? Icons.check_circle : Icons.warning_amber,
+                  size: 16,
+                  color: isSupabaseReady
+                      ? AppColors.semanticSuccess
+                      : AppColors.semanticWarning,
+                ),
+                const SizedBox(width: AppSpacing.s2),
+                Text(
+                  isSupabaseReady ? 'Supabase 연결됨' : 'Supabase 미설정',
+                  style: textTheme.bodySmall,
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.s8),
             const Text(

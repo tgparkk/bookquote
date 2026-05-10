@@ -22,7 +22,9 @@ abstract final class Env {
   /// Supabase 프로젝트 URL.
   static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 
-  /// Supabase anon public 키. RLS 정책으로 보호되는 전제.
+  /// Supabase 클라이언트 키 — 구식 anon JWT (`eyJ...`) 또는 신식 publishable
+  /// (`sb_publishable_...`) 양쪽 다 SDK의 `anonKey:` 자리에 그대로 들어간다.
+  /// RLS 정책으로 보호되는 전제.
   static const String supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
   /// 누락된 키 목록 — 시작 시점 sanity check용.
