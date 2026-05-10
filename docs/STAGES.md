@@ -42,8 +42,8 @@
 - [x] 의존성 설치 (Riverpod / Supabase / freezed / build_runner / palette_generator / go_router)
 - [x] 디자인 토큰 이식 (`lib/core/theme/tokens.dart`)
 - [x] `ProviderScope` + placeholder 화면, Chrome 빌드 sanity check
-- [ ] git init + 첫 커밋
-- [ ] `AppTheme` (ThemeData·TextTheme) 본격 구성 (tokens 기반)
+- [x] git init + 첫 커밋 (https://github.com/tgparkk/bookquote, public)
+- [x] `AppTheme` (ThemeData·TextTheme) 본격 구성 (`lib/core/theme/app_theme.dart`, `app_text_styles.dart`)
 - [ ] 폰트 번들링 (`assets/fonts/Pretendard-*`, `NotoSerifKR-*`, pubspec.yaml fonts 섹션)
 - [ ] go_router 셋업 (`lib/core/routing/app_router.dart`)
 - [ ] 알라딘 OpenAPI 키 발급

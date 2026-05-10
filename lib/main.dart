@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/theme/app_theme.dart';
 import 'core/theme/tokens.dart';
 
 void main() {
@@ -14,14 +15,7 @@ class BookquoteApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '책귀',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.accent500,
-          surface: AppColors.secondary200,
-        ),
-        scaffoldBackgroundColor: AppColors.secondary200,
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light(),
       home: const _PlaceholderHome(),
     );
   }
@@ -32,28 +26,32 @@ class _PlaceholderHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      body: Center(
+      appBar: AppBar(
+        title: const Text('책귀'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(AppSpacing.s6),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text('Stage 1 setup complete', style: textTheme.headlineSmall),
+            const SizedBox(height: AppSpacing.s2),
             Text(
-              '책귀',
-              style: TextStyle(
-                fontSize: AppFontSize.xxl,
-                color: AppColors.primary900,
-                letterSpacing: AppLetterSpacing.tight,
-                fontWeight: FontWeight.w600,
-              ),
+              'AppTheme · TextTheme · ColorScheme 적용 확인',
+              style: textTheme.bodyMedium,
             ),
-            SizedBox(height: AppSpacing.s4),
-            Text(
-              'Stage 1 setup complete',
-              style: TextStyle(
-                fontSize: AppFontSize.sm,
-                color: AppColors.primary500,
-                letterSpacing: AppLetterSpacing.wide,
-              ),
+            const SizedBox(height: AppSpacing.s8),
+            Wrap(
+              spacing: AppSpacing.s3,
+              runSpacing: AppSpacing.s3,
+              children: [
+                ElevatedButton(onPressed: () {}, child: const Text('Primary')),
+                OutlinedButton(onPressed: () {}, child: const Text('Outline')),
+                TextButton(onPressed: () {}, child: const Text('Text')),
+              ],
             ),
           ],
         ),
