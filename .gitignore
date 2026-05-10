@@ -51,3 +51,6 @@ app.*.map.json
 # Secrets (실 키는 .env.json — example 파일만 커밋)
 .env.json
 .env.local.json
+
+# 작업용 스크린샷 (루트에 저장된 PNG만)
+/*.png

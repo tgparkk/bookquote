@@ -45,7 +45,9 @@
 - [x] git init + 첫 커밋 (https://github.com/tgparkk/bookquote, public)
 - [x] `AppTheme` (ThemeData·TextTheme) 본격 구성 (`lib/core/theme/app_theme.dart`, `app_text_styles.dart`)
 - [x] 폰트 번들링 — Pretendard 정적(R/M/SB) + NotoSerifKR 가변 단일 파일 (`assets/fonts/`, pubspec.yaml fonts 섹션)
-- [ ] go_router 셋업 (`lib/core/routing/app_router.dart`)
+- [x] go_router 셋업 (`lib/app/router.dart`) — `StatefulShellRoute` 4탭 + auth gate(`refreshListenable`) + `/splash` cold-start, placeholder 화면 7개. 위젯 테스트는 cold boot → /auth/login 자동 이동 검증
+- [ ] `cached_network_image` 도입 (이미지 렌더 시작 시점, 알라딘 표지 URL 캐싱)
+- [ ] 알라딘 API Supabase Edge Function 프록시 (책 검색 화면과 동시 — 클라이언트 키 노출 회피)
 - [x] 알라딘 OpenAPI 키 발급 — `.env.json` (gitignored)에 저장, `lib/core/config/env.dart`로 로드. 빌드 시 `--dart-define-from-file=.env.json` 필요
 - [x] Supabase 프로젝트 생성 (Northeast Asia / Seoul, 프로젝트 ID `ndbvptxwznogcuuumzzh`). 초기 스키마는 별도 작업
 - [x] `supabase_flutter` 초기화 (`lib/core/supabase/supabase_init.dart`, `main()`에서 호출, 키 누락 시 graceful skip)

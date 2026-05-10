@@ -5,6 +5,21 @@
 
 ---
 
+## 2026-05-10 — go_router 구조 (`StatefulShellRoute` + auth gate) + 비용 정책
+
+- **결정 (라우터)**: `StatefulShellRoute.indexedStack` 4 슬롯 BottomNav (홈/서재/[+]/내정보), `[+]`는 sentinel이라 `/quote/new` 풀스크린 push. 카드 편집기·인용구 입력은 `parentNavigatorKey: rootKey`로 셸 외부. `/book/:id`만 게스트 미리보기 허용. `/splash` initialLocation으로 cold-start 세션 hydrate 경합 회피
+- **결정 (auth gate)**: `redirect` + `GoRouterRefreshStream(supabase.auth.onAuthStateChange)` 패턴. `ref.read`만으로는 로그아웃 후 화면이 안 바뀌는 함정 (QA 자문가가 P0로 지목)
+- **이유**: 아키텍트(5탭) vs 기획자(3탭+[+]) 충돌 → 인터뷰 5명 중 timeline 핵심 페르소나 1명뿐, 친구 0명일 때 빈 탭이 cold start 함정. 친구 기능은 `/me` 안 진입점으로 흡수
+- **대안**: 평면 `GoRoute` 트리 — 거부 (탭 전환 시 스크롤·검색 입력 상태 손실)
+- **비용 영향 (QA 검토 결과 적용 예정)**:
+  - 알라딘 API 프록시 Edge Function: Stage 4 → **Stage 1 (책 검색 화면 작업과 동시)**. 키 노출·IP 차단 위험 회피
+  - `cached_network_image`: Stage 1 (이미지 렌더 시작 시점)
+  - 친구 timeline Realtime 상시 구독 X → pull-to-refresh + 60s 폴링. Realtime은 V2 (200 동시 연결 한도)
+  - 무한 스크롤은 `cursor-after` (created_at + id), 페이지 사이즈 15. offset 금지
+  - 책 표지는 알라딘 URL 직접 캐시, Supabase Storage 미러링 X
+  - 카드 PNG는 클라이언트 로컬에서만 생성, Storage 업로드 X
+- **재검토 트리거**: 베타 사용자 50명 돌파 시 친구 탭 BottomNav 승격 검토. 친구 100명 이상이면 Realtime 도입 재검토
+
 ## 2026-05-10 — `riverpod_lint` / `custom_lint` 보류
 
 - **결정**: dev_dependencies에서 `riverpod_lint`·`custom_lint` 제외하고 셋업 완료
