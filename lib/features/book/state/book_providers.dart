@@ -33,3 +33,10 @@ final myRatingProvider =
   final repo = ref.read(bookRepositoryProvider);
   return repo.getMyRating(bookId);
 });
+
+/// 이 책이 내 서재에 담겨 있는지 (EXISTS). 담기/빼기 후
+/// `ref.invalidate(isInLibraryProvider(bookId))`로 갱신.
+final isInLibraryProvider =
+    FutureProvider.autoDispose.family<bool, String>((ref, bookId) async {
+  return ref.read(bookRepositoryProvider).isInLibrary(bookId);
+});

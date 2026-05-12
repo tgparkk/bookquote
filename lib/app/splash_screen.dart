@@ -17,6 +17,7 @@ import 'package:go_router/go_router.dart';
 import '../core/supabase/supabase_init.dart';
 import '../core/theme/tokens.dart';
 import 'auth_state_provider.dart';
+import 'deep_link_handler.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -42,6 +43,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   void _resolve() {
     if (_resolved || !mounted) return;
     _resolved = true;
+    // deep link로 부팅됐다면(공유 카드 → `://book/:id?from=share` 등) 그 경로로 바로.
+    // 미로그인이어도 `/book/:id`는 게스트 허용이라 read-only로 열린다.
+    final pending = DeepLinkHandler().consumePendingRoute();
+    if (pending != null) {
+      context.go(pending);
+      return;
+    }
     final loggedIn =
         isSupabaseReady && supabase.auth.currentSession != null;
     context.go(loggedIn ? '/' : '/auth/login');

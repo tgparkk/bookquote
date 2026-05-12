@@ -19,11 +19,24 @@ Future<void> main() async {
   runApp(const ProviderScope(child: BookquoteApp()));
 }
 
-class BookquoteApp extends ConsumerWidget {
+class BookquoteApp extends ConsumerStatefulWidget {
   const BookquoteApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BookquoteApp> createState() => _BookquoteAppState();
+}
+
+class _BookquoteAppState extends ConsumerState<BookquoteApp> {
+  @override
+  void initState() {
+    super.initState();
+    // deep link 핸들러가 인앱 라우트(`://book/:id?from=share` 등)를 GoRouter로
+    // 보낼 수 있게 연결한다. 콜드스타트 진입은 스플래시가 보류 경로를 소비.
+    DeepLinkHandler().attachRouter(ref.read(routerProvider));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
       title: '책귀',

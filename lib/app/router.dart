@@ -66,8 +66,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/book/:id',
-        builder: (_, state) =>
-            BookDetailScreen(bookId: state.pathParameters['id']!),
+        builder: (_, state) => BookDetailScreen(
+          bookId: state.pathParameters['id']!,
+          // 공유 카드 deep link(`?from=share`)로 들어오면 "내 서재에 담기"가 1급.
+          from: state.uri.queryParameters['from'],
+        ),
       ),
       GoRoute(
         path: '/quote/new',

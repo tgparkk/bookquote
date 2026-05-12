@@ -136,6 +136,24 @@ class BookRepository {
     }
   }
 
+  /// 이 책이 내 서재에 담겨 있는지 (EXISTS — 한 행만 조회). `listMyLibrary`는 limit 50이라
+  /// 50권 넘는 사용자에선 누락될 수 있어 정확 판정은 이쪽으로. 비로그인이면 false.
+  Future<bool> isInLibrary(String bookId) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return false;
+    try {
+      final rows = await _client
+          .from(_userBooksTable)
+          .select('book_id')
+          .eq('user_id', uid)
+          .eq('book_id', bookId)
+          .limit(1);
+      return rows.isNotEmpty;
+    } on PostgrestException catch (e) {
+      throw BookRepositoryException('FETCH_FAILED', e.message);
+    }
+  }
+
   /// 내 서재 책 목록. added_at desc.
   Future<List<Book>> listMyLibrary({int limit = 50}) async {
     final uid = _client.auth.currentUser?.id;
