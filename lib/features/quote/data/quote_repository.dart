@@ -206,6 +206,22 @@ class QuoteRepository {
     }
   }
 
+  /// 내 인용구 총 개수. 비로그인이면 0. ('내 정보' 화면 요약용)
+  Future<int> countMyQuotes() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return 0;
+    try {
+      final res = await _client
+          .from(_table)
+          .select('id')
+          .eq('user_id', uid)
+          .count(CountOption.exact);
+      return res.count;
+    } on PostgrestException catch (e) {
+      throw QuoteRepositoryException('COUNT_FAILED', e.message);
+    }
+  }
+
   /// 내 인용구 무드 통계 — 전체 수 + 무드별 개수 (서재 인용 뷰 필터 칩용).
   Future<MoodCounts> getMoodCounts() async {
     final uid = _client.auth.currentUser?.id;

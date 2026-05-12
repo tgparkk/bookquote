@@ -155,6 +155,23 @@ class BookRepository {
     }
   }
 
+  /// 내 서재 책 권수. 비로그인이면 0. ('내 정보' 화면 요약용 — `listMyLibrary`는
+  /// limit 50이라 `.length`로는 부정확하니 count 쿼리로.)
+  Future<int> countMyLibrary() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return 0;
+    try {
+      final res = await _client
+          .from(_userBooksTable)
+          .select('book_id')
+          .eq('user_id', uid)
+          .count(CountOption.exact);
+      return res.count;
+    } on PostgrestException catch (e) {
+      throw BookRepositoryException('COUNT_FAILED', e.message);
+    }
+  }
+
   Future<Book?> getByIsbn(String isbn13) async {
     try {
       final row = await _client

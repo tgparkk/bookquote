@@ -7,19 +7,21 @@
 
 ---
 
-## ▶ 다음 세션 시작점 (2026-05-13 기준)
+## ▶ 다음 세션 시작점 (2026-05-14 기준)
 
-**상태**: Stage 0~1 완료 + 화면 설계(Stage 0b 연장) 완료 + **Stage 2 진행 중 — PR1·2·3·4 + 책 별점 완료**. `flutter analyze` clean, `flutter test` 25개 통과. 마이그레이션 4개(`quotes`, `user_books.rating`, `my_quote_mood_counts`, +Stage1 4개) 원격 적용 완료. main에 push됨. 릴리스 APK 빌드해 실기기(SM F956N) 설치 진행.
+**상태**: Stage 0~1 완료 + 화면 설계(Stage 0b 연장) 완료 + **Stage 2 진행 중 — PR1·2·3·4·5 + 책 별점 완료, 다음은 PR6**. `flutter analyze` clean, `flutter test` 33개 통과. 마이그레이션 4개(`quotes`, `user_books.rating`, `my_quote_mood_counts`, +Stage1 4개) 원격 적용 완료. main에 push됨. 릴리스 APK 빌드해 실기기(SM F956N) 설치 진행.
 
-**지금 동작하는 플로우**: 로그인 → 홈(내 인용 피드: 무한스크롤·당겨새로고침·빈상태 CTA·카드 탭 펼침→[카드만들기]/[삭제]) → ＋ → 인용구 입력(본문/클립보드 붙여넣기/책 연결/페이지/무드/draft/오프라인 큐잉) → 저장 → 홈 반영 / 서재 [책↔인용구] 세그먼트 — "인용구" 탭 무드별 다시보기 / 책 상세 별점 매기기 / 책 검색·로그인은 Stage 1. ("카드 만들기 →"는 카드 에디터 스텁으로 감 — Stage 3.)
+**지금 동작하는 플로우**: 로그인 → 홈(내 인용 피드: 무한스크롤·당겨새로고침·빈상태 CTA·카드 탭 펼침→[카드만들기]/[삭제]) → ＋ → 인용구 입력(본문/클립보드 붙여넣기/책 연결/페이지/무드/draft/오프라인 큐잉) → 저장 → 홈 반영 / 서재 [책↔인용구] 세그먼트 — "인용구" 탭 무드별 다시보기 / 책 상세 별점 매기기 / **내 정보**(프로필·인용/서재 count·Markdown 내보내기·약관/개인정보/문의 링크·로그아웃[아웃박스 경고]·회원 탈퇴 2단계) / 책 검색·로그인은 Stage 1. ("카드 만들기 →"는 카드 에디터 스텁으로 감 — Stage 3.)
 
-**바로 이어서 할 것** → **PR5 (Me 화면 보강)** — `screens/me.md` 설계대로:
-- 프로필(이니셜 아바타 + 이메일 + "로그인됨"/"확인 중") · 내 데이터 섹션(인용 N개·서재 N권 count → /library, Markdown 내보내기 = `markdown_exporter.dart` → `share_plus`) · 설정(다크모드 "시스템 설정" 읽기전용 / 알림 "곧" 비활성) · 정보(앱 버전 `package_info_plus`, 문의 `mailto:`, **이용약관·개인정보처리방침** 외부 링크 `url_launcher`) · 계정(로그아웃 — **앞에 아웃박스 대기 N개면 경고 Modal**, 회원 탈퇴 2단계 확인 → Edge Function `delete-account`)
-- "친구 찾기" = 숨김(현행 빈 `onTap` 제거). 다크모드 토글 = V1.5.
-- pubspec 추가: `url_launcher`, `package_info_plus`. 책 count 쿼리 — `book_repository`에 `countMyLibrary()`(또는 `user_books` count), `quote_repository`에 `countMyQuotes()`(또는 `getMoodCounts().total` 재사용).
-- **출시 블로커**: in-app 계정 삭제(Edge Function — `auth.admin.deleteUser`는 service_role 필요), 이용약관·개인정보처리방침 호스팅 페이지 URL. → STAGES Stage 5에도 적힘.
+**바로 이어서 할 것** → **PR6 (책 상세 보강)** — `screens/book-detail.md` 설계대로:
+- "내가 이 책에서 모은 N구절" 섹션(`bookQuotesProvider` 재사용 — 이미 있음) + "인용구 추가" CTA(`/quote/new?bookId=`) + `isInLibrary` EXISTS 체크 + 설명 점진적 공개(접기/펼치기) + 남은 raw `$e` 노출 정리
+- `deep_link_handler` 일반화 — 현재 `/auth/callback`만 처리 → `/book/:id`(공유 카드 → 책 상세) 라우팅 + payload 보존(`?from=share`). Stage 3 카드 공유에서 받는 쪽이 필요해짐.
 
-**그다음** → PR6 (책 상세 보강 + `deep_link_handler` 일반화), 그다음 Stage 3 (카드 에디터·공유·deep link 받기 — 가장 공들일 단계).
+**그다음** → Stage 3 (카드 에디터·공유·deep link 받기 — 가장 공들일 단계).
+
+**⚠️ PR5 남긴 출시 블로커 (Stage 5 전 처리 필수)**:
+- `supabase/functions/delete-account/` — **함수 코드 작성 완료, 아직 배포 안 함**. `npx --yes supabase functions deploy delete-account` 필요(`SUPABASE_SERVICE_ROLE_KEY` 등은 Edge Function에 자동 주입 — 별도 시크릿 설정 불필요). 미배포 상태에선 회원 탈퇴 시 invoke 404 → "탈퇴 처리에 실패했어요" 토스트.
+- 이용약관·개인정보처리방침 — `me_screen.dart`의 `_termsUrl`/`_privacyUrl`이 **placeholder URL**(`https://tgparkk.github.io/bookquote/{terms,privacy}`). 실제 정적 페이지 호스팅 + 상수 교체 + 스토어 등록 폼 필요.
 
 **작업 방식 메모**: 각 PR = main에 직접 commit+push(Stage 1 패턴), 매 PR마다 `flutter analyze` + `flutter test` 통과 + 위젯/유닛 테스트 추가, 마이그레이션은 작성 후 `npx supabase db push`(supabase 명령은 PATH에 없음 — `npx --yes supabase ...` 사용, `printf 'y\n' |`로 프롬프트 통과). 매니저 모드(가상 팀)는 설계 단계용 — 구현 PR은 설계 문서(`docs/design/screens/*.md`)가 충분히 상세해 직접 구현.
 
@@ -29,6 +31,7 @@
 - 인용 목록 정렬(책별 그룹 / 페이지순) · 인용구 텍스트 검색(서버 `ilike`) · 홈/책상세 무드 칩 탭 → `/library?tab=quotes&mood=` navigation
 - 서재 책 카드: "이 책에서 모은 N구절" 배지 + 표지 dominant color 띠
 - 삭제 시 undo SnackBar(현재는 확인 다이얼로그)
+- Me: Markdown 내보내기를 텍스트 공유 대신 `.md` 파일 첨부(`XFile`) — 컬렉션 큰 경우 안드로이드 인텐트 한도 회피 / 다크모드 토글(`[시스템/라이트/다크]` + `darkTheme` 정의) = V1.5 / 섹션 사이 `Divider` 시각 구분 / 카운트 trailing 변경 후 `invalidate(myQuoteCountProvider)` 동선(인용구 추가/삭제 시)
 - 그룹 3 역정리 문서의 나머지 개선: 로그인 매직링크 재전송 출구 + `?from=` 보존, 콜백 타임아웃 사유 안내, 책 검색 시트 검색-전 빈결과·ISBN 직접 등록·오프라인 캐시-우선, 스플래시 워드마크·안전망 시간 실측
 - **릴리스 빌드 로그인 확인 + Resend SMTP 점검** — 2026-05-13 릴리스 APK에서 매직링크 발송이 "문제가 발생했어요"로 실패(디버그 빌드에선 정상). Supabase 기본 이메일 한도(≈4건/시간)에 걸렸을 가능성. Supabase Dashboard > Authentication > Emails(SMTP)에 Resend가 실제로 연결돼 있는지 확인(Stage 1에서 연결했다고 적혀 있으나 Auth 쪽 물림 여부 미확인). + `authErrorMessage`가 릴리스에서도 최소한의 단서(에러 타입/짧은 코드)를 남기게 개선 검토
 - (개발 편의 메모) **폰 테스트는 한 가지 빌드 타입으로 통일** — 디버그↔릴리스는 서명 키가 달라 `flutter install` 시 완전 삭제 후 재설치 → 세션(`flutter_secure_storage`) 날아가 매직링크 재로그인 필요. 같은 빌드 타입이면 `adb install -r`로 데이터 유지 → 세션 유지. (스토어 배포 빌드는 항상 같은 키라 실 사용자엔 무관)
@@ -102,7 +105,7 @@
 - [x] **PR2** 인용구 입력 화면 (`/quote/new[?bookId=]`) — 본문 멀티라인 + 글자수 카운터 + 클립보드 붙여넣기 감지 배너(Clipboard.hasStrings) + 책 연결(showBookSearchSheet 재사용 — `_onPick`의 잘못된 "서재 추가" 토스트 제거) + 페이지·무드 칩(최대 3개) + draft 자동저장/복원 + PopScope 폐기 확인 + "카드 만들기 →"(pushReplacement → /quote/:id/card) / "저장만 하기" + 오프라인 아웃박스 큐잉. `presentation/widgets/mood_chips.dart`(moodColors 단일 정의처), `data/quote_draft.dart`. quote_input_screen_test 3개
 - [x] **PR3** 홈 화면 재작성 — "내 인용 피드": `quote_feed_provider`(`Notifier<AsyncValue<List<QuoteWithBook>>>` — cursor-after 무한스크롤 누적 + `removeLocal` 낙관적 삭제, NotifierProvider 비-autoDispose), `quote_repository.listMyQuotesWithBook`(`*, book:books(*)` 임베드 — N+1 회피, `QuoteWithBook` 레코드), `quote_list_card.dart`(홈·인용목록 공유 위젯 — 접힘/펼침, 무드 뱃지, [카드 만들기]/[삭제]), `home_screen.dart`(`ConsumerStatefulWidget` + 스크롤 무한로드 + RefreshIndicator + 빈 상태 CTA + 에러 재시도 + 카드 탭 펼침 + 삭제 확인 다이얼로그 + 포그라운드 복귀 시 아웃박스 best-effort flush), `quote_input_screen`은 저장 성공 시 `ref.invalidate(quoteFeedProvider)`. FAB 없음, Realtime 없음. home_screen_test 3개. — 설계: `screens/home.md`. (인용 목록 위젯 공유 / 무드 칩 navigation·"동기화 대기" 배너·undo는 PR4 또는 후속)
 - [x] **PR4** 서재 "책 ↔ 인용구" 세그먼트 — `library_screen`(stub→`ConsumerStatefulWidget`): `SegmentedButton` [책]/[인용구], `?tab=quotes&mood=<name>` 쿼리로 초기 탭·무드 설정(`GoRouterState.of` in `didChangeDependencies`), `_ErrorView` raw `$error` 제거 + [다시 시도], 추가 실패 메시지 userMessage화. `quote_list_view.dart`(`ConsumerStatefulWidget`, Scaffold 없음): 무드 필터 칩(전체 N + 무드별 개수) + cursor-after 무한스크롤 카드 목록(`quote_list_card` 재사용) + pull-to-refresh + 빈 상태(전체="아직 인용구 없어요"+＋ / 무드="이 무드 없어요"+전체보기) + 삭제 확인 다이얼로그(→ `quoteFeedProvider` invalidate + 카운트 갱신). `my_quote_mood_counts()` RPC(마이그레이션 `20260512140000`, **remote 적용**) + `quote_repository.getMoodCounts/parseMoodCounts`. parseMoodCounts 테스트 2개. 무드별 컬렉션 = 차별화 ④. — 설계: `screens/quote-list.md`. (인라인 [수정]/[무드 변경]·정렬(책별/페이지순)·검색·홈→서재 무드 칩 navigation·구절수 배지·표지색 띠는 후속)
-- [ ] **PR5** Me 화면 보강 — 프로필 + 내 데이터(인용/서재 count, Markdown 내보내기) + 약관·개인정보·버전·문의 + 회원 탈퇴 2단계(Edge Function `delete-account`) + 로그아웃 시 아웃박스 경고. 친구 찾기 = 숨김. 다크모드 토글 = V1.5. pubspec: `url_launcher`·`package_info_plus`. — 설계: `screens/me.md`
+- [x] **PR5** Me 화면 보강 — `me_screen.dart` 재작성(섹션형 `ListView`): 프로필(이니셜 아바타+이메일+"로그인됨"/"로그인 정보 없음", 오버플로 처리) + 내 데이터(`quote_repository.countMyQuotes()`·`book_repository.countMyLibrary()` count 쿼리 → `me_providers`의 `myQuoteCountProvider`/`myBookCountProvider`, `/library?tab=quotes`·`/library` navigation, **Markdown 내보내기**=`markdown_exporter.dart`(순수, 책별 그룹+쪽수·무드 메타)+`quote_export.dart`(전체 페이지네이션 수집→`share_plus` 텍스트 공유)) + 설정(다크모드 "시스템 설정" 읽기전용 / 알림 "곧 추가될 기능" 비활성) + 정보(앱 버전 `package_info_plus` → `appVersionProvider`, 문의 `mailto:`, 이용약관·개인정보처리방침 외부 링크 `url_launcher`) + 계정(로그아웃 — `quote_outbox.pending()` 있으면 경고 다이얼로그 먼저; 회원 탈퇴 2단계=`account_deletion.dart`(영구삭제 경고+내보내기 권유 → "탈퇴합니다" 타이핑 → dim → `delete-account` invoke → `signOut`)). 친구 찾기 = 숨김(빈 `onTap` 제거). 다크모드 토글 = V1.5. `meSessionInfoProvider`(세션 요약 — 테스트 override용). pubspec: `url_launcher`·`package_info_plus`·`share_plus` 추가. AndroidManifest `<queries>`에 https·mailto intent 추가. Edge Function `supabase/functions/delete-account/index.ts` 작성(JWT로 호출자 확인 → service_role `auth.admin.deleteUser` → cascade) — **배포는 미완(Stage 5)**. markdown_exporter 5개 + me_screen 3개 테스트. — 설계: `screens/me.md`
 - [ ] **PR6** 책 상세 보강 — "내가 이 책에서 모은 N구절" 섹션 + "인용구 추가" CTA + `?from=share` deep link 분기 + 설명 점진적 공개 + raw `$e` 노출 제거 + `isInLibrary` EXISTS. `deep_link_handler` 일반화(`/book/:id` 라우팅 + payload 보존). — 설계: `screens/book-detail.md`
 - [x] **별점** 책 별점 — `user_books.rating smallint 1~5`(마이그레이션 `20260512130000`, **remote 적용**), `book_repository.setMyRating/getMyRating`, `myRatingProvider`, `StarRating` 위젯(읽기전용/인터랙티브, 재탭=지우기), `book_detail_screen` 헤더에 별점 행(로그인 시만) + raw `$e` 노출 제거. star_rating_test 4개. 반쪽 별은 V1.5 (DECISIONS 2026-05-13)
 - [~] 아웃박스 flush 트리거 — 포그라운드 복귀 시 `QuoteOutbox.flush`는 PR3에서 배선됨. `connectivity_plus` 연결-회복 트리거 + "동기화 대기" 배너는 후속(백로그)
@@ -129,8 +132,8 @@
 
 ## Stage 5 — 출시 (1–2주)
 
-- [ ] **(출시 블로커) in-app 계정 삭제** — Edge Function `delete-account`(JWT 검증 → `auth.admin.deleteUser`). Apple Guideline 5.1.1(v) + Google Play 둘 다 요구. cascade로 `quotes`/`user_books`/`cards`/`profiles` 자동 삭제
-- [ ] **(출시 블로커) 개인정보처리방침·이용약관 페이지** — 호스팅(GitHub Pages/Notion 등) + Me 화면 `url_launcher` 링크 + 스토어 등록 폼
+- [~] **(출시 블로커) in-app 계정 삭제** — Edge Function `supabase/functions/delete-account/index.ts` **작성 완료**(PR5 — JWT로 호출자 확인 → service_role `auth.admin.deleteUser`, cascade로 `quotes`/`user_books`/`profiles` 자동 삭제; `cards`는 Stage 3에서 `on delete cascade` 챙길 것), Me 화면에서 2단계 확인 후 invoke. **남은 일: 배포** — `npx --yes supabase functions deploy delete-account` (Edge Function에 `SUPABASE_*` 자동 주입이라 시크릿 설정 불필요). Apple Guideline 5.1.1(v) + Google Play 둘 다 요구.
+- [ ] **(출시 블로커) 개인정보처리방침·이용약관 페이지** — 호스팅(GitHub Pages/Notion 등). PR5에서 Me 화면 `url_launcher` 링크는 이미 연결돼 있으나 URL이 placeholder(`me_screen.dart` `_termsUrl`/`_privacyUrl`) — 실제 페이지 만들고 상수 교체 + 스토어 등록 폼
 - [ ] 앱스토어·플레이스토어 등록
 - [ ] PostHog 연동, 핵심 funnel 측정 setup (PII 미전송 — 인용구 텍스트·검색어 raw 안 보냄)
 - [ ] 인스타 본인 인용구 카드 매일 1개 (W-4부터)

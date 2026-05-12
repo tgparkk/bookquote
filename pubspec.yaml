@@ -48,6 +48,9 @@ dependencies:
   app_links: ^6.3.2
   shared_preferences: ^2.3.0   # 인용구 draft / 오프라인 아웃박스 (DECISIONS 2026-05-11)
   connectivity_plus: ^6.0.0    # 오프라인 감지 — 배너 + 아웃박스 flush 트리거
+  url_launcher: ^6.3.2
+  package_info_plus: ^10.1.0
+  share_plus: ^13.1.0
 
 dev_dependencies:
   flutter_test:
