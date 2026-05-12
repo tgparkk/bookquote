@@ -76,6 +76,7 @@
 - [ ] **PR4** 인용구 목록 — 서재 탭 내 "책 ↔ 인용구" 세그먼트 (`/library?tab=quotes&mood=&bookId=`, 무드/책/최근순 필터 + 검색, `quote_list_card.dart` 위젯 — 홈 피드와 공유). 무드별 컬렉션 = 차별화 ④. — 설계: `screens/quote-list.md`
 - [ ] **PR5** Me 화면 보강 — 프로필 + 내 데이터(인용/서재 count, Markdown 내보내기) + 약관·개인정보·버전·문의 + 회원 탈퇴 2단계(Edge Function `delete-account`) + 로그아웃 시 아웃박스 경고. 친구 찾기 = 숨김. 다크모드 토글 = V1.5. pubspec: `url_launcher`·`package_info_plus`. — 설계: `screens/me.md`
 - [ ] **PR6** 책 상세 보강 — "내가 이 책에서 모은 N구절" 섹션 + "인용구 추가" CTA + `?from=share` deep link 분기 + 설명 점진적 공개 + raw `$e` 노출 제거 + `isInLibrary` EXISTS. `deep_link_handler` 일반화(`/book/:id` 라우팅 + payload 보존). — 설계: `screens/book-detail.md`
+- [x] **별점** 책 별점 — `user_books.rating smallint 1~5`(마이그레이션 `20260512130000`, **remote 적용**), `book_repository.setMyRating/getMyRating`, `myRatingProvider`, `StarRating` 위젯(읽기전용/인터랙티브, 재탭=지우기), `book_detail_screen` 헤더에 별점 행(로그인 시만) + raw `$e` 노출 제거. star_rating_test 4개. 반쪽 별은 V1.5 (DECISIONS 2026-05-13)
 - [ ] (아웃박스 flush 트리거 배선 — `connectivity_plus` 연결 회복/포그라운드 시 `QuoteOutbox.flush`. PR3 또는 별도)
 
 ## Stage 3 — 카드 (3–4주, 가장 공들일 단계) — 설계 완료, 구현 대기

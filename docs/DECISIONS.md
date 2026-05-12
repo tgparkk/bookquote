@@ -5,6 +5,12 @@
 
 ---
 
+## 2026-05-13 — 책 별점 = `user_books.rating` (정수 1~5, nullable)
+
+- **결정**: 책 별점은 "내 서재에서의 이 책 평가"라 `user_books`에 컬럼 추가(`rating smallint check between 1 and 5`, nullable=미평가). 별도 `book_ratings` 테이블 X. 별점을 매기면 그 책이 자동으로 내 서재에 들어옴(`setMyRating` = upsert `{user_id, book_id, rating}` onConflict — `addToLibrary`는 rating 미포함 upsert라 기존 별점을 안 건드림). 별점 지우기 = `rating=null` update(서재에는 그대로). 마이그레이션 `20260512130000_user_books_rating.sql` **remote 적용 완료**.
+- **반쪽 별(0.5 단위) 안 함 — V1.5**: 입력 UI(별 좌/우반 탭) 복잡도 + 책귀는 책 트래커가 아니라 인용구 앱이라 별점은 보조 기능. 필요하면 `numeric(2,1)`로 확장(데이터 마이그레이션 쉬움).
+- **UI**: `book_detail_screen` 헤더에 `StarRating` 행(로그인 시만 — `/book/:id`는 게스트 허용이라 비로그인은 별점 행 숨김). 탭=설정, 현재 별점 별 재탭=지우기. `repo.setMyRating` → `ref.invalidate(myRatingProvider(bookId))` + `myLibraryProvider`. `book-detail.md` 설계 문서에 반영.
+
 ## 2026-05-12 — 화면 설계 Phase B 그룹 1·2 결정 묶음 (가상 팀 협의 종합)
 
 매니저 모드(UI/UX·기획·Dart·QA) 협의 후 `competitor-screen-analysis-2026-05-11.md §7` 미해결 5건 중 4건 + 신규 2건 결정. 근거 상세는 `docs/sessions/2026-05-12-screen-design-b.md`.

@@ -169,6 +169,53 @@ class BookRepository {
     }
   }
 
+  // ── 별점 ────────────────────────────────────────────
+
+  /// 내가 이 책에 매긴 별점 (1~5). 안 매겼거나 비로그인이면 null.
+  Future<int?> getMyRating(String bookId) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return null;
+    try {
+      final row = await _client
+          .from(_userBooksTable)
+          .select('rating')
+          .eq('user_id', uid)
+          .eq('book_id', bookId)
+          .maybeSingle();
+      return (row?['rating'] as num?)?.toInt();
+    } on PostgrestException catch (e) {
+      throw BookRepositoryException('FETCH_FAILED', e.message);
+    }
+  }
+
+  /// 별점을 매긴다(1~5). 그 책이 서재에 없으면 자동으로 추가된다.
+  /// [rating]이 null이면 별점을 지운다(서재에는 그대로 둔다). 비로그인이면 'NOT_AUTHENTICATED'.
+  Future<void> setMyRating(String bookId, int? rating) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) {
+      throw BookRepositoryException('NOT_AUTHENTICATED', '로그인이 필요해요.');
+    }
+    if (rating != null && (rating < 1 || rating > 5)) {
+      throw BookRepositoryException('VAL_INVALID', '별점은 1~5 사이여야 해요.');
+    }
+    try {
+      if (rating == null) {
+        await _client
+            .from(_userBooksTable)
+            .update({'rating': null})
+            .eq('user_id', uid)
+            .eq('book_id', bookId);
+      } else {
+        await _client.from(_userBooksTable).upsert(
+          {'user_id': uid, 'book_id': bookId, 'rating': rating},
+          onConflict: 'user_id,book_id',
+        );
+      }
+    } on PostgrestException catch (e) {
+      throw BookRepositoryException('SET_RATING_FAILED', e.message);
+    }
+  }
+
   Future<AladinSearchResponse> _invokeAladin(Map<String, dynamic> body) async {
     final FunctionResponse res;
     try {

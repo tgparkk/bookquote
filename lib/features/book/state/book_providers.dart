@@ -25,3 +25,11 @@ final myLibraryProvider = FutureProvider.autoDispose<List<Book>>((ref) async {
   final repo = ref.read(bookRepositoryProvider);
   return repo.listMyLibrary();
 });
+
+/// 이 책에 내가 매긴 별점 (1~5, 미평가/비로그인이면 null). 별점 변경 후
+/// `ref.invalidate(myRatingProvider(bookId))`로 갱신.
+final myRatingProvider =
+    FutureProvider.autoDispose.family<int?, String>((ref, bookId) async {
+  final repo = ref.read(bookRepositoryProvider);
+  return repo.getMyRating(bookId);
+});
