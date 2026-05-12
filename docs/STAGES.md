@@ -23,6 +23,8 @@
 - `supabase/functions/delete-account/` — **함수 코드 작성 완료, 아직 배포 안 함**. `npx --yes supabase functions deploy delete-account` 필요(`SUPABASE_SERVICE_ROLE_KEY` 등은 Edge Function에 자동 주입 — 별도 시크릿 설정 불필요). 미배포 상태에선 회원 탈퇴 시 invoke 404 → "탈퇴 처리에 실패했어요" 토스트.
 - 이용약관·개인정보처리방침 — `me_screen.dart`의 `_termsUrl`/`_privacyUrl`이 **placeholder URL**(`https://tgparkk.github.io/bookquote/{terms,privacy}`). 실제 정적 페이지 호스팅 + 상수 교체 + 스토어 등록 폼 필요.
 
+**문서 지도** (2026-05-14 정리): `docs/app-scenarios.md`(현재 V1 동선 — `discovery/flows.md` 초안 대체) · `docs/db-schema.md`(현재 DB 설계서 — `discovery/api-design.md`·`architecture.md` 초안 대체) · `docs/design/screens/README.md`(화면 13개 인덱스 + 구현 상태 + 실제 파일 경로) · `docs/design/screens/*.md`(화면별 7섹션 명세). `discovery/`의 architecture·api-design·flows는 시점 고정 초안(상단 배너).
+
 **작업 방식 메모**: 각 PR = main에 직접 commit+push(Stage 1 패턴), 매 PR마다 `flutter analyze` + `flutter test` 통과 + 위젯/유닛 테스트 추가, 마이그레이션은 작성 후 `npx supabase db push`(supabase 명령은 PATH에 없음 — `npx --yes supabase ...` 사용, `printf 'y\n' |`로 프롬프트 통과). 매니저 모드(가상 팀)는 설계 단계용 — 구현 PR은 설계 문서(`docs/design/screens/*.md`)가 충분히 상세해 직접 구현.
 
 ### 후속 작업 백로그 (Stage 2 마무리 전후 — 우선순위 낮음)

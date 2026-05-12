@@ -1,5 +1,7 @@
 # 핵심 사용자 플로우 시퀀스 (V1)
 
+> ⚠️ **시점 고정 초안 (2026-05-09)** — follow 타임라인·Realtime·TanStack Query 시절 구상이 섞여 있다(아래 "V1 범위 정정" 박스 + DECISIONS 2026-05-12로 상당 부분 정정됨). **지금 동작하는 V1 동선의 단일 진실은 [`../app-scenarios.md`](../app-scenarios.md)** + `docs/design/screens/*.md`. 이 문서는 초기 사고 흔적으로 보존.
+
 **버전**: 0.2 (2026-05-09 — Flutter 스택 반영)
 **연계**: `architecture.md` · `client-architecture.md` · `api-design.md`
 **스택 변경 이력**: 0.1 RN+Expo+TS → 0.2 Flutter+Dart (라이브러리 표기 일괄 교체)

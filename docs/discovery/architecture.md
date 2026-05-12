@@ -1,5 +1,7 @@
 # 시스템 아키텍처 — 책 인용구 공유 앱 (V1)
 
+> ⚠️ **시점 고정 초안 (2026-05-09)**. 큰 그림(Supabase + RLS + 알라딘 프록시 + Flutter)은 유효하나 세부(테이블·RPC·Edge Function)는 옛 구상이 섞여 있다. **현재 DB·API의 단일 진실은 [`../db-schema.md`](../db-schema.md)** + `lib/`. 동선은 [`../app-scenarios.md`](../app-scenarios.md).
+
 **버전**: 0.2 (2026-05-09 — 클라이언트 스택 Flutter로 변경)
 **근거**: 플랜 `parallel-sleeping-meadow.md` + 데이터 아키텍처 메모리
 **스택 변경 이력**: 0.1 RN+Expo+Skia → 0.2 Flutter (Skia 엔진 내장, 전 화면 픽셀 통제)

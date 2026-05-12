@@ -1,5 +1,7 @@
 # API · 서버 함수 설계 (V1)
 
+> ⚠️ **시점 고정 초안 (2026-05-09)** — Expo + `@supabase/supabase-js` + TanStack Query + `supabase gen types` 시절. 실제 구현은 Flutter + `supabase_flutter` + Riverpod이고 Edge Function도 2개(`aladin-search`·`delete-account`) 있다. **현재 DB 스키마·RPC·Edge Function의 단일 진실은 [`../db-schema.md`](../db-schema.md)** + `lib/features/**/data/*_repository.dart`.
+
 **버전**: 0.1 (2026-05-09)
 **연계**: `architecture.md` (시스템) · `client-architecture.md` (클라이언트)
 

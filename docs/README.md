@@ -11,8 +11,14 @@
 처음 보는 사람은 이 순서로:
 
 1. **[PLAN.md](PLAN.md)** — 프로젝트가 무엇이고 왜 만드는지 (마스터 플랜, 14–21주)
-2. **[STAGES.md](STAGES.md)** — 지금 어디까지 왔고 다음에 뭘 할지 (체크리스트)
+2. **[STAGES.md](STAGES.md)** — 지금 어디까지 왔고 다음에 뭘 할지 (체크리스트 — 맨 위 "▶ 다음 세션 시작점"부터)
 3. **[DECISIONS.md](DECISIONS.md)** — 주요 결정사항을 왜 그렇게 정했는지 (날짜 역순)
+
+코드의 현재 상태를 알고 싶으면:
+
+- **[app-scenarios.md](app-scenarios.md)** — 지금 동작하는 V1 사용 동선 (화면 지도 + 시나리오 A~F, 구현 상태 표시)
+- **[design/screens/README.md](design/screens/README.md)** — 화면별 설계서 13개 인덱스 + 구현 상태 + 실제 파일 경로
+- **[db-schema.md](db-schema.md)** — DB 설계서 (테이블·RLS·RPC·트리거·cascade·Edge Function — 마이그레이션 정리)
 
 ## 폴더 구조
 
@@ -21,8 +27,11 @@
 | [PLAN.md](PLAN.md) | 마스터 플랜 — 컨셉, MVP 범위, 스택, 로드맵, GTM |
 | [STAGES.md](STAGES.md) | Stage 0a/0b/1~5 진행 체크리스트 |
 | [DECISIONS.md](DECISIONS.md) | 결정 대장 (날짜 역순 단일 파일) |
+| [app-scenarios.md](app-scenarios.md) | **현재 V1 앱 시나리오** (구현 기준 — `discovery/flows.md` 초안을 대체) |
+| [db-schema.md](db-schema.md) | **현재 DB 설계서** (구현 기준 — `discovery/api-design.md`·`architecture.md` 초안을 대체) |
 | [sessions/](sessions/) | 작업 세션 로그 (날짜별, 그날 무엇·왜·함정 정리) |
-| [discovery/](discovery/) | Validation 단계 산출물 — 인터뷰, 경쟁사 평가, 아키텍처 초안, 랜딩페이지 |
+| [design/screens/](design/screens/) | 화면별 세부 설계서 13개 (7섹션 구조) + 인덱스/IA |
+| [discovery/](discovery/) | Validation 단계 산출물 — 인터뷰, 경쟁사 평가, **아키텍처/API/flows 초안(시점 고정 — 현재 기준은 위 두 문서)**, 랜딩페이지 |
 | [design/](design/) | 디자인 시스템·토큰·카드 템플릿 5종·색추출 알고리즘·mockup |
 
 ## discovery/ 주요 문서
@@ -32,8 +41,9 @@
 - [discovery/real-interview-guide.md](discovery/real-interview-guide.md) — 실제 사용자 인터뷰 가이드 v2
 - [discovery/competitor-evaluation.md](discovery/competitor-evaluation.md) — Goodreads/Readwise/Letterboxd/북적북적/Tezza 평가
 - [discovery/bookstagram-analysis.md](discovery/bookstagram-analysis.md) — #책스타그램 카드 분석
-- [discovery/architecture.md](discovery/architecture.md), [client-architecture.md](discovery/client-architecture.md), [api-design.md](discovery/api-design.md) — 시스템·클라이언트·API 초안
-- [discovery/flows.md](discovery/flows.md), [error-handling.md](discovery/error-handling.md), [testing-strategy.md](discovery/testing-strategy.md) — 사용자 흐름·오류·테스트 전략
+- [discovery/architecture.md](discovery/architecture.md), [client-architecture.md](discovery/client-architecture.md), [api-design.md](discovery/api-design.md) — 시스템·클라이언트·API **초안 (2026-05-09, Expo/TanStack 시절 — 시점 고정)**. 현재 스키마·API는 [db-schema.md](db-schema.md)가 기준
+- [discovery/flows.md](discovery/flows.md) — 사용자 흐름 **초안 (2026-05-09, follow 타임라인 포함 — 시점 고정)**. 현재 V1 동선은 [app-scenarios.md](app-scenarios.md)가 기준
+- [discovery/error-handling.md](discovery/error-handling.md), [testing-strategy.md](discovery/testing-strategy.md) — 오류 분류·테스트 전략 (화면 설계서 §3·§7이 참조)
 - [discovery/design-brief-for-designer-session.md](discovery/design-brief-for-designer-session.md) — 디자인 세션에 넘긴 브리프
 - [discovery/landing-page/](discovery/landing-page/) — 사전등록 페이지 (미배포)
 
