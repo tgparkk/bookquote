@@ -81,16 +81,9 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
 
     if (!sheetCtx.mounted) return;
     setState(() => _saving = false);
-    if (book != null) {
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: Text('"${book.title}"을(를) 서재에 추가했어요'),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-    }
+    // 책 선택 결과만 호출자에게 돌려준다. "서재에 추가했어요" 같은 피드백은 호출자
+    // 책임 — 시트의 _onPick은 books 카탈로그 upsert일 뿐 user_books 등록이 아니다
+    // (서재 화면이 자체 SnackBar, 인용구 입력은 별도 토스트 불필요).
     Navigator.of(sheetCtx).pop(book);
   }
 
