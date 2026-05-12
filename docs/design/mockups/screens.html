@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>책귀 — V1 화면 와이어프레임 (그룹 1)</title>
+<style>
+  :root{
+    --ink:#1C1917;--ink-800:#241F18;--ink-700:#342E26;--ink-600:#4A4339;--ink-500:#635B50;--ink-400:#8C8478;--ink-300:#B5ADA0;--ink-200:#D6D0C4;--ink-100:#F0EDE6;--ink-50:#FAF8F5;
+    --paper-50:#FFFFFF;--paper-100:#FDFCFB;--paper-200:#FAFAF8;--paper-300:#F5F1EB;--paper-400:#EDE5D8;--paper-500:#E2D9C8;--paper-700:#C2B49A;
+    --copper:#B87333;--copper-400:#CC9A4E;--copper-300:#E0B87A;--copper-100:#FAEBD6;--copper-700:#7D4D1E;
+    --mono-bg:#0F0F0F;--err:#C0392B;--warn:#C87F0A;--ok:#4A7C59;--info:#2563EB;
+    --serif:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper-300);color:var(--ink);font-family:-apple-system,"Pretendard","Segoe UI",Roboto,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.55;padding:32px 20px 80px}
+  .wrap{max-width:1200px;margin:0 auto}
+  h1{font-size:30px;letter-spacing:-.02em;margin-bottom:6px}
+  .sub{color:var(--ink-500);font-size:14px;margin-bottom:4px}
+  .sub code{background:var(--paper-100);padding:1px 4px;border-radius:4px}
+  .flowbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--ink-600);margin:18px 0 28px;padding:12px 16px;background:var(--paper-100);border:1px solid var(--ink-100);border-radius:10px}
+  .flowbar b{color:var(--copper-700)} .flowbar .arr{color:var(--ink-300)}
+
+  section{margin:40px 0;padding-top:10px;border-top:2px solid var(--ink-100)}
+  section>h2{font-size:21px;letter-spacing:-.01em;margin:14px 0 2px}
+  section>.rt{font-size:12.5px;color:var(--ink-500);margin-bottom:14px}
+  section>.rt code{background:var(--paper-100);padding:1px 4px;border-radius:4px}
+  .lay{display:flex;gap:30px;align-items:flex-start;flex-wrap:wrap}
+  .notes{flex:1;min-width:260px;font-size:12.5px}
+  .notes h4{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-500);margin:14px 0 5px}
+  .notes h4:first-child{margin-top:0}
+  .notes ul{margin-left:16px} .notes li{margin-bottom:4px;color:var(--ink-700)}
+  .notes .sev{font-size:9px;padding:1px 5px;border-radius:7px;font-weight:600;vertical-align:middle}
+  .sev.hi{background:#fdecea;color:var(--err)} .sev.mid{background:#fef3e2;color:var(--warn)} .sev.lo{background:#eaf2ec;color:var(--ok)}
+
+  .phone{width:300px;flex:0 0 300px;background:var(--paper-200);border:8px solid var(--ink);border-radius:34px;overflow:hidden;box-shadow:0 12px 30px rgba(28,25,23,.18)}
+  .phone.dark{background:var(--mono-bg)}
+  .phone .status{height:26px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;font-size:10px;color:var(--ink-400)}
+  .screen{padding:6px 14px 12px;min-height:460px;display:flex;flex-direction:column}
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 12px;font-size:15px;font-weight:600}
+  .appbar .ico,.appbar .x{font-size:17px;color:var(--ink-500);font-weight:400}
+  .appbar .ct{font-size:11px;color:var(--ink-400);font-weight:400}
+  .tabbar{display:flex;border-top:1px solid var(--ink-100);margin:auto -14px 0;padding:8px 0 4px;justify-content:space-around;font-size:10px;color:var(--ink-400);background:var(--paper-100)}
+  .tabbar .t.on{color:var(--copper);font-weight:600}
+  .tabbar .t .g{display:block;font-size:16px;margin-bottom:1px}
+  .fab{align-self:flex-end;margin-top:auto;background:var(--copper);color:#fff;border-radius:24px;padding:8px 14px;font-size:12px;font-weight:600;box-shadow:0 4px 12px rgba(184,115,51,.4)}
+
+  .field{background:var(--paper-100);border:1.5px solid var(--ink-200);border-radius:10px;padding:10px 12px;font-size:13px;min-height:88px}
+  .field.serif{font-family:var(--serif);color:var(--ink-700)}
+  .field .ph{color:var(--ink-400);font-family:-apple-system,sans-serif;font-size:11.5px}
+  .banner{background:var(--paper-300);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--ink-500);display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+  .banner b{color:var(--ink-700)} .banner .a{color:var(--copper);font-weight:600}
+  .banner.warn{background:#fef3e2;color:var(--warn)}
+  .card-mini{background:var(--paper-100);border:1px solid var(--ink-100);border-radius:12px;padding:10px 12px;margin-bottom:9px;display:flex;gap:10px}
+  .cover{width:34px;height:50px;border-radius:3px;flex:0 0 34px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;text-align:center;line-height:1.2;overflow:hidden;background:linear-gradient(135deg,var(--paper-500),var(--paper-700))}
+  .cover.c1{background:linear-gradient(135deg,#2b3a55,#4a6491)}.cover.c2{background:linear-gradient(135deg,#7a3b2e,#b5654a)}.cover.c3{background:linear-gradient(135deg,#3d4a2a,#6b7d3f)}
+  .cover.big{width:64px;height:94px;flex:0 0 64px}
+  .q{font-family:var(--serif);font-size:13px;color:var(--ink-800);line-height:1.5}
+  .meta{font-size:10.5px;color:var(--ink-400);margin-top:3px}
+  .memo{font-size:10.5px;color:var(--ink-500);font-style:italic;margin-top:3px}
+  .chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+  .chip{font-size:9.5px;padding:2px 7px;border-radius:10px;background:var(--copper-100);color:var(--copper-700);border:1px solid var(--copper-300)}
+  .chip.calm{background:#eaf2ec;color:#3a5a45;border-color:#bcd}.chip.mel{background:#eef0f6;color:#444;border-color:#cdd}.chip.hope{background:#fff5e8;color:#8a6a30;border-color:#e8d}
+  .chip.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .badge{font-size:9px;padding:1px 6px;border-radius:8px;font-weight:600}
+  .badge.warn{background:#fef3e2;color:var(--warn)}.badge.ok{background:#eaf2ec;color:var(--ok)}
+  .row{display:flex;gap:8px;align-items:center;margin:8px 0}
+  .btn{display:inline-block;background:var(--copper);color:#fff;border-radius:10px;padding:9px 14px;font-size:12px;font-weight:600;text-align:center}
+  .btn.full{display:block;width:100%}
+  .btn.ghost{background:transparent;color:var(--ink-600);border:1.5px solid var(--ink-200)}
+  .btn.dim{background:var(--paper-500);color:var(--ink-400);font-weight:600}
+  .btn.tert{background:transparent;color:var(--ink-400);font-weight:400}
+  .btn.kakao{background:#FEE500;color:#191919}
+  .seg{display:flex;border:1.5px solid var(--ink-200);border-radius:9px;overflow:hidden;font-size:10.5px}
+  .seg span{padding:5px 10px;color:var(--ink-400)} .seg span.on{background:var(--ink);color:#fff}
+  .swatches{display:flex;gap:6px;align-items:center;margin:8px 0}
+  .sw{width:22px;height:22px;border-radius:6px;border:1.5px solid rgba(0,0,0,.08)}
+  .cardprev{aspect-ratio:9/16;border-radius:10px;padding:18px 16px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;background:#3D2817;color:#F5EDD8;box-shadow:0 4px 14px rgba(28,25,23,.15)}
+  .cardprev .cq{font-family:var(--serif);font-size:14px;line-height:1.6}
+  .cardprev .cb{font-size:9.5px;opacity:.85;margin-top:14px}
+  .cardprev .wm{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:7.5px;opacity:.32}
+  .tmpls{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px}
+  .tmpl{flex:0 0 50px;height:84px;border-radius:7px;border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:7px;text-align:center;padding:4px;line-height:1.3}
+  .tmpl.m1{background:#FAFAF8;color:#1C1917}.tmpl.m2{background:#EDE5D8;color:#342E26;font-family:var(--serif)}.tmpl.m3{background:#0F0F0F;color:#fff}.tmpl.m4{background:linear-gradient(135deg,#3d4a2a,#6b7d3f);color:#fff}.tmpl.m5{background:#FAF8F5;color:#4A4339;font-family:var(--serif)}
+  .tmpl.on{border-color:var(--copper)}
+  .auxrow{display:flex;gap:10px;font-size:10px;color:var(--ink-500);margin-top:7px}
+  .auxrow .last{margin-left:auto;color:var(--copper)}
+  .sheet{background:var(--paper-100);border-radius:16px 16px 0 0;margin:14px -14px -12px;padding:14px 16px 18px;box-shadow:0 -4px 16px rgba(0,0,0,.07)}
+  .sheet .handle{width:32px;height:4px;background:var(--ink-200);border-radius:2px;margin:0 auto 14px}
+  .src{font-size:11px;color:var(--ink-400);margin-top:30px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>책귀 — V1 화면 와이어프레임 (그룹 1)</h1>
+  <div class="sub">정적 목업 · 2026-05-11 · 명세: <code>docs/design/screens/*.md</code> · 경쟁앱 비교 버전은 <code>docs/discovery/mockups/competitor-references.html</code></div>
+  <div class="sub">색·폰트·간격은 <code>lib/core/theme/tokens.dart</code> 토큰. 픽셀 정밀 아님 — 영역 구성과 인터랙션의 시각 참조.</div>
+  <div class="flowbar">
+    <b>인용구 입력</b> <code>/quote/new</code> <span class="arr">──카드 만들기──▶</span> <b>카드 에디터</b> <code>/quote/:id/card</code> <span class="arr">──공유──▶</span> <b>공유 시트</b> <span class="arr">──카카오톡──▶</span> <b>(받는 사람) 책 담기</b> <code>/book/:id?from=share</code> &nbsp;|&nbsp; <b>인용구 목록</b> = 서재 탭 내 "인용구" 뷰
+  </div>
+
+  <!-- ===== 인용구 입력 ===== -->
+  <section>
+    <h2>1. 인용구 입력 <code>/quote/new</code></h2>
+    <div class="rt">명세: <code>screens/quote-input.md</code> · 풀스크린(셸 밖) · 인증 가드 · 내장 OCR 없음 → 클립보드 붙여넣기 (DECISIONS 2026-05-11)</div>
+    <div class="lay">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>● ● ●</span></div>
+        <div class="screen">
+          <div class="appbar"><span class="x">✕</span><span>인용구 추가</span><span class="ct">912 / 2000</span></div>
+          <div class="field serif">가장 깊은 밤에 가장 빛나는 별이 보인다.<span style="color:var(--copper-700)">|</span></div>
+          <div class="banner"><span>📋 클립보드에 새 텍스트: "그래도 별은 떠 있었다…"</span><span class="a">붙여넣기</span></div>
+          <div class="card-mini" style="margin-top:8px"><div class="cover c1"></div><div style="flex:1;align-self:center"><div style="font-size:11.5px;font-weight:600">미드나잇 라이브러리</div><div class="meta">매트 헤이그 · 변경 ▸</div></div></div>
+          <div class="row"><span style="font-size:11px;color:var(--ink-500)">페이지</span><span class="field" style="min-height:auto;padding:5px 9px;width:54px;text-align:center;font-size:12px">132</span><span style="font-size:11px;color:var(--ink-500);margin-left:auto">무드 ▾</span></div>
+          <div class="chips" style="margin-bottom:8px"><span class="chip sel">위로</span><span class="chip">먹먹</span><span class="chip">새벽3시</span><span class="chip">통찰</span><span class="chip">설렘</span></div>
+          <div class="btn full">카드 만들기 →</div>
+          <div class="btn tert full" style="margin-top:6px">저장만 하기</div>
+        </div>
+      </div>
+      <div class="notes">
+        <h4>주요 인터랙션</h4>
+        <ul>
+          <li>진입 시 본문 자동 포커스+키보드. book prefill(<code>?bookId=</code>)이어도 동일</li>
+          <li>붙여넣기 배너: 클립보드에 텍스트 있고 본문 비었거나 미수정 시 노출 → 탭하면 채움. 사용자가 본문 만지면 자동 dismiss(덮어쓰기 방지)</li>
+          <li>책 영역 탭 → <code>showBookSearchSheet</code> (모달이라 입력 보존). "서재에 추가했어요" 토스트는 이 진입에선 억제</li>
+          <li>무드 = 멀티 선택 최대 3개, 토글, 색+텍스트 라벨 둘 다</li>
+          <li>뒤로/✕: 작성 내용 있으면 [임시저장하고 나가기 / 폐기 / 계속 쓰기]. 본문 변경 시 debounce 1s로 draft 1건 자동 저장 → 재진입 "이어쓰기/폐기"</li>
+        </ul>
+        <h4>상태</h4>
+        <ul>
+          <li><span class="sev hi">높음</span> 오프라인 저장 = 실패 아님 → 아웃박스(<code>shared_preferences</code> JSON 리스트)에 영속화 + "동기화 대기" 뱃지. 책: 골랐으면 <code>book_id</code>, 아니면 <code>manual_book_text</code></li>
+          <li><span class="sev hi">높음</span> 저장 실패(5xx/세션만료) → 폼 100% 보존 + [다시 시도] / 세션만료면 임시저장 후 로그인 유도</li>
+          <li><span class="sev mid">중간</span> 책 못 골라도 저장 가능(BOOK_UNRESOLVED) — 시트에 [ISBN 직접 등록] 출구</li>
+          <li><span class="sev lo">낮음</span> 권한 흐름 0 (카메라·사진 권한 요청 안 함 — 내장 OCR 없음)</li>
+        </ul>
+        <h4>신규</h4>
+        <ul><li><code>quotes</code> 테이블(<code>book_id</code> nullable, <code>manual_book_text</code>, <code>text</code> CHECK 1~2000, <code>source</code> manual/clipboard, <code>moods text[]</code>), <code>quote_repository/quote.dart/quote_providers/createQuoteController/quote_outbox</code>. pubspec: <code>shared_preferences</code>·<code>connectivity_plus</code></li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 카드 에디터 ===== -->
+  <section>
+    <h2>2. 카드 에디터 <code>/quote/:id/card</code></h2>
+    <div class="rt">명세: <code>screens/card-editor.md</code> · 풀스크린 · 3단 고정 레이아웃 · 렌더=위젯 트리(CustomPaint 아님) · 팔레트는 비동기, 카드는 동기</div>
+    <div class="lay">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>● ● ●</span></div>
+        <div class="screen">
+          <div class="row" style="margin:2px 0 8px"><span style="font-size:16px;color:var(--ink-500)">←</span><div class="seg" style="margin:0 auto"><span>1:1</span><span>4:5</span><span class="on">9:16</span></div><span style="font-size:14px;color:var(--ink-400)">⤺</span><span class="btn" style="padding:5px 11px">공유</span></div>
+          <div class="cardprev"><div class="cq">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div><div class="cb">미드나잇 라이브러리 · 매트 헤이그</div><div class="wm">책귀에서 만들었어요 · bookgwi.app</div></div>
+          <div class="swatches"><span class="sw" style="background:#3D2817"></span><span class="sw" style="background:#6B4423"></span><span class="sw" style="background:#C9A876"></span><span class="sw" style="background:#8B5A3C"></span><span class="sw" style="background:#A08060"></span><span style="font-size:9.5px;color:var(--ink-400);margin-left:4px">↑ 이 책 표지에서 추출</span></div>
+          <div class="tmpls"><div class="tmpl m1">미니멀</div><div class="tmpl m2">웜</div><div class="tmpl m3">모노</div><div class="tmpl m4 on">표지<br>발췌</div><div class="tmpl m5">타이포</div></div>
+          <div class="auxrow"><span>텍스트</span><span>색</span><span>위치 상·중·하</span><span>워터마크 ●</span><span class="last">다른 느낌 ↻</span></div>
+        </div>
+      </div>
+      <div class="notes">
+        <h4>주요 인터랙션</h4>
+        <ul>
+          <li>진입 직후: fallback 팔레트로 즉시 렌더(빈 화면 0초) → 표지 fetch 도착 시 cross-fade → 팔레트 추출 완료 시 색만 cross-fade. 추천 템플릿이 선택된 상태로 시작</li>
+          <li>"색 변경 UI"를 따로 안 만듦 — 표지 5스와치 줄이 곧 컬러 패널. 탭하면 현재 템플릿의 색 슬롯에 적용. 흑백 표지는 채도&lt;10 폴백</li>
+          <li>인용구 텍스트 박스 = "한 번 탭" → 인라인 핸들(이동/크기). <b>더블탭 숨김 금지</b>. 이동은 상/중/하 3지점 스냅 앵커(템플릿 미관 보호)</li>
+          <li><b>언두 필수</b>(Mojo가 없어서 욕먹은 지점) — 최소 20단계, 비율·템플릿 전환까지 포함. 비율 전환 시 텍스트 위치 재매핑(상대좌표 0~1 + clamp)</li>
+          <li>편집 상태(템플릿·팔레트·앵커·비율·undo 스택) 디버운스 영속화 → 재진입 "이어 만들기". 인용구 본문은 DB라 안전 → 뒤로 시 폐기 확인 불필요</li>
+        </ul>
+        <h4>상태</h4>
+        <ul>
+          <li><span class="sev hi">높음</span> PNG 생성 실패(OOM) → Toast + 디자인 전부 유지 → 재시도 시 1080→720 폴백</li>
+          <li><span class="sev hi">높음</span> 폰트 로드 완료를 캡처 전에 보장(<code>endOfFrame</code> + 미로드 시 1회 재시도) — 안 그러면 첫 캡처가 □□□로 인스타에 박힘. NotoSerifKR은 앱 번들 asset(런타임 다운로드 X)</li>
+          <li><span class="sev hi">높음</span> 긴 인용구 auto-fit 한계 — 잘린 채 export 절대 금지. 최소 폰트 도달 후 넘치면 비율 자동 추천 → 그래도 안 되면 명시적 경고</li>
+          <li><span class="sev hi">높음</span> 표지 색 vs 텍스트 대비 부족 → <code>ensureContrast</code>(WCAG AA 4.5:1) + T4 그라데이션 overlay. 깨지면 가독성 0 → 스냅샷+대비 테스트 필수</li>
+          <li><span class="sev mid">중간</span> 표지 없는 책 → T1/T3/T5 정상, T2/T4는 fallback 팔레트. <b>T4(표지발췌) 처리 미결: 비활성화 vs 단색 degrade — 권고 비활성화</b></li>
+        </ul>
+        <h4>미결</h4>
+        <ul>
+          <li>텍스트 위치 앵커(상/중/하) V1에 넣을지 — 넣으면 템플릿 좌표 모델 변경 수반. 권고: V1은 폰트 크기 ±·정렬만, 앵커는 V1.5</li>
+          <li>표지 없는 책에서 T4 — 권고: 비활성화(썸네일 회색 + "표지가 필요해요")</li>
+        </ul>
+        <h4>재사용</h4>
+        <ul><li>인프라 거의 완비: <code>ExtractedPalette</code>·<code>fallbackPalettes</code>·<code>getQuoteFontSize</code>·<code>CardRatio</code>·<code>AppCardSize</code>·<code>AppWatermark</code>·<code>palette_generator</code>·<code>color-extraction.md</code>. 신규: <code>card_template.dart</code>(sealed×5)·<code>quote_card.dart</code>·<code>palette_service</code>·<code>card_renderer</code>·<code>cards</code> 테이블. pubspec: <code>share_plus</code>·<code>path_provider</code></li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 공유 시트 ===== -->
+  <section>
+    <h2>3. 카드 공유·저장 시트</h2>
+    <div class="rt">명세: <code>screens/card-share.md</code> · 카드 에디터의 "공유" → 모달 시트 · V1은 <code>share_plus</code> OS 시트, 카카오 SDK 메시지 카드는 V1.1</div>
+    <div class="lay">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>● ● ●</span></div>
+        <div class="screen" style="justify-content:flex-end">
+          <div class="cardprev" style="max-height:170px;width:120px;margin:auto auto 0;padding:12px"><div class="cq" style="font-size:9px">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div><div class="wm">책귀에서 만들었어요</div></div>
+          <div class="sheet">
+            <div class="handle"></div>
+            <div class="btn kakao full" style="margin-bottom:8px">💬 카카오톡 단톡방으로 보내기</div>
+            <div class="btn ghost full" style="margin-bottom:8px">📷 인스타그램 스토리 (9:16)</div>
+            <div class="btn dim full" style="margin-bottom:8px">⬇ 이미지 저장 &nbsp;<span class="badge warn">권한 필요</span></div>
+            <div class="btn ghost full">⋯ 다른 앱으로 공유</div>
+            <div style="font-size:10px;color:var(--ink-400);text-align:center;margin-top:10px">저장 권한 없어도 공유는 그대로 — 막다른 골목 없음</div>
+          </div>
+        </div>
+      </div>
+      <div class="notes">
+        <h4>핵심</h4>
+        <ul>
+          <li>1순위 = 카카오톡 단톡방. 받는 사람이 카드(또는 텍스트 링크) 탭 → deep link로 책 담기까지 이어짐 (다음 화면)</li>
+          <li>V1: 모든 버튼이 <code>share_plus</code> OS share sheet 호출(카카오/인스타 SDK·OAuth 불필요, 셋업 0). 우리 라벨 버튼은 "이 경로 권장" 안내 + 분석용. 카카오 메시지 카드 형태(이미지+제목+deep link 버튼) 공유는 V1.1</li>
+          <li>카카오 <i>공유</i> SDK는 카카오 <i>로그인</i>(V1.5)과 독립 — 네이티브 키만 필요</li>
+        </ul>
+        <h4>상태</h4>
+        <ul>
+          <li><span class="sev hi">높음</span> 사진 라이브러리 쓰기 권한 거부 → [이미지 저장]만 비활성 + [권한 필요] 뱃지 + [설정], <b>나머지 버튼은 활성</b>. iOS add-only / Android 11+ scoped storage(권한 불필요) / Android 9↓ WRITE_EXTERNAL_STORAGE 분기. 전체 시트를 막지 않음</li>
+          <li><span class="sev mid">중간</span> 카카오톡/인스타 미설치 → OS 시트에 자동으로 안 뜸(무해). 전용 버튼이면 <code>canLaunchUrl</code> 체크 후 안내, 크래시 금지</li>
+          <li><span class="sev mid">중간</span> 네트워크 끊겨도 공유 자체는 됨(PNG 로컬, OS 시트 로컬). <code>cards</code> 히스토리 INSERT만 큐/skip → 사용자엔 "성공"</li>
+          <li><span class="sev lo">낮음</span> 공유 시트 취소 = 에러 아님, Toast 없음, 에디터 유지, 히스토리 저장 안 함</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 받는 사람 deep link ===== -->
+  <section>
+    <h2>4. 받은 카드 → 책 담기 <code>/book/:id?from=share</code></h2>
+    <div class="rt">명세: <code>screens/deep-link-receive.md</code> · 바이럴 K-factor · <code>/book/:id</code> 게스트 허용(redirect 통과) · <code>deep_link_handler.dart</code> 일반화 필요(현재 <code>/auth/callback</code>만 처리)</div>
+    <div class="lay">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>● ● ●</span></div>
+        <div class="screen">
+          <div class="appbar"><span style="font-size:16px;font-weight:400">←</span><span>책</span><span class="ct">지영님이 단톡방에서 공유</span></div>
+          <div class="row" style="align-items:flex-start;margin:6px 2px 14px"><div class="cover c1 big"></div><div style="align-self:center"><div style="font-size:15px;font-weight:600">미드나잇 라이브러리</div><div class="meta">매트 헤이그 · 인플루엔셜</div><div class="meta">ISBN 9791191056556</div></div></div>
+          <div class="card-mini" style="background:var(--copper-100);border-color:var(--copper-300)"><div style="flex:1"><div class="q" style="font-size:12px">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div><div class="meta">p.132 · 지영님의 인용구</div></div></div>
+          <div class="btn full" style="margin-top:10px">＋ 내 서재에 담기</div>
+          <div style="font-size:10.5px;color:var(--ink-400);margin-top:10px;text-align:center">비로그인이면: 책 정보 먼저 → "담기" 누르면 로그인 → 원래 화면 복귀해 담기</div>
+          <div class="tabbar"><span class="t"><span class="g">▦</span>홈</span><span class="t"><span class="g">▤</span>서재</span><span class="t"><span class="g">＋</span></span><span class="t"><span class="g">◔</span>나</span></div>
+        </div>
+      </div>
+      <div class="notes">
+        <h4>주요 인터랙션</h4>
+        <ul>
+          <li>deep link 수신 → <code>deep_link_handler</code> 분기: auth code면 <code>getSessionFromUrl</code>(기존), 아니면 <code>router.go('/book/$id?from=$from')</code></li>
+          <li>미로그인 → router redirect로 <code>/auth/login?from=...</code> + handler가 pending deep link 보관 → 로그인 후 소비 → 책 상세 복귀</li>
+          <li>"내 서재에 담기" → <code>addToLibrary</code>(idempotent) → "서재에 담았어요 ✓" + "이 책에서 인용구 모으기" 권유</li>
+          <li>같은 deep link를 단톡방 스크롤하며 여러 번 탭 → idempotent, Toast 폭탄 방지</li>
+        </ul>
+        <h4>상태</h4>
+        <ul>
+          <li><span class="sev hi">높음</span> 미로그인 진입(현재 미구현) → read-only 먼저 + payload 보존 후 로그인→복귀</li>
+          <li><span class="sev hi">높음</span> 콜드스타트+미로그인+deep link → <code>/splash</code>→로그인 게이트→보존된 link 소비. 가입이면 "프로필 생성 중" 짧은 대기 후</li>
+          <li><span class="sev mid">중간</span> 그 책/인용 삭제됨(<code>PGRST116</code>) → "더 이상 볼 수 없어요" + [홈으로]/[책 검색]. 비공개·차단 인용은 책 정보만</li>
+          <li><span class="sev mid">중간</span> 이미 서재에 있는 책(<code>23505</code>) → "이미 서재에 있어요" 정보성 Toast(에러 아님)</li>
+          <li><span class="sev mid">중간</span> deep link 무한 루프 → 앱당 1회 consume 후 클리어, redirect 최대 1홉</li>
+          <li><span class="sev mid">중간</span> 앱 미설치 → 커스텀 스킴은 fallback 없음. 웹 뷰어(Universal/App Link + 도메인 + assetlinks)는 V1.5. V1은 "앱 있는 사람끼리만" 한계 + 안내 카피</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 인용구 목록 ===== -->
+  <section>
+    <h2>5. 인용구 목록·상세 (서재 탭 내 "인용구" 뷰)</h2>
+    <div class="rt">명세: <code>screens/quote-list.md</code> · Readwise 카드 문법 + StoryGraph 무드 필터 · 위치(별도 탭 vs 서재 내 뷰)는 결정 대기 — 본 목업은 "서재 내 뷰" 전제</div>
+    <div class="lay">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>● ● ●</span></div>
+        <div class="screen">
+          <div class="appbar"><span>서재</span><span style="font-size:11px;color:var(--ink-400);font-weight:400"><span class="seg" style="display:inline-flex;vertical-align:middle"><span>책</span><span class="on">인용구</span></span> &nbsp;🔍</span></div>
+          <div class="chips" style="margin:0 2px 10px"><span class="chip sel">전체</span><span class="chip calm">위로 12</span><span class="chip mel">먹먹 8</span><span class="chip hope">새벽3시 5</span><span class="chip">통찰 3</span></div>
+          <div class="card-mini"><div class="cover c1"></div><div><div class="q">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div><div class="meta">미드나잇 라이브러리 · 매트 헤이그 · p.132</div><div class="chips"><span class="chip calm">위로</span><span class="chip mel">먹먹</span></div><div class="memo">메모: 힘들 때 다시 읽으려고</div></div></div>
+          <div class="card-mini"><div class="cover c2"></div><div><div class="q">"우리는 우리가 반복하는 것이다. 탁월함은 행동이 아니라 습관이다."</div><div class="meta">니코마코스 윤리학 · p.55</div><div class="chips"><span class="chip">통찰</span></div></div></div>
+          <div class="card-mini"><div class="cover c3"></div><div><div class="q">"오래된 것은 사라지지 않는다, 다만 잊힐 뿐."</div><div class="meta">잃어버린 시간을 찾아서 · p.408 &nbsp;<span class="badge warn">동기화 대기</span></div><div class="chips"><span class="chip hope">새벽3시</span></div></div></div>
+          <div class="row" style="font-size:10.5px;color:var(--ink-500);margin-top:auto;justify-content:flex-end">정렬: 최근순 ▾</div>
+          <div class="tabbar"><span class="t"><span class="g">▦</span>홈</span><span class="t on"><span class="g">▤</span>서재</span><span class="t"><span class="g">＋</span></span><span class="t"><span class="g">◔</span>나</span></div>
+        </div>
+      </div>
+      <div class="notes">
+        <h4>주요 인터랙션</h4>
+        <ul>
+          <li>서재 헤더 세그먼트: "책" ↔ "인용구" — 전환 시 스크롤 위치 각자 유지(<code>StatefulShellRoute</code> state 보존)</li>
+          <li>무드 칩 = 단일 선택 필터(개수 표시). 인용구 카드 탭 → 인라인 확장(전체 텍스트 + 메모 편집 + 액션: 카드 만들기 / 수정 / 무드 변경 / 공유 / 삭제)</li>
+          <li>무드 변경 = 카드에서 직접 칩 토글(Readwise 인라인 태깅) — 저장 즉시 낙관적. 인용 저장 직후 토스트의 "무드 추가?" 칩도 같은 경로</li>
+          <li>스와이프 삭제 X(우발 삭제 우려) — 확장 후 [삭제] 버튼 + undo SnackBar 5s</li>
+          <li>정렬: 최근순(기본) / 책별 그룹 / 페이지순. 페이지네이션 = cursor-after(created_at+id), 15개 — offset 금지(DECISIONS 2026-05-10)</li>
+        </ul>
+        <h4>상태</h4>
+        <ul>
+          <li><span class="sev mid">중간</span> 빈: "아직 인용구가 없어요…" + [＋ 인용구 추가]. 특정 무드 0개: "이 무드의 인용구가 아직 없어요" + [전체 보기]</li>
+          <li><span class="sev mid">중간</span> 오프라인: 마지막 캐시 표시(stale-while-revalidate) + 배너. 동기화 대기 인용구는 "동기화 대기" 뱃지 + 책 매칭 실패 시 "책 정보 필요" 액션</li>
+          <li><span class="sev mid">중간</span> 책 없는 인용구(BOOK_UNRESOLVED): 표지 자리 placeholder + "책 연결하기" 인라인 액션</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="src">전체 명세: <code>docs/design/screens/README.md</code> (인덱스+IA) · <code>quote-input.md</code> · <code>card-editor.md</code> · <code>card-share.md</code> · <code>deep-link-receive.md</code> · <code>quote-list.md</code>. 근거: <code>docs/discovery/competitor-screen-analysis-2026-05-11.md</code>. 그룹 2(홈·Me·책상세 보강), 그룹 3(스플래시·로그인·콜백·서재·책검색시트 역정리)는 다음 세션.</div>
+</div>
+</body>
+</html>

@@ -5,6 +5,32 @@
 
 ---
 
+## 2026-05-12 — 화면 설계 Phase B 그룹 1·2 결정 묶음 (가상 팀 협의 종합)
+
+매니저 모드(UI/UX·기획·Dart·QA) 협의 후 `competitor-screen-analysis-2026-05-11.md §7` 미해결 5건 중 4건 + 신규 2건 결정. 근거 상세는 `docs/sessions/2026-05-12-screen-design-b.md`.
+
+- **카드 텍스트 위치 앵커(상/중/하): V1엔 안 넣음. V1.5.** V1 카드 에디터의 미세 조정은 폰트 크기 ±·정렬(템플릿이 허용하는 범위)만. 이유: `docs/design/templates/01~05.md`가 이미 고정 좌표 모델(`quoteArea y=192` 등)이라 앵커를 넣으면 5종 명세를 "정렬 기반"으로 재작성 + 디자인팀 재합의 필요 → V1 차별화(①②④)와 시간 경쟁. Tezza/Unfold의 자유 배치가 미관 깨고 신규 사용자 헤매게 한 사례(competitor §2.5)와도 어긋남. 단 `card_editor_controller`의 텍스트 위치는 **지금부터 상대좌표(0~1)로 직렬화** — V1.5에 앵커 3지점 스냅 붙일 때 마이그레이션 0. (`card-editor.md §7` 미결 1 → 해소)
+- **표지 없는 책(`cover_url == null`)에서 T4(표지발췌): 비활성화.** 썸네일 회색 + "표지가 필요해요" 오버레이(`templates/04.md`의 `showTemplateDisabledOverlay`), 나머지 4종(T1/T2/T3/T5)은 정상 제공 + (가능하면) "표지 추가하기" 인라인 액션으로 ISBN 재검색 유도(막다른 골목 금지). 이유: T4의 정체성이 "이 색이 이 책 표지에서 나왔다"는 바이럴 순간 — 표지 없는데 단색 그라데이션 degrade하면 그 약속이 거짓이 되고 T1/T3와 시각 구분도 안 됨. (`card-editor.md §7` 미결 2 → 해소)
+- **인용구 목록 위치: 별도 탭 X. 서재 탭 안의 "책 ↔ 인용구" 세그먼트 뷰.** 4탭(홈/서재/＋/나) 유지 — DECISIONS 2026-05-10의 "친구 0명일 때 빈 탭이 cold-start 함정" 회피 원칙과 정합. 책↔인용구는 같은 데이터의 두 단면. 홈 피드("내 인용 — 최근순", 시간순 흐름)와 역할 구분: 서재>인용구 = 무드·책 단위 *탐색*(다시 보기). 세그먼트 전환 시 각 뷰 스크롤 위치 보존(`StatefulShellRoute` state). (`quote-list.md §1` 결정 대기 → 해소: (b)안 채택)
+- **인용 중심 AI(차별화 ⑤): V1 출시 메시지·앱 내 어디에도 "AI"라는 단어를 쓰지 않음. "곧 출시" 약속도 안 함.** 이유: Fable이 2025.01 AI 연말 요약 인종차별 문구로 AI 전면 폐기한 사건(competitor §2.4) — 1인 개발자가 "곧" 약속을 깔면 그 사고 책임을 떠안음. 짧은 한국어 인용구는 AI 품질 빈약 → "곧 나온다" 했는데 품질 나쁘면 신뢰 손상이 더 큼. V1 viral은 ①②④가 담당(AI는 필수 카드 아님). V1.5에 넣을 때도 "이 인용 영어 번역"·"이 책 핵심 문장 3개"처럼 입출력 좁고 사용자가 항상 결과를 편집하는 기능만(OCR과 동일 원칙).
+- **(신규) 홈 `/`의 "받은 카드 함": V1엔 안 넣음. V1 홈 = 순수 "내 인용 피드".** V1.5에 `received_cards`/`received_books` 테이블 1개 + deep link 핸들러 INSERT로 추가. 이유: V1 deep link 수신 흐름은 `deep-link-receive.md` 명세상 "책 상세 + `user_books` 담기"이지 "카드를 내 계정에 복제"가 아님 — "받은 카드"의 영속 저장소가 V1에 없다. follow 타임라인은 V1.5에 같은 피드에 합쳐 진화. `flows.md`/`client-architecture.md`의 `timelineProvider`(follow 의존)·`quotes` INSERT 시 `publish to followers` Realtime은 **코드에 0** — "제거"가 아니라 그 문서들의 해당 절을 "V1.5"로 마킹하는 게 작업. `home_screen.dart` 재작성 시 Realtime 구독 코드 금지(Realtime은 V2 — DECISIONS 2026-05-10).
+- **(신규) `quote_repository.listMyQuotes` cursor 시그니처 확정.** 홈·인용 목록·책 상세 셋이 다 호출하므로 한 번만 정의: `listMyQuotes({String? bookId, Set<QuoteMood>? moods, ({DateTime createdAt, String id})? after, int limit = 15})` — cursor-after(created_at + id), offset 금지(DECISIONS 2026-05-10). 누적 상태는 `Notifier<AsyncValue<List<Quote>>>` + `_isLoadingMore` 가드 패턴(`createQuoteController`와 결). `bookSearchPagedProvider`는 README 주석에만 있고 코드에 없으므로 "참고 구현"으로 못 씀 — cursor-pagination은 그룹 1에서 처음 짜는 패턴.
+
+## 2026-05-11 — 오프라인 입력은 "경량 로컬 아웃박스"까지만 (완전 동기화 엔진은 V1.5)
+
+- **결정**: V1 인용구 입력 화면은 오프라인에서도 동작 — 미저장 인용구를 `shared_preferences`(또는 hive)에 **JSON 리스트(아웃박스)**로 들고 있다가, 앱 포그라운드 복귀 / 연결 회복 시 **best-effort flush**(실패 시 그대로 두고 다음 기회 재시도). 책은 온라인으로 골라뒀으면 `book_id`, 아니면 `manual_book_text`(텍스트) 저장 → 온라인 시 재매칭 제안. 홈/서재에 "동기화 대기 N개" 뱃지. `flows.md` Flow F의 **완전 동기화 엔진**(connectivity 상시 감지 + 충돌 해결 + 실시간 publish + 책 재매칭 UI)은 **V1.5**
+- **이유**: 출퇴근 독자가 핵심 페르소나 → "지하철에서 쓴 인용구 날아감"은 신뢰 배신, 막아야 함. 근데 막는 데 필요한 건 완전 엔진이 아니라 경량 아웃박스(`drift`/`sqflite` 불필요, 스키마 마이그레이션 0, 단일 기기라 last-write-wins로 충분). 완전 엔진은 별도 서브시스템(M~L)이라 차별화와 시간 경쟁. 게다가 내장 OCR을 뺀 지금 오프라인 캡처 흐름 자체가 이미 반쪽(책 검색은 어차피 온라인 필요)
+- **데이터 모델 영향**: `quotes.book_id` nullable(`on delete set null`) + `manual_book_text text` 필드를 V1에 넣어두면 V1.5에 큐 붙일 때 마이그레이션 안 함
+- **재검토/축소 트리거**: Stage 2 일정이 빠듯하면 아웃박스를 **2.1로 미루고** V1은 "draft 1건만 로컬 저장(앱 죽으면 복구) + 저장 실패 시 폼 보존 + 재시도 버튼"으로 떨어뜨림 — "여러 건 오프라인 캡처"는 못 하지만 "쓴 거 날아감"은 막힘
+
+## 2026-05-11 — 앱 내장 OCR 안 함, 폰 기능(iOS Live Text 등) + 클립보드 붙여넣기로
+
+- **결정**: V1 인용구 입력은 ① 직접 텍스트 입력 ② **클립보드 붙여넣기 자동 감지** 두 경로만. ML Kit(`google_mlkit_text_recognition`) 등 앱 내장 OCR은 V1에 넣지 않는다. 사용자가 책 사진에서 텍스트를 따올 때는 **OS 기본 기능**(iOS Live Text, Android Google Lens/구글렌즈, 갤럭시 빅스비 비전 등)으로 복사 → 책귀에 붙여넣기. 인용구 입력 화면은 클립보드에 새 텍스트가 있으면 "붙여넣기" 배너를 띄움
+- **이유**: ① 내장 OCR은 패키지 추가(`google_mlkit_*` + `image_picker` + 카메라/사진 권한) + 한국어 모델 번들(앱 용량 증가) + 웹 미지원(`kIsWeb` 가드 필요) + 세로쓰기·곡면 책 정확도 한계 + 결과 후처리 코드 → M~L 작업이 통째로 붙는데, 차별화(표지 팔레트·deep link 공유·무드 태그)와 시간 경쟁 ② iOS Live Text·구글렌즈가 이미 OS 레벨에서 한국어 OCR을 잘 함 — 굳이 우리가 다시 만들 이유 없음 ③ `flows.md` Flow B 4.3이 원래 이 방식("폰 기능 + 클립보드")이었음 — 이 결정으로 그 명세가 다시 유효해짐
+- **대안 검토**: (a) 내장 OCR 광고 0으로 북모리 차별화 → 거부, 위 비용. 북모리의 진짜 약점은 OCR 없음이 아니라 *OCR마다 광고 게이트*이고, 우리가 OCR 자체를 안 해도 "막다른 골목 없음" 원칙은 지켜짐 (b) V1.5에 내장 OCR 재검토 — 베타에서 "사진→붙여넣기 2단계가 불편" 피드백 누적되면
+- **영향**: STAGES Stage 2에서 "사진 촬영 → ML Kit OCR → 결과 편집 UI" 항목 삭제. quotes 테이블의 `source` 컬럼은 `manual` / `clipboard` 2종(`ocr` 제거 또는 V1.5 대비 유지). `pubspec.yaml`에 OCR/카메라 패키지 추가 안 함. `competitor-screen-analysis-2026-05-11.md` §7 결정 #1 = 해소
+- **재검토 트리거**: 베타 사용자 다수가 "OS OCR → 붙여넣기"를 번거로워하면 V1.5에 내장 OCR (단 광고 0)
+
 ## 2026-05-10 — 카카오 OAuth는 V1.5로 미룸 (개인 앱 + Supabase GoTrue 충돌)
 
 - **결정**: V1 출시까지 인증은 이메일 매직링크 단일. LoginScreen의 카카오 버튼은 비활성 placeholder ("카카오로 시작 (V1.5)"). 코드 인프라(`AuthController.signInWithKakao`, Supabase Dashboard의 Kakao provider 키, `handle_new_user` OAuth 호환 트리거)는 그대로 유지 — V1.5 활성화 시 LoginScreen의 OutlinedButton에 `_signInKakao` 다시 연결만 하면 됨

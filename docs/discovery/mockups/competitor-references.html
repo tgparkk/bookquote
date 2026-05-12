@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>책귀 — 경쟁앱 화면 패턴 vs V1 권고</title>
+<style>
+  :root{
+    /* design tokens (lib/core/theme/tokens.dart) */
+    --ink:#1C1917; --ink-800:#241F18; --ink-700:#342E26; --ink-600:#4A4339; --ink-500:#635B50; --ink-400:#8C8478; --ink-300:#B5ADA0; --ink-200:#D6D0C4; --ink-100:#F0EDE6; --ink-50:#FAF8F5;
+    --paper-50:#FFFFFF; --paper-100:#FDFCFB; --paper-200:#FAFAF8; --paper-300:#F5F1EB; --paper-400:#EDE5D8; --paper-500:#E2D9C8; --paper-700:#C2B49A;
+    --copper:#B87333; --copper-400:#CC9A4E; --copper-300:#E0B87A; --copper-100:#FAEBD6; --copper-700:#7D4D1E;
+    --mono-bg:#0F0F0F;
+    --err:#C0392B; --warn:#C87F0A; --ok:#4A7C59; --info:#2563EB;
+    --serif: "Noto Serif KR", "Nanum Myeongjo", Georgia, serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper-300);color:var(--ink);font-family:-apple-system,"Pretendard","Segoe UI",Roboto,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.55;padding:32px 20px 80px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:30px;letter-spacing:-.02em;margin-bottom:6px}
+  .sub{color:var(--ink-500);font-size:14px;margin-bottom:4px}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-600);margin:18px 0 30px;padding:12px 16px;background:var(--paper-100);border:1px solid var(--ink-100);border-radius:10px}
+  .legend b{color:var(--ink)}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:5px}
+  .dot.comp{background:var(--ink-300)} .dot.us{background:var(--copper)}
+
+  section{margin:38px 0;padding-top:8px;border-top:2px solid var(--ink-100)}
+  section > h2{font-size:21px;letter-spacing:-.01em;margin:14px 0 4px}
+  section > .why{font-size:13.5px;color:var(--ink-600);margin-bottom:18px;max-width:880px}
+  .why em{color:var(--copper-700);font-style:normal;font-weight:600}
+
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start}
+  @media(max-width:840px){.pair{grid-template-columns:1fr}}
+  .col h3{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-500);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  .col.us h3{color:var(--copper-700)}
+
+  /* phone frame */
+  .phone{width:300px;margin:0 auto;background:var(--paper-200);border:8px solid var(--ink);border-radius:34px;overflow:hidden;box-shadow:0 12px 30px rgba(28,25,23,.18)}
+  .phone.dark{background:var(--mono-bg)}
+  .phone .status{height:26px;background:transparent;display:flex;justify-content:space-between;align-items:center;padding:0 16px;font-size:10px;color:var(--ink-400)}
+  .phone.dark .status{color:#666}
+  .screen{padding:6px 14px 12px;min-height:430px;display:flex;flex-direction:column}
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 12px;font-size:15px;font-weight:600}
+  .appbar .ico{font-size:18px;color:var(--ink-500)}
+  .tabbar{display:flex;border-top:1px solid var(--ink-100);margin:auto -14px 0;padding:8px 0 4px;justify-content:space-around;font-size:10px;color:var(--ink-400);background:var(--paper-100)}
+  .tabbar .t.on{color:var(--copper);font-weight:600}
+  .tabbar .t .g{display:block;font-size:16px;margin-bottom:1px}
+  .fab{position:relative;align-self:flex-end;margin-top:auto;background:var(--copper);color:#fff;border-radius:24px;padding:8px 14px;font-size:12px;font-weight:600;box-shadow:0 4px 12px rgba(184,115,51,.4)}
+
+  .card-mini{background:var(--paper-100);border:1px solid var(--ink-100);border-radius:12px;padding:10px 12px;margin-bottom:9px;display:flex;gap:10px}
+  .cover{width:34px;height:50px;border-radius:3px;flex:0 0 34px;background:linear-gradient(135deg,var(--paper-500),var(--paper-700));display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--ink-500);text-align:center;line-height:1.2;overflow:hidden}
+  .cover.c1{background:linear-gradient(135deg,#2b3a55,#4a6491)} .cover.c2{background:linear-gradient(135deg,#7a3b2e,#b5654a)} .cover.c3{background:linear-gradient(135deg,#3d4a2a,#6b7d3f)} .cover.c4{background:linear-gradient(135deg,#5b2c4a,#8b4a73)}
+  .q{font-family:var(--serif);font-size:13px;color:var(--ink-800);line-height:1.5}
+  .meta{font-size:10.5px;color:var(--ink-400);margin-top:3px}
+  .chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+  .chip{font-size:9.5px;padding:2px 7px;border-radius:10px;background:var(--copper-100);color:var(--copper-700);border:1px solid var(--copper-300)}
+  .chip.calm{background:#eaf2ec;color:#3a5a45;border-color:#bcd} .chip.mel{background:#eef0f6;color:#444;border-color:#cdd} .chip.hope{background:#fff5e8;color:#8a6a30;border-color:#e8d}
+  .chip.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .badge{font-size:9px;padding:1px 6px;border-radius:8px;font-weight:600}
+  .badge.warn{background:#fef3e2;color:var(--warn)} .badge.ok{background:#eaf2ec;color:var(--ok)} .badge.err{background:#fdecea;color:var(--err)}
+
+  .field{background:var(--paper-100);border:1.5px solid var(--ink-200);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--ink-400);min-height:90px}
+  .field.serif{font-family:var(--serif);color:var(--ink-700)}
+  .btn{display:inline-block;background:var(--copper);color:#fff;border-radius:10px;padding:9px 14px;font-size:12px;font-weight:600;text-align:center}
+  .btn.ghost{background:transparent;color:var(--ink-600);border:1.5px solid var(--ink-200)}
+  .btn.full{display:block;width:100%}
+  .row{display:flex;gap:8px;align-items:center;margin:8px 0}
+  .seg{display:flex;border:1.5px solid var(--ink-200);border-radius:9px;overflow:hidden;font-size:10.5px}
+  .seg span{padding:5px 10px;color:var(--ink-400)} .seg span.on{background:var(--ink);color:#fff}
+
+  /* card preview (editor) */
+  .cardprev{aspect-ratio:9/16;border-radius:10px;padding:18px 16px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+  .cardprev.t-cover{background:#3D2817;color:#F5EDD8}
+  .cardprev .cq{font-family:var(--serif);font-size:14px;line-height:1.6}
+  .cardprev .cb{font-size:9.5px;opacity:.8;margin-top:14px}
+  .cardprev .wm{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:7.5px;opacity:.3}
+  .swatches{display:flex;gap:6px;margin:8px 0}
+  .sw{width:22px;height:22px;border-radius:6px;border:1.5px solid rgba(0,0,0,.1)}
+  .tmpls{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px}
+  .tmpl{flex:0 0 52px;height:88px;border-radius:7px;border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:7px;text-align:center;color:#fff;padding:4px;line-height:1.3}
+  .tmpl.on{border-color:var(--copper)}
+  .tmpl.m1{background:#FAFAF8;color:#1C1917;border:2px solid var(--copper)} .tmpl.m2{background:#EDE5D8;color:#342E26;font-family:var(--serif)} .tmpl.m3{background:#0F0F0F} .tmpl.m4{background:linear-gradient(135deg,#3d4a2a,#6b7d3f)} .tmpl.m5{background:#FAF8F5;color:#4A4339;font-family:var(--serif)}
+
+  .note{font-size:11.5px;color:var(--ink-500);margin-top:12px;padding:10px 12px;background:var(--paper-100);border-left:3px solid var(--copper);border-radius:0 8px 8px 0}
+  .note b{color:var(--ink)}
+  ul.k{font-size:12.5px;color:var(--ink-700);margin:10px 0 0 18px} ul.k li{margin-bottom:5px}
+  .src{font-size:11px;color:var(--ink-400);margin-top:24px}
+  .pillrow{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 14px}
+  .pill{font-size:11px;padding:3px 9px;border-radius:12px;background:var(--ink-100);color:var(--ink-600)}
+  .pill.us{background:var(--copper-100);color:var(--copper-700);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>책귀 — 경쟁앱 화면 패턴 vs V1 권고</h1>
+  <div class="sub">정적 레퍼런스 목업 · 2026-05-11 · 매니저 모드 가상 팀(UI/UX·기획·Dart·QA) 종합</div>
+  <div class="sub">정밀 디자인 아님 — <b>화면별 세부 설계(<code>docs/design/screens/*.md</code>)의 의사결정 출발점</b>. 색·폰트는 <code>lib/core/theme/tokens.dart</code> 토큰 사용. 본문 분석: <code>docs/discovery/competitor-screen-analysis-2026-05-11.md</code></div>
+  <div class="legend">
+    <span><span class="dot comp"></span><b>왼쪽</b> = 경쟁앱(북모리·북적북적·Readwise·Tezza 등) 공통 패턴 — 추정 포함</span>
+    <span><span class="dot us"></span><b>오른쪽</b> = 책귀 V1 권고 — Ink-Paper-Copper 모던 톤</span>
+    <span>4원칙: ① 막다른 골목 금지 ② 화면=공유 산출물 ③ 결정 끝난 5종+표지색 자동 ④ 데이터 안 잃음</span>
+  </div>
+
+  <!-- ============ 1. 홈 / 피드 ============ -->
+  <section>
+    <h2>1. 홈 / 피드 탭</h2>
+    <p class="why">북모리=현재 읽는 책 대시보드, 북적북적=책탑 캡처 산출물(친구 피드 없음), Goodreads=친구 타임라인이지만 <em>사실상 죽은 피드</em>(150M 유저에도). → 책귀 V1은 "친구 새 인용"이라는 빈 화면을 쓰지 않고 <em>"내 인용 피드 + 단톡으로 받은 카드 함"</em>으로 출시. cold start 면역 + 쌓이는 게 보임(retention) + 그 화면이 캡처감. follow 타임라인은 V1.5에 같은 피드에 합쳐 진화.</p>
+    <div class="pair">
+      <div class="col">
+        <h3><span class="dot comp"></span>경쟁앱: 대시보드 / 책탑 / 죽은 피드</h3>
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>● ● ●</span></div>
+          <div class="screen">
+            <div class="appbar"><span>읽는 중</span><span class="ico">⚙</span></div>
+            <div class="card-mini"><div class="cover c1">읽는 중</div><div><div style="font-size:12px;font-weight:600">미드나잇 라이브러리</div><div class="meta">132 / 320p · 41%</div><div style="height:5px;background:#eee;border-radius:3px;margin-top:5px"><div style="width:41%;height:5px;background:#888;border-radius:3px"></div></div><div class="meta" style="margin-top:5px">▶ 독서 타이머 시작</div></div></div>
+            <div class="meta" style="margin:6px 2px">↓ 스크롤하면 캘린더 · 통계 · 캐릭터</div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:4px 2px">
+              <span class="cover" style="height:14px;background:#ddd"></span><span class="cover" style="height:14px;background:#eee"></span><span class="cover" style="height:14px;background:#cfc"></span><span class="cover" style="height:14px;background:#eee"></span><span class="cover" style="height:14px;background:#cfc"></span><span class="cover" style="height:14px;background:#cfc"></span><span class="cover" style="height:14px;background:#eee"></span>
+            </div>
+            <div style="margin-top:14px;text-align:center;font-size:10px;color:#bbb">친구 활동 — Goodreads식 피드는 진도 업데이트 스팸 → 거의 안 봄</div>
+            <div class="tabbar"><span class="t on"><span class="g">▦</span>읽는중</span><span class="t"><span class="g">▤</span>서재</span><span class="t"><span class="g">✎</span>기억</span><span class="t"><span class="g">☰</span>설정</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="col us">
+        <h3><span class="dot us"></span>책귀 V1: 내 인용 피드 + 받은 카드 함</h3>
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>● ● ●</span></div>
+          <div class="screen">
+            <div class="appbar"><span>책귀</span><span class="ico">🔍</span></div>
+            <div style="font-size:11px;color:var(--ink-400);margin:2px 2px 8px">단톡으로 받은 카드 · 2</div>
+            <div class="card-mini" style="border-color:var(--copper-300);background:var(--copper-100)"><div class="cover c2"></div><div><div class="q" style="font-size:12px">"우리는 우리가 반복하는 것이다."</div><div class="meta">니코마코스 윤리학 · 지영님이 보냄</div><div class="row" style="margin:5px 0 0"><span class="badge ok">＋ 내 서재 담기</span></div></div></div>
+            <div style="font-size:11px;color:var(--ink-400);margin:10px 2px 8px">내 인용 — 최근순</div>
+            <div class="card-mini"><div class="cover c1"></div><div><div class="q">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div><div class="meta">미드나잇 라이브러리 · p.132</div><div class="chips"><span class="chip calm">위로</span><span class="chip mel">먹먹</span></div></div></div>
+            <div class="card-mini"><div class="cover c3"></div><div><div class="q">"오래된 것은 사라지지 않는다, 다만 잊힐 뿐."</div><div class="meta">잃어버린 시간을 찾아서 · p.408</div><div class="chips"><span class="chip hope">새벽3시</span></div></div></div>
+            <div class="fab">＋ 인용구</div>
+            <div class="tabbar"><span class="t on"><span class="g">▦</span>홈</span><span class="t"><span class="g">▤</span>서재</span><span class="t"><span class="g">＋</span></span><span class="t"><span class="g">◔</span>나</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>코드 정리 필요:</b> <code>flows.md</code>/코드의 홈=<code>timelineProvider</code>(follow 의존) + <code>quotes</code> INSERT 시 <code>publish to followers</code> Realtime은 V1.5 스펙이 V1에 새어든 것 → V1 경로에서 제거. · <b>빈 상태:</b> "아직 인용구가 없어요. 좋아하는 책의 한 줄을 저장해보세요." + [＋ 인용구 추가] 큰 버튼 1개.</div>
+  </section>
+
+  <!-- ============ 2. 서재 ============ -->
+  <section>
+    <h2>2. 서재 탭</h2>
+    <p class="why">북적북적의 "책탑"은 <em>두께·페이지 비례로 쌓이는 시각화</em> = 그 화면이 곧 SNS 캡처 산출물(#북적북적 8.6만 게시물). 원리는 훔치되(누적이 시각적으로 보이고, 캡처감일 것) 책더미 자체·귀여운 캐릭터는 안 베낀다(우리 모던 톤과 충돌, 디자이너 세그먼트 이탈). V1은 단순 리스트 유지 + <em>책 카드에 "이 책에서 모은 N구절" 배지 + 표지 dominant color 띠</em>를 심어두면 V1.5 "인용 서가" 시각화로 저비용 확장.</p>
+    <div class="pair">
+      <div class="col">
+        <h3><span class="dot comp"></span>북적북적: 책탑 시각화 + 리스트/캘린더 토글</h3>
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>● ● ●</span></div>
+          <div class="screen">
+            <div class="appbar"><span>2026년 · 23권 · 41cm</span><span class="ico">⬇</span></div>
+            <div style="flex:1;display:flex;flex-direction:column-reverse;align-items:center;gap:3px;padding:18px 0;background:linear-gradient(180deg,#f7f3ec,#ede4d3);border-radius:10px">
+              <div style="width:120px;height:14px;background:#7a3b2e;border-radius:2px"></div>
+              <div style="width:90px;height:22px;background:#2b3a55;border-radius:2px"></div>
+              <div style="width:130px;height:10px;background:#3d4a2a;border-radius:2px"></div>
+              <div style="width:75px;height:18px;background:#5b2c4a;border-radius:2px"></div>
+              <div style="width:110px;height:12px;background:#8a6a30;border-radius:2px"></div>
+              <div style="font-size:24px;margin-bottom:6px">🐱</div>
+            </div>
+            <div class="row" style="justify-content:center;font-size:10px;color:#bbb">책탑 · 리스트 · 캘린더</div>
+            <div class="tabbar"><span class="t on"><span class="g">▦</span>홈</span><span class="t"><span class="g">＋</span>책 추가</span><span class="t"><span class="g">◔</span>마이</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="col us">
+        <h3><span class="dot us"></span>책귀 V1: 리스트 + 구절 수 배지 + 표지색 띠</h3>
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>● ● ●</span></div>
+          <div class="screen">
+            <div class="appbar"><span>내 서재</span><span class="ico">↕</span></div>
+            <div style="font-size:10.5px;color:var(--ink-400);margin:0 2px 8px">정렬: 최근 추가 · 책별 · 구절 많은 순</div>
+            <div class="card-mini"><div style="width:5px;border-radius:3px;background:#4a6491"></div><div class="cover c1"></div><div style="flex:1"><div style="font-size:12px;font-weight:600">미드나잇 라이브러리</div><div class="meta">매트 헤이그 · 인플루엔셜</div></div><div style="align-self:center"><span class="badge ok">7구절</span></div></div>
+            <div class="card-mini"><div style="width:5px;border-radius:3px;background:#b5654a"></div><div class="cover c2"></div><div style="flex:1"><div style="font-size:12px;font-weight:600">니코마코스 윤리학</div><div class="meta">아리스토텔레스 · 길</div></div><div style="align-self:center"><span class="badge ok">3구절</span></div></div>
+            <div class="card-mini"><div style="width:5px;border-radius:3px;background:#6b7d3f"></div><div class="cover c3"></div><div style="flex:1"><div style="font-size:12px;font-weight:600">잃어버린 시간을 찾아서</div><div class="meta">마르셀 프루스트 · 민음사</div></div><div style="align-self:center"><span class="badge warn">동기화 대기</span></div></div>
+            <div class="fab">＋ 책 추가</div>
+            <div class="tabbar"><span class="t"><span class="g">▦</span>홈</span><span class="t on"><span class="g">▤</span>서재</span><span class="t"><span class="g">＋</span></span><span class="t"><span class="g">◔</span>나</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>현행 유지:</b> <code>library_screen.dart</code>의 RefreshIndicator·빈/에러 뷰·FAB→<code>showBookSearchSheet</code> 그대로. <b>추가:</b> 표지 dominant color 띠(<code>palette_generator</code> 재사용), 구절 수 배지(<code>quotes</code> count), 정렬 토글, 동기화 대기 뱃지. <b>북모리 표지 로딩 실패 약점</b>은 <code>BookCover</code>의 placeholder fallback로 우아하게 차별화.</div>
+  </section>
+
+  <!-- ============ 3. 인용구 입력 ============ -->
+  <section>
+    <h2>3. 인용구 입력 화면 <code>/quote/new</code> — 그룹 1 (Stage 2, 최우선)</h2>
+    <p class="why">북모리는 OCR이 메인 도입 동선이지만 <em>무료는 보상형 광고 시청 후</em>(= "뭐만 하려 하면 광고" 이탈 주범) + 페이지·태그가 부가 입력으로 묻힘. → 책귀는 <em>OCR 결과 + 페이지 + 무드 태그 + 노트를 한 화면에서 편집</em>, OCR은 "편집 가능한 초안 채우기"로만(자동 확정 X), 원본 사진 대조 뷰, <em>OCR에 광고 절대 안 붙임</em>. 권한 거부·OCR 실패·검색 0건 어디서든 "직접 입력" 출구 상시 노출.</p>
+    <div class="pair">
+      <div class="col">
+        <h3><span class="dot comp"></span>북모리: OCR → (광고) → 편집 / 페이지·태그 별도</h3>
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>● ● ●</span></div>
+          <div class="screen">
+            <div class="appbar"><span>← 노트 작성</span><span class="ico">✓</span></div>
+            <div class="field" style="min-height:60px">사진에서 텍스트 가져오기 ▸</div>
+            <div class="note" style="border-color:var(--warn);background:#fef3e2;margin:10px 0;font-size:11px"><b>광고 시청 후 OCR 사용 가능</b> &nbsp;▶ 30초</div>
+            <div class="field serif" style="margin-top:4px">가장 깊은 밤에 가장 빛나는 별이 보인다</div>
+            <div class="row" style="margin-top:14px;font-size:11px;color:#bbb">→ 다음 화면에서 페이지 입력</div>
+            <div class="row" style="font-size:11px;color:#bbb">→ 또 다음 화면에서 태그</div>
+            <div class="tabbar"><span class="t"><span class="g">▦</span></span><span class="t"><span class="g">▤</span></span><span class="t on"><span class="g">✎</span></span><span class="t"><span class="g">☰</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="col us">
+        <h3><span class="dot us"></span>책귀 V1: 한 화면에서 인용+사진+책+페이지+무드</h3>
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>● ● ●</span></div>
+          <div class="screen">
+            <div class="appbar"><span>✕ 인용구 추가</span><span style="font-size:11px;color:var(--ink-400)">912/2000</span></div>
+            <div class="field serif">가장 깊은 밤에 가장 빛나는 별이 보인다.</div>
+            <div class="row"><span class="btn ghost" style="flex:1">📷 사진에서 가져오기</span><span class="btn ghost" style="flex:1">📋 붙여넣기 감지됨</span></div>
+            <div class="card-mini" style="margin-top:4px"><div class="cover c1"></div><div style="flex:1;align-self:center"><div style="font-size:11.5px;font-weight:600">미드나잇 라이브러리</div><div class="meta">매트 헤이그 · 변경 ▸</div></div></div>
+            <div class="row"><span style="font-size:11px;color:var(--ink-500)">페이지</span><span class="field" style="min-height:auto;padding:5px 10px;width:60px;text-align:center">132</span><span style="font-size:11px;color:var(--ink-500);margin-left:auto">무드</span></div>
+            <div class="chips" style="margin-bottom:8px"><span class="chip sel">위로</span><span class="chip">먹먹</span><span class="chip">새벽3시</span><span class="chip">통찰</span><span class="chip">설렘</span></div>
+            <div class="btn full">카드 만들기 →</div>
+            <div class="btn ghost full" style="margin-top:6px;border:none;color:var(--ink-400)">저장만 하기</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>명세에 박을 7가지 상태(QA-1):</b> ① DRAFT(작성중 로컬 영속화→재진입 "이어쓰기/폐기") ② OFFLINE_QUEUED(저장=실패 아닌 큐 성공+뱃지) ③ OCR_MODEL_UNAVAILABLE(OCR만 막힘, 직접입력 전환) ④ OCR_EMPTY_RESULT(0글자→에러 페이지 X) ⑤ PERMISSION 상태 머신(5분기, 영구거부=설정 딥링크, 모든 분기에 대체 동선) ⑥ SAVING/SAVE_FAILED(비차단, 폼 100% 보존) ⑦ BOOK_UNRESOLVED(책 못 골라도 저장 가능 + 시트에 [ISBN 직접 등록]).<br><b>재사용:</b> <code>showBookSearchSheet</code>(SnackBar 문구 억제 옵션 추가), <code>bookByIdProvider</code>, <code>/quote/new?bookId=</code> 라우트(배선됨), <code>getQuoteFontSize</code>·<code>AppFonts.quote</code>. <b>신규:</b> <code>quotes</code> 테이블(<code>book_id</code> nullable, <code>moods text[]</code>, <code>source</code> text-enum), <code>quote_repository/quote.dart/quote_providers/createQuoteController</code>, OCR 위젯 + <code>ocr_cleanup.dart</code>(순수함수+테스트). <b>플랫폼:</b> <code>google_mlkit_*</code>은 웹 미지원 → OCR 진입점 <code>kIsWeb</code> 가드.</div>
+  </section>
+
+  <!-- ============ 4. 카드 에디터 ============ -->
+  <section>
+    <h2>4. 카드 에디터 <code>/quote/:id/card</code> — 그룹 1 (Stage 3)</h2>
+    <p class="why">북모리=고정 배경 라이브러리(표지색 X, "앱 만든 티"), Tezza/Canva/Typorama=무한 옵션(그라데이션·3D·100폰트→분석마비), Mojo=언두 없어서 욕먹음. → 책귀는 <em>3단 고정 레이아웃 + 5종 큐레이션 + 표지색 자동 팔레트</em>. "색 변경 UI"를 따로 만들지 않음 — 표지에서 뽑은 5스와치 줄이 곧 컬러 패널. 언두 필수(최소 20단계, 비율·템플릿 전환 포함). 더블탭 숨김(Tezza/Unfold 발견성 약점) 금지.</p>
+    <div class="pair">
+      <div class="col">
+        <h3><span class="dot comp"></span>북모리: 노트 상세 sub-flow · 고정 배경 · 표지색 없음</h3>
+        <div class="phone dark">
+          <div class="status" style="color:#666"><span>9:41</span><span>● ● ●</span></div>
+          <div class="screen" style="background:#1a1a1a">
+            <div class="appbar" style="color:#ddd"><span>← 이미지로 공유</span><span class="ico" style="color:#777">⬇</span></div>
+            <div style="aspect-ratio:1/1;border-radius:8px;background:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%221%22 height=%221%22/>'),#6b5b73;background-blend-mode:overlay;display:flex;align-items:center;justify-content:center;padding:24px;color:#fff;font-family:var(--serif);font-size:14px;text-align:center;background-image:linear-gradient(135deg,#6b5b73,#3d3a4a)">가장 깊은 밤에<br>가장 빛나는 별이<br>보인다</div>
+            <div style="display:flex;gap:6px;margin:12px 0;overflow-x:auto">
+              <div style="flex:0 0 40px;height:30px;border-radius:5px;background:linear-gradient(135deg,#6b5b73,#3d3a4a)"></div><div style="flex:0 0 40px;height:30px;border-radius:5px;background:#2a3a2a"></div><div style="flex:0 0 40px;height:30px;border-radius:5px;background:#4a3a2a"></div><div style="flex:0 0 40px;height:30px;border-radius:5px;background:#3a2a3a"></div><div style="flex:0 0 40px;height:30px;border-radius:5px;background:#888"></div>
+            </div>
+            <div style="font-size:10px;color:#888">배경 사진 라이브러리 · 폰트 · 색 · 문단 간격</div>
+            <div style="font-size:10px;color:#666;margin-top:6px">⤺ 되돌리기 — 없음</div>
+          </div>
+        </div>
+      </div>
+      <div class="col us">
+        <h3><span class="dot us"></span>책귀 V1: 비율 토글 / 라이브 프리뷰 / 5종 한 줄 + 표지팔레트</h3>
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>● ● ●</span></div>
+          <div class="screen">
+            <div class="row" style="margin:2px 0 8px"><span style="font-size:16px;color:var(--ink-500)">←</span><div class="seg" style="margin:0 auto"><span>1:1</span><span>4:5</span><span class="on">9:16</span></div><span style="font-size:14px;color:var(--ink-400)">⤺</span> <span class="btn" style="padding:5px 11px">공유</span></div>
+            <div class="cardprev t-cover">
+              <div class="cq">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div>
+              <div class="cb">미드나잇 라이브러리 · 매트 헤이그</div>
+              <div class="wm">책귀에서 만들었어요 · bookgwi.app</div>
+            </div>
+            <div class="swatches"><span class="sw" style="background:#3D2817"></span><span class="sw" style="background:#6B4423"></span><span class="sw" style="background:#C9A876"></span><span class="sw" style="background:#8B5A3C"></span><span class="sw" style="background:#A08060"></span><span style="font-size:9.5px;color:var(--ink-400);align-self:center;margin-left:4px">↑ 표지에서 추출</span></div>
+            <div class="tmpls">
+              <div class="tmpl m1">미니멀</div><div class="tmpl m2">웜</div><div class="tmpl m3" style="color:#fff">모노</div><div class="tmpl m4 on" style="color:#fff;border:2px solid var(--copper)">표지<br>발췌</div><div class="tmpl m5">타이포</div>
+            </div>
+            <div class="row" style="font-size:10.5px;color:var(--ink-500);margin:6px 0 0"><span>텍스트</span><span>색</span><span>위치 상·중·하</span><span>워터마크 ●</span><span style="margin-left:auto;color:var(--copper)">다른 느낌 ↻</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>명세에 박을 7가지 상태(QA-2):</b> ① "공유는 되지만 저장은 안 됨"(사진 쓰기 권한 거부 시 [저장]만 비활성, 공유는 활성) ② PNG 생성 실패 단계적 폴백 + 디자인 보존(OOM→1080→720) ③ <b>폰트 로드 완료를 캡처 전에 보장</b>(안 그러면 첫 캡처가 □□□로 인스타에 박힘) ④ 긴 인용구 auto-fit 한계 — <b>잘린 채 export 절대 금지</b> ⑤ 표지 색 대비 자동 보정(<code>ensureContrast</code> WCAG AA 4.5:1 + 채도&lt;10 폴백 — 깨지면 가독성 0) ⑥ 편집 상태 영속화→재진입 "이어 만들기" ⑦ 언두=비율·템플릿 전환까지 최소 20단계.<br><b>구현:</b> 렌더=위젯 트리(CustomPaint 아님), 팔레트는 비동기·카드는 동기(<code>fallbackPalettes</code>로 즉시 렌더→cross-fade), PNG는 <code>AppCardSize</code> 1080 기준 <code>RepaintBoundary.toImage</code>. 인프라 완비(<code>ExtractedPalette</code>/<code>fallbackPalettes</code>/<code>getQuoteFontSize</code>/<code>CardRatio</code>/<code>AppCardSize</code>/<code>AppWatermark</code>). 신규 패키지: <code>share_plus</code>·<code>path_provider</code>(필수), <code>gal</code>(다운로드 버튼).<br><b>미결:</b> 텍스트 앵커(상/중/하) V1에 넣을지(템플릿 좌표 모델 변경 수반) · 표지 없는 책에서 T4 비활성화 vs 단색 degrade.</div>
+  </section>
+
+  <!-- ============ 5. 카드 공유 + 받는 사람 ============ -->
+  <section>
+    <h2>5. 카드 공유 시트 + 받는 사람 deep link → 책 담기 — 그룹 1 (Stage 3/4 · 바이럴 K-factor)</h2>
+    <p class="why">북모리=OS 공유 시트만(양방향 0), 북적북적=사용자가 화면 캡처해서 인스타(우연한 바이럴). → 책귀는 <em>카카오톡(단톡방) 1탭 우선</em> + 받는 사람이 카드 탭 → 앱 열림 → 책 정보 + "내 서재 담기" 1탭. 북적북적의 우연을 deep link 메커닉으로 의도 설계. <code>deep_link_handler.dart</code>가 현재 <code>/auth/callback</code>만 처리 → <code>/book/:id</code> deep link 라우팅 + 콜드스타트 미로그인 시 payload 보존 + 1회 consume이 핵심 갭.</p>
+    <div class="pair">
+      <div class="col us">
+        <h3><span class="dot us"></span>책귀 V1: 공유 시트 — 카카오톡 1순위</h3>
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>● ● ●</span></div>
+          <div class="screen" style="justify-content:flex-end">
+            <div class="cardprev t-cover" style="aspect-ratio:9/16;max-height:200px;margin:auto auto 0;width:130px"><div class="cq" style="font-size:10px">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div><div class="wm">책귀에서 만들었어요</div></div>
+            <div style="background:var(--paper-100);border-radius:16px 16px 0 0;margin:14px -14px -12px;padding:16px 16px 18px;box-shadow:0 -4px 16px rgba(0,0,0,.06)">
+              <div style="width:32px;height:4px;background:var(--ink-200);border-radius:2px;margin:0 auto 14px"></div>
+              <div class="btn full" style="background:#FEE500;color:#191919;margin-bottom:8px">💬 카카오톡 단톡방으로 보내기</div>
+              <div class="btn ghost full" style="margin-bottom:8px">📷 인스타그램 스토리 (9:16)</div>
+              <div class="btn ghost full">⬇ 이미지 저장 <span class="badge warn" style="margin-left:4px">권한 필요</span></div>
+              <div style="font-size:10px;color:var(--ink-400);text-align:center;margin-top:10px">저장 권한 없어도 공유는 그대로 — 막다른 골목 없음</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <h3><span class="dot us"></span>받는 사람: deep link → 책 상세(read-only) → 담기</h3>
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>● ● ●</span></div>
+          <div class="screen">
+            <div class="appbar"><span>← 책</span><span style="font-size:10px;color:var(--ink-400)">지영님이 단톡방에서 공유</span></div>
+            <div style="display:flex;gap:14px;margin:6px 2px 14px"><div class="cover c1" style="width:64px;height:94px;flex:0 0 64px"></div><div style="align-self:center"><div style="font-size:15px;font-weight:600">미드나잇 라이브러리</div><div class="meta">매트 헤이그 · 인플루엔셜</div><div class="meta">ISBN 9791191056556</div></div></div>
+            <div class="card-mini" style="background:var(--copper-100);border-color:var(--copper-300)"><div style="flex:1"><div class="q" style="font-size:12px">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div><div class="meta">p.132 · 지영님의 인용구</div></div></div>
+            <div class="btn full" style="margin-top:8px">＋ 내 서재에 담기</div>
+            <div style="font-size:10.5px;color:var(--ink-400);margin-top:10px;text-align:center">비로그인이면: 책 정보 먼저 보여주고 → "담기" 누르면 로그인 → 원래 화면 복귀해 담기</div>
+            <div class="tabbar"><span class="t"><span class="g">▦</span>홈</span><span class="t"><span class="g">▤</span>서재</span><span class="t"><span class="g">＋</span></span><span class="t"><span class="g">◔</span>나</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>명세에 박을 것(deep link):</b> 앱 미설치→설치 후 deferred 복원(Universal/App Link — 미설치 fallback 웹뷰어는 V1.5, V1은 커스텀 스킴 한계 수용) · 비로그인 진입→read-only 먼저 + payload 보존 · 책/인용 삭제됨→"더 이상 볼 수 없어요" · 비공개·차단 인용은 책 정보만 · 1회 consume(무한루프 금지) · 이미 서재에 있는 책=<code>23505</code>→"이미 있어요" toast. <b>V1 공유:</b> <code>share_plus</code> OS 시트 기본(카카오 SDK·OAuth 불필요), 카카오 메시지 카드 형태 공유는 V1.1(카카오 *공유*는 OAuth와 독립). 인스타 link sticker는 2024부터 전체 개방.</div>
+  </section>
+
+  <!-- ============ 6. 인용 목록 / 상세 ============ -->
+  <section>
+    <h2>6. 인용 목록 / 상세 (Readwise 카드 문법 + 무드 인라인)</h2>
+    <p class="why">Readwise 하이라이트 카드 = 표지+제목/저자+텍스트+노트+태그, 다차원 필터, <em>인라인 태깅</em>(읽다가 <code>T</code> 한 번으로 그 자리에서 태그). 디자인 철학도 동족 — 하이라이트 색이 "물리적 형광펜 모사"(우리 "오래된 잉크·종이"와 같은 사고). → 책귀는 Readwise 카드 구성을 한국어·한국 책 메타로, 무드 태그는 저장 직후 토스트의 "무드 추가?" 칩으로 인라인. 필터 3개로 충분(책별/무드별/최근순) + 상단 검색.</p>
+    <div class="pillrow">
+      <span class="pill">Readwise: 읽기상태·타입·태그·도메인·하이라이트색·위치 (필터 다차원)</span>
+      <span class="pill us">책귀 V1: 책별 · 무드별 · 최근순 (3개) + 검색</span>
+      <span class="pill">Readwise: textshot 3 레이아웃(곁다리)</span>
+      <span class="pill us">책귀: 카드 5종 + 표지 팔레트 (메인 기능)</span>
+      <span class="pill">Readwise: 영어·해외서, 모바일 공유 경로 깊음(i→Notebook→…→Share)</span>
+      <span class="pill us">책귀: 한국어 세리프·알라딘 메타, 공유 항상 1탭 거리</span>
+    </div>
+    <div class="phone" style="margin:0">
+      <div class="status"><span>9:41</span><span>● ● ●</span></div>
+      <div class="screen">
+        <div class="appbar"><span>인용구</span><span class="ico">🔍</span></div>
+        <div class="chips" style="margin:0 2px 10px"><span class="chip sel">전체</span><span class="chip calm">위로 12</span><span class="chip mel">먹먹 8</span><span class="chip hope">새벽3시 5</span><span class="chip">통찰 3</span></div>
+        <div class="card-mini"><div class="cover c1"></div><div><div class="q">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div><div class="meta">미드나잇 라이브러리 · 매트 헤이그 · p.132</div><div class="chips"><span class="chip calm">위로</span><span class="chip mel">먹먹</span></div><div class="meta" style="margin-top:4px;font-style:italic">메모: 힘들 때 다시 읽으려고</div></div></div>
+        <div class="card-mini"><div class="cover c2"></div><div><div class="q">"우리는 우리가 반복하는 것이다. 탁월함은 행동이 아니라 습관이다."</div><div class="meta">니코마코스 윤리학 · 아리스토텔레스 · p.55</div><div class="chips"><span class="chip">통찰</span></div></div></div>
+        <div class="card-mini"><div class="cover c3"></div><div><div class="q">"오래된 것은 사라지지 않는다, 다만 잊힐 뿐."</div><div class="meta">잃어버린 시간을 찾아서 · p.408</div><div class="chips"><span class="chip hope">새벽3시</span></div></div></div>
+        <div class="tabbar"><span class="t"><span class="g">▦</span>홈</span><span class="t"><span class="g">▤</span>서재</span><span class="t"><span class="g">＋</span></span><span class="t"><span class="g">◔</span>나</span></div>
+      </div>
+    </div>
+    <div class="note"><b>위치:</b> 별도 탭으로 둘지(북모리의 "기억하기" 탭처럼 — 인용구를 책에 가두지 않는 1급 IA) vs 서재 안의 뷰 토글로 둘지 — 화면 설계 문서에서 결정. 현재 4탭(홈/서재/＋/나)이라 5번째 탭 추가는 신중히. <b>데일리 리마인더</b>(매일 1개 인용을 카드로 → "공유"/"무드 태그"/"보관")는 Readwise Daily Review의 가벼운 재해석 — V1.5(가입 첫날 회상할 데이터 없음).</div>
+  </section>
+
+  <!-- ============ 차별화 5축 ============ -->
+  <section>
+    <h2>7. 차별화 5축 — 경쟁앱은 / 우리는 / V1 판정</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px;background:var(--paper-100);border-radius:10px;overflow:hidden">
+      <thead><tr style="background:var(--ink);color:#fff;text-align:left"><th style="padding:9px 12px">축</th><th style="padding:9px 12px">경쟁앱</th><th style="padding:9px 12px">책귀 (화면 레벨)</th><th style="padding:9px 12px">V1</th></tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--ink-100)"><td style="padding:9px 12px;font-weight:600">① 표지색 자동 팔레트</td><td style="padding:9px 12px">북모리·북적북적·Readwise·Tezza 전부 안 함 (고정 배경/스와치)</td><td style="padding:9px 12px">에디터 진입=표지 5~7색 적용된 상태로 시작. "색 변경 UI"를 안 만들고 그 스와치 줄이 곧 컬러 패널. 흑백 표지=채도&lt;10 폴백</td><td style="padding:9px 12px"><span class="badge ok">필수</span> 인프라 완비</td></tr>
+        <tr style="border-bottom:1px solid var(--ink-100)"><td style="padding:9px 12px;font-weight:600">② 단톡 1탭 공유 + 수신 1탭 책담기</td><td style="padding:9px 12px">북모리=OS시트만, 북적북적=우연한 캡처, Fable=앱 내 클럽</td><td style="padding:9px 12px">공유 1순위=카카오톡 단톡방. 받는 사람 deep link→책 상세(비로그인 read-only 먼저)→담기 1탭=K-factor</td><td style="padding:9px 12px"><span class="badge ok">필수</span> 핸들러 일반화 필요</td></tr>
+        <tr style="border-bottom:1px solid var(--ink-100)"><td style="padding:9px 12px;font-weight:600">③ 데이터 주권</td><td style="padding:9px 12px">북모리·북적북적 약점("export 안 됨", "폰 바꾸면 날아감"), Readwise=표준</td><td style="padding:9px 12px">설정/서재에 "내보내기(Markdown)" 버튼 V1부터. 클라우드 자동 동기화는 기본값</td><td style="padding:9px 12px"><span class="badge ok">V1=Markdown만</span> Notion·웹뷰어 V1.5</td></tr>
+        <tr style="border-bottom:1px solid var(--ink-100)"><td style="padding:9px 12px;font-weight:600">④ 무드 태그 재그룹화</td><td style="padding:9px 12px">북모리=커스텀 태그+랜덤 노트(라이트), StoryGraph mood 검증됨</td><td style="padding:9px 12px">저장 직후 토스트 "무드 추가?" 칩(Readwise 인라인 태깅). 무드별 컬렉션 자동. 색 코딩+텍스트 라벨, 최대 3개</td><td style="padding:9px 12px"><span class="badge ok">필수</span> <code>moods text[]</code></td></tr>
+        <tr><td style="padding:9px 12px;font-weight:600">⑤ 인용 중심 AI</td><td style="padding:9px 12px">한국 시장 완전 빈자리(플라이북 등은 "책 추천" AI), Fable은 AI 사고 친 적</td><td style="padding:9px 12px">넣어도 입력·출력 좁고 검수 가능한 것만("번역", "핵심 3문장"). 사용자 항상 편집. "AI 친구" 과한 약속 금지</td><td style="padding:9px 12px"><span class="badge warn">V1.5</span></td></tr>
+      </tbody>
+    </table>
+    <div class="note">"OCR + 카드"만으로는 북모리와 동일 → <b>①②④ 중 최소 2개를 V1 출시 메시지에 박아야</b> "북모리가 먼저 나왔고 동일"이라는 결론을 피한다. (<code>market-research-2026-05-10.md</code> §8.1 일치)</div>
+  </section>
+
+  <div class="src">출처 전체: <code>docs/discovery/competitor-screen-analysis-2026-05-11.md</code> §8 — 북모리(공식·Play·Book Riot·brunch @drawhatha/1)·북적북적(App Store·longblack·brunch @drawhatha/2)·Readwise(Docs·blog·blakecrosley)·Fable(공식·Book Riot·LitHub AI 사건)·카드앱(Pratt IXD Tezza 크리틱·Canva SDK·Mojo·Unfold·Typorama·IMG.LY 인스타 스토리). 픽셀·세부 제스처는 추정 — V1 출시 후 실사용 데이터로 검증.</div>
+</div>
+</body>
+</html>
