@@ -7,6 +7,32 @@
 
 ---
 
+## ▶ 다음 세션 시작점 (2026-05-13 기준)
+
+**상태**: Stage 0~1 완료 + 화면 설계(Stage 0b 연장) 완료 + **Stage 2 진행 중 — PR1·2·3·4 + 책 별점 완료**. `flutter analyze` clean, `flutter test` 25개 통과. 마이그레이션 4개(`quotes`, `user_books.rating`, `my_quote_mood_counts`, +Stage1 4개) 원격 적용 완료. main에 push됨. 릴리스 APK 빌드해 실기기(SM F956N) 설치 진행.
+
+**지금 동작하는 플로우**: 로그인 → 홈(내 인용 피드: 무한스크롤·당겨새로고침·빈상태 CTA·카드 탭 펼침→[카드만들기]/[삭제]) → ＋ → 인용구 입력(본문/클립보드 붙여넣기/책 연결/페이지/무드/draft/오프라인 큐잉) → 저장 → 홈 반영 / 서재 [책↔인용구] 세그먼트 — "인용구" 탭 무드별 다시보기 / 책 상세 별점 매기기 / 책 검색·로그인은 Stage 1. ("카드 만들기 →"는 카드 에디터 스텁으로 감 — Stage 3.)
+
+**바로 이어서 할 것** → **PR5 (Me 화면 보강)** — `screens/me.md` 설계대로:
+- 프로필(이니셜 아바타 + 이메일 + "로그인됨"/"확인 중") · 내 데이터 섹션(인용 N개·서재 N권 count → /library, Markdown 내보내기 = `markdown_exporter.dart` → `share_plus`) · 설정(다크모드 "시스템 설정" 읽기전용 / 알림 "곧" 비활성) · 정보(앱 버전 `package_info_plus`, 문의 `mailto:`, **이용약관·개인정보처리방침** 외부 링크 `url_launcher`) · 계정(로그아웃 — **앞에 아웃박스 대기 N개면 경고 Modal**, 회원 탈퇴 2단계 확인 → Edge Function `delete-account`)
+- "친구 찾기" = 숨김(현행 빈 `onTap` 제거). 다크모드 토글 = V1.5.
+- pubspec 추가: `url_launcher`, `package_info_plus`. 책 count 쿼리 — `book_repository`에 `countMyLibrary()`(또는 `user_books` count), `quote_repository`에 `countMyQuotes()`(또는 `getMoodCounts().total` 재사용).
+- **출시 블로커**: in-app 계정 삭제(Edge Function — `auth.admin.deleteUser`는 service_role 필요), 이용약관·개인정보처리방침 호스팅 페이지 URL. → STAGES Stage 5에도 적힘.
+
+**그다음** → PR6 (책 상세 보강 + `deep_link_handler` 일반화), 그다음 Stage 3 (카드 에디터·공유·deep link 받기 — 가장 공들일 단계).
+
+**작업 방식 메모**: 각 PR = main에 직접 commit+push(Stage 1 패턴), 매 PR마다 `flutter analyze` + `flutter test` 통과 + 위젯/유닛 테스트 추가, 마이그레이션은 작성 후 `npx supabase db push`(supabase 명령은 PATH에 없음 — `npx --yes supabase ...` 사용, `printf 'y\n' |`로 프롬프트 통과). 매니저 모드(가상 팀)는 설계 단계용 — 구현 PR은 설계 문서(`docs/design/screens/*.md`)가 충분히 상세해 직접 구현.
+
+### 후속 작업 백로그 (Stage 2 마무리 전후 — 우선순위 낮음)
+- 아웃박스 `connectivity_plus` 연결-회복 트리거(현재 포그라운드 복귀 시만) + 홈/인용목록에 "동기화 대기 N개" 배너
+- 인용구 [수정] (= `/quote/new?quoteId=` 편집 모드) · 카드/목록의 인라인 [무드 변경]
+- 인용 목록 정렬(책별 그룹 / 페이지순) · 인용구 텍스트 검색(서버 `ilike`) · 홈/책상세 무드 칩 탭 → `/library?tab=quotes&mood=` navigation
+- 서재 책 카드: "이 책에서 모은 N구절" 배지 + 표지 dominant color 띠
+- 삭제 시 undo SnackBar(현재는 확인 다이얼로그)
+- 그룹 3 역정리 문서의 나머지 개선: 로그인 매직링크 재전송 출구 + `?from=` 보존, 콜백 타임아웃 사유 안내, 책 검색 시트 검색-전 빈결과·ISBN 직접 등록·오프라인 캐시-우선, 스플래시 워드마크·안전망 시간 실측
+
+---
+
 ## Stage 0a — Validation (2–3주, 진행 중)
 
 코드 한 줄 쓰기 전에 시장 검증. 신호 미달 시 컨셉 피벗 또는 폐기 가능해야 함.
@@ -77,7 +103,7 @@
 - [ ] **PR5** Me 화면 보강 — 프로필 + 내 데이터(인용/서재 count, Markdown 내보내기) + 약관·개인정보·버전·문의 + 회원 탈퇴 2단계(Edge Function `delete-account`) + 로그아웃 시 아웃박스 경고. 친구 찾기 = 숨김. 다크모드 토글 = V1.5. pubspec: `url_launcher`·`package_info_plus`. — 설계: `screens/me.md`
 - [ ] **PR6** 책 상세 보강 — "내가 이 책에서 모은 N구절" 섹션 + "인용구 추가" CTA + `?from=share` deep link 분기 + 설명 점진적 공개 + raw `$e` 노출 제거 + `isInLibrary` EXISTS. `deep_link_handler` 일반화(`/book/:id` 라우팅 + payload 보존). — 설계: `screens/book-detail.md`
 - [x] **별점** 책 별점 — `user_books.rating smallint 1~5`(마이그레이션 `20260512130000`, **remote 적용**), `book_repository.setMyRating/getMyRating`, `myRatingProvider`, `StarRating` 위젯(읽기전용/인터랙티브, 재탭=지우기), `book_detail_screen` 헤더에 별점 행(로그인 시만) + raw `$e` 노출 제거. star_rating_test 4개. 반쪽 별은 V1.5 (DECISIONS 2026-05-13)
-- [ ] (아웃박스 flush 트리거 배선 — `connectivity_plus` 연결 회복/포그라운드 시 `QuoteOutbox.flush`. PR3 또는 별도)
+- [~] 아웃박스 flush 트리거 — 포그라운드 복귀 시 `QuoteOutbox.flush`는 PR3에서 배선됨. `connectivity_plus` 연결-회복 트리거 + "동기화 대기" 배너는 후속(백로그)
 
 ## Stage 3 — 카드 (3–4주, 가장 공들일 단계) — 설계 완료, 구현 대기
 
