@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>책귀 — V1 사용 시나리오 (화면과 함께)</title>
+<style>
+  :root{
+    --ink:#1C1917;--ink-800:#241F18;--ink-700:#342E26;--ink-600:#4A4339;--ink-500:#635B50;--ink-400:#8C8478;--ink-300:#B5ADA0;--ink-200:#D6D0C4;--ink-100:#F0EDE6;--ink-50:#FAF8F5;
+    --paper-50:#FFFFFF;--paper-100:#FDFCFB;--paper-200:#FAFAF8;--paper-300:#F5F1EB;--paper-400:#EDE5D8;--paper-500:#E2D9C8;--paper-700:#C2B49A;
+    --copper:#B87333;--copper-400:#CC9A4E;--copper-300:#E0B87A;--copper-100:#FAEBD6;--copper-700:#7D4D1E;--copper-50:#FDF6ED;
+    --mono-bg:#0F0F0F;--err:#C0392B;--warn:#C87F0A;--ok:#4A7C59;--ok-l:#EAF2EC;--info:#2563EB;
+    --serif:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper-300);color:var(--ink);font-family:-apple-system,"Pretendard","Segoe UI",Roboto,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.6;padding:32px 20px 100px}
+  .wrap{max-width:980px;margin:0 auto}
+  h1{font-size:30px;letter-spacing:-.02em;margin-bottom:6px}
+  .sub{color:var(--ink-500);font-size:14px;margin-bottom:4px}
+  .sub code{background:var(--paper-100);padding:1px 4px;border-radius:4px}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-600);margin:18px 0 28px;padding:12px 16px;background:var(--paper-100);border:1px solid var(--ink-100);border-radius:10px}
+  .tag{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600}
+  .tag.done{background:var(--ok-l);color:var(--ok)} .tag.new{background:var(--copper-100);color:var(--copper-700)} .tag.todo{background:#fef3e2;color:var(--warn)}
+
+  .step{display:flex;gap:28px;align-items:flex-start;margin:30px 0;padding-top:8px}
+  @media(max-width:760px){.step{flex-direction:column;gap:16px}}
+  .step .narr{flex:1;min-width:260px}
+  .step .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-size:13px;font-weight:700;margin-right:8px;vertical-align:middle}
+  .step h2{font-size:18px;letter-spacing:-.01em;display:inline}
+  .step .rt{font-size:12px;color:var(--ink-400);margin:8px 0 0}
+  .step .rt code{background:var(--paper-100);padding:1px 4px;border-radius:4px}
+  .step p.body{font-size:14px;color:var(--ink-700);margin-top:10px}
+  .step .you{font-size:13.5px;color:var(--copper-700);background:var(--copper-50);border-left:3px solid var(--copper);border-radius:0 8px 8px 0;padding:8px 12px;margin-top:10px}
+  .step .you b{color:var(--copper-700)}
+  .step ul{font-size:13px;color:var(--ink-600);margin:8px 0 0 18px} .step li{margin-bottom:3px}
+  .arrowdown{text-align:center;color:var(--ink-300);font-size:22px;margin:-12px 0 -6px;padding-left:160px}
+  @media(max-width:760px){.arrowdown{padding-left:0}}
+
+  /* phones */
+  .phones{display:flex;gap:14px;flex-wrap:wrap}
+  .phone{width:248px;flex:0 0 248px;background:var(--paper-200);border:7px solid var(--ink);border-radius:30px;overflow:hidden;box-shadow:0 10px 26px rgba(28,25,23,.16)}
+  .phone.dark{background:var(--mono-bg)}
+  .phone .status{height:22px;display:flex;justify-content:space-between;align-items:center;padding:0 14px;font-size:9px;color:var(--ink-400)}
+  .phone.dark .status{color:#666}
+  .screen{padding:5px 11px 10px;min-height:380px;display:flex;flex-direction:column}
+  .cap{text-align:center;font-size:10.5px;color:var(--ink-400);margin-top:5px}
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:5px 1px 9px;font-size:13.5px;font-weight:600}
+  .appbar .ico,.appbar .x{font-size:15px;color:var(--ink-500);font-weight:400}
+  .appbar .ct{font-size:9.5px;color:var(--ink-400);font-weight:400}
+  .tabbar{display:flex;border-top:1px solid var(--ink-100);margin:auto -11px 0;padding:6px 0 3px;justify-content:space-around;font-size:8.5px;color:var(--ink-400);background:var(--paper-100)}
+  .tabbar .t.on{color:var(--copper);font-weight:600}
+  .tabbar .t .g{display:block;font-size:14px;margin-bottom:1px}
+  .field{background:var(--paper-100);border:1.4px solid var(--ink-200);border-radius:9px;padding:9px 11px;font-size:12px}
+  .field.serif{font-family:var(--serif);color:var(--ink-700);min-height:72px}
+  .field .ph{color:var(--ink-400);font-size:10.5px}
+  .banner{background:var(--paper-300);border-radius:7px;padding:7px 9px;font-size:10.5px;color:var(--ink-600);display:flex;justify-content:space-between;align-items:center;margin-top:7px}
+  .banner b{color:var(--ink-700)} .banner .a{color:var(--copper);font-weight:600}
+  .banner.ok{background:var(--ok-l);color:var(--ok)} .banner.warn{background:#fef3e2;color:var(--warn)}
+  .card-mini{background:var(--paper-100);border:1px solid var(--ink-100);border-radius:11px;padding:8px 10px;margin-bottom:7px;display:flex;gap:8px}
+  .cover{width:30px;height:44px;border-radius:3px;flex:0 0 30px;display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;text-align:center;line-height:1.2;overflow:hidden;background:linear-gradient(135deg,var(--paper-500),var(--paper-700))}
+  .cover.c1{background:linear-gradient(135deg,#2b3a55,#4a6491)}.cover.c2{background:linear-gradient(135deg,#7a3b2e,#b5654a)}.cover.c3{background:linear-gradient(135deg,#3d4a2a,#6b7d3f)}
+  .cover.big{width:56px;height:82px;flex:0 0 56px}
+  .q{font-family:var(--serif);font-size:11.5px;color:var(--ink-800);line-height:1.5}
+  .meta{font-size:9.5px;color:var(--ink-400);margin-top:2px}
+  .memo{font-size:9.5px;color:var(--ink-500);font-style:italic;margin-top:2px}
+  .chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+  .chip{font-size:8.5px;padding:2px 6px;border-radius:9px;background:var(--copper-100);color:var(--copper-700);border:1px solid var(--copper-300)}
+  .chip.calm{background:var(--ok-l);color:#3a5a45;border-color:#bcd}.chip.mel{background:#eef0f6;color:#444;border-color:#cdd}.chip.hope{background:#eff6ff;color:#2a5a8a;border-color:#bdf}
+  .chip.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .badge{font-size:8px;padding:1px 5px;border-radius:7px;font-weight:600}
+  .badge.warn{background:#fef3e2;color:var(--warn)}.badge.ok{background:var(--ok-l);color:var(--ok)}
+  .row{display:flex;gap:7px;align-items:center;margin:7px 0}
+  .btn{display:inline-block;background:var(--copper);color:#fff;border-radius:9px;padding:8px 12px;font-size:11px;font-weight:600;text-align:center}
+  .btn.full{display:block;width:100%}
+  .btn.ghost{background:transparent;color:var(--ink-600);border:1.4px solid var(--ink-200)}
+  .btn.dim{background:var(--paper-500);color:var(--ink-400);font-weight:600}
+  .btn.tert{background:transparent;color:var(--ink-400);font-weight:400}
+  .btn.kakao{background:#FEE500;color:#191919}
+  .seg{display:flex;border:1.4px solid var(--ink-200);border-radius:8px;overflow:hidden;font-size:9.5px}
+  .seg span{padding:4px 9px;color:var(--ink-400)} .seg span.on{background:var(--ink);color:#fff}
+  .swatches{display:flex;gap:5px;align-items:center;margin:7px 0}
+  .sw{width:18px;height:18px;border-radius:5px;border:1.3px solid rgba(0,0,0,.08)}
+  .cardprev{aspect-ratio:9/16;border-radius:9px;padding:14px 13px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;background:#3D2817;color:#F5EDD8;box-shadow:0 4px 12px rgba(28,25,23,.14)}
+  .cardprev .cq{font-family:var(--serif);font-size:11.5px;line-height:1.6}
+  .cardprev .cb{font-size:8px;opacity:.85;margin-top:10px}
+  .cardprev .wm{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:6.5px;opacity:.32}
+  .tmpls{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px}
+  .tmpl{flex:0 0 42px;height:70px;border-radius:6px;border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:6.5px;text-align:center;padding:3px;line-height:1.3}
+  .tmpl.m1{background:#FAFAF8;color:#1C1917}.tmpl.m2{background:#EDE5D8;color:#342E26;font-family:var(--serif)}.tmpl.m3{background:#0F0F0F;color:#fff}.tmpl.m4{background:linear-gradient(135deg,#3d4a2a,#6b7d3f);color:#fff}.tmpl.m5{background:#FAF8F5;color:#4A4339;font-family:var(--serif)}
+  .tmpl.on{border-color:var(--copper)}
+  .sheet{background:var(--paper-100);border-radius:14px 14px 0 0;margin:12px -11px -10px;padding:12px 14px 16px;box-shadow:0 -4px 14px rgba(0,0,0,.07)}
+  .sheet .handle{width:28px;height:4px;background:var(--ink-200);border-radius:2px;margin:0 auto 11px}
+  .src{font-size:11px;color:var(--ink-400);margin-top:34px;border-top:1px solid var(--ink-100);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>책귀 — V1 사용 시나리오 (화면과 함께)</h1>
+  <div class="sub">"책 페이지 사진 한 장 → 1분 → 단톡방" — 첫 사용부터 단톡 공유, 받는 쪽까지. 정적 와이어프레임(픽셀 정밀 아님).</div>
+  <div class="sub">화면 명세: <code>docs/design/screens/*.md</code> · 와이어프레임 전체: <code>screens.html</code> · 흐름 텍스트: <code>docs/discovery/flows.md</code></div>
+  <div class="legend">
+    <span><span class="tag done">구현됨</span> Stage 1 (인증·검색·서재) 완료</span>
+    <span><span class="tag new">방금 구현</span> Stage 2 PR1·PR2 (quotes 데이터 레이어 + 인용구 입력 화면)</span>
+    <span><span class="tag todo">설계만</span> Stage 2 PR3~ / Stage 3·4 — 구현 대기</span>
+  </div>
+
+  <!-- ====================== 1 ====================== -->
+  <div class="step">
+    <div class="narr">
+      <div><span class="num">1</span><h2>첫 실행 — 이메일 매직링크로 시작</h2></div>
+      <div class="rt"><code>/splash</code> → <code>/auth/login</code> → (메일 클릭) <code>/auth/callback</code> → <code>/</code> &nbsp; <span class="tag done">구현됨</span></div>
+      <p class="body">민지(28, 마케터)가 책귀를 처음 연다. 콜드스타트 시 스플래시가 잠깐 — Supabase가 저장된 세션을 불러오는 동안 로그인 화면으로 잘못 튀지 않게 막는 게이트. 처음이라 세션 없음 → 로그인.</p>
+      <div class="you"><b>민지</b>: 이메일 입력 → "로그인 링크 받기" → 메일함에서 링크 클릭 → 책귀가 다시 열리며 로그인 완료.</div>
+      <ul>
+        <li>비밀번호 없음(매직링크). 가입·로그인 통합 — 신규/기존 구분 안 함</li>
+        <li>카카오 로그인 버튼은 비활성 placeholder(개인 앱 + GoTrue scope 충돌으로 V1.5)</li>
+      </ul>
+    </div>
+    <div class="phones">
+      <div>
+        <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen" style="align-items:center;justify-content:center"><div style="font-family:var(--serif);font-size:20px;color:var(--ink-900);margin-bottom:12px">책귀</div><div style="font-size:20px;color:var(--copper)">◌</div></div></div>
+        <div class="cap">스플래시</div>
+      </div>
+      <div>
+        <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen">
+          <div style="margin-top:24px;font-family:var(--serif);font-size:18px;color:var(--ink-900)">책귀</div>
+          <div style="font-size:11px;color:var(--ink-500);margin-bottom:14px">좋은 구절을 모으세요</div>
+          <div class="field" style="min-height:auto"><span class="ph">이메일</span></div>
+          <div class="btn full" style="margin-top:8px">로그인 링크 받기</div>
+          <div style="margin-top:12px;font-size:11px;color:var(--ink-300);border-top:1px solid var(--ink-100);padding-top:12px">⊗ 카카오로 시작 (곧 지원)</div>
+        </div></div>
+        <div class="cap">로그인</div>
+      </div>
+      <div>
+        <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen" style="align-items:center;justify-content:center"><div style="font-size:30px">✉</div><div style="font-weight:600;color:var(--ink-900);margin-top:8px">메일을 보냈어요</div><div style="font-size:11px;color:var(--ink-500);text-align:center;margin-top:4px">minji@…로 로그인 링크를<br>보냈어요. 메일함을 확인해주세요.</div></div></div>
+        <div class="cap">전송 후</div>
+      </div>
+    </div>
+  </div>
+  <div class="arrowdown">↓</div>
+
+  <!-- ====================== 2 ====================== -->
+  <div class="step">
+    <div class="narr">
+      <div><span class="num">2</span><h2>홈 — 텅 빈 첫 화면, "인용구 추가"로 안내</h2></div>
+      <div class="rt"><code>/</code> (홈 = "내 인용 피드") &nbsp; <span class="tag todo">설계만 (PR3)</span></div>
+      <p class="body">로그인하면 홈. 아직 모은 게 없으니 — 빈 화면을 죽은 피드처럼 두지 않고, 큰 버튼 하나로 첫 행동을 가리킨다. (튜토리얼 없음.)</p>
+      <div class="you"><b>민지</b>: "＋ 인용구 추가" 탭. (또는 하단 가운데 ＋ 버튼.)</div>
+      <ul>
+        <li>"친구 새 인용" 같은 빈 탭 X — V1 홈은 <b>내가 모은 인용구가 시간순으로 쌓이는 곳</b>. follow 타임라인은 V1.5에 같은 피드에 합류</li>
+      </ul>
+    </div>
+    <div class="phones">
+      <div>
+        <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen">
+          <div class="appbar"><span style="font-family:var(--serif)">책귀</span><span class="ico">🔍</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px">
+            <div style="font-size:34px;color:var(--ink-300)">❝</div>
+            <div style="font-weight:600;color:var(--ink-900)">아직 인용구가 없어요</div>
+            <div style="font-size:11px;color:var(--ink-500)">좋아하는 책의 한 줄을 저장해보세요.</div>
+            <div class="btn" style="margin-top:4px">＋ 인용구 추가</div>
+          </div>
+          <div class="tabbar"><span class="t on"><span class="g">▦</span>홈</span><span class="t"><span class="g">▤</span>서재</span><span class="t"><span class="g">＋</span></span><span class="t"><span class="g">◔</span>나</span></div>
+        </div></div>
+        <div class="cap">홈 — 빈 상태</div>
+      </div>
+    </div>
+  </div>
+  <div class="arrowdown">↓</div>
+
+  <!-- ====================== 3 ====================== -->
+  <div class="step">
+    <div class="narr">
+      <div><span class="num">3</span><h2>책 사진을 폰 기능으로 복사 → 책귀에서 "붙여넣기"</h2></div>
+      <div class="rt">앱 밖(iOS Live Text / 구글렌즈) → <code>/quote/new</code> 진입 시 클립보드 감지 배너 &nbsp; <span class="tag new">방금 구현 (PR2)</span></div>
+      <p class="body">민지는 읽던 책의 한 페이지를 폰 카메라로 비춰 <b>iOS Live Text</b>로 마음에 든 문장을 길게 눌러 복사한다(앱 내장 OCR을 우리가 다시 만들지 않는다 — OS가 이미 잘함). 책귀로 돌아오면 인용구 입력 화면 상단에 "📋 클립보드에 텍스트가 있어요" 배너 — <b>붙여넣기</b> 한 번.</p>
+      <div class="you"><b>민지</b>: 카메라 앱에서 문장 길게 눌러 복사 → 책귀 열기 → "붙여넣기" 탭. 본문에 문장이 채워진다.</div>
+      <ul>
+        <li>클립보드는 <code>Clipboard.hasStrings()</code>로 <i>알림 없이</i> 존재만 확인 → "붙여넣기" 누를 때만 실제 내용을 읽음(프라이버시)</li>
+        <li>직접 타이핑도 물론 가능. 작성 중인 내용은 1초마다 로컬에 임시저장 — 앱이 죽어도 복구</li>
+      </ul>
+    </div>
+    <div class="phones">
+      <div>
+        <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen">
+          <div class="appbar"><span class="x">✕</span><span>인용구 추가</span><span class="ct">0 / 2000</span></div>
+          <div class="field serif"><span class="ph">좋아하는 한 줄을 입력하거나, 아래 '붙여넣기'를 눌러보세요</span></div>
+          <div class="banner"><span>📋 클립보드에 텍스트가 있어요</span><span class="a">붙여넣기</span></div>
+          <div class="card-mini" style="margin-top:8px;padding:7px 9px"><div style="font-size:15px;color:var(--accent-600,#9A5F28)">＋</div><div style="align-self:center;font-size:11px;color:#9A5F28">책 연결</div></div>
+          <div class="row" style="font-size:10.5px;color:var(--ink-500)">페이지 [ — ]  &nbsp;  무드 (선택, 최대 3개)</div>
+          <div class="chips"><span class="chip">위로</span><span class="chip">먹먹</span><span class="chip">새벽3시</span><span class="chip">통찰</span><span class="chip">설렘</span></div>
+          <div class="btn dim full" style="margin-top:10px">카드 만들기 → <i style="font-size:8px">(본문 비어서 비활성)</i></div>
+        </div></div>
+        <div class="cap">인용구 입력 — 진입 직후</div>
+      </div>
+      <div>
+        <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen">
+          <div class="appbar"><span class="x">✕</span><span>인용구 추가</span><span class="ct">24 / 2000</span></div>
+          <div class="field serif">가장 깊은 밤에 가장 빛나는 별이 보인다.<span style="color:var(--copper-700)">|</span></div>
+          <div class="card-mini" style="margin-top:8px;padding:7px 9px"><div style="font-size:15px;color:#9A5F28">＋</div><div style="align-self:center;font-size:11px;color:#9A5F28">책 연결</div></div>
+          <div class="row" style="font-size:10.5px;color:var(--ink-500)">페이지 [ — ]  &nbsp;  무드</div>
+          <div class="chips"><span class="chip">위로</span><span class="chip">먹먹</span><span class="chip">새벽3시</span><span class="chip">통찰</span><span class="chip">설렘</span></div>
+          <div class="btn full" style="margin-top:10px">카드 만들기 →</div>
+          <div class="btn tert full" style="margin-top:4px">저장만 하기</div>
+        </div></div>
+        <div class="cap">붙여넣기 후 — 책 연결 전</div>
+      </div>
+    </div>
+  </div>
+  <div class="arrowdown">↓</div>
+
+  <!-- ====================== 4 ====================== -->
+  <div class="step">
+    <div class="narr">
+      <div><span class="num">4</span><h2>책 연결 — 검색 시트 (Stage 1 그대로 재사용)</h2></div>
+      <div class="rt">"책 연결" 탭 → <code>showBookSearchSheet</code> 모달 (알라딘 검색 + 캐시) &nbsp; <span class="tag done">구현됨</span></div>
+      <p class="body">"책 연결"을 누르면 책 검색 시트가 올라온다 — 서재에 책 추가할 때 쓰던 그 시트. 제목을 치면 캐시(이전 검색)와 알라딘 결과가 같이. 책을 고르면 시트가 닫히고 입력 화면에 책이 붙는다.</p>
+      <div class="you"><b>민지</b>: "미드나잇 라이브러리" 검색 → 결과 탭. 인용구 입력 화면으로 돌아오니 책 카드가 채워져 있다. 페이지 "132" 입력, 무드 "위로" 칩 탭.</div>
+      <ul>
+        <li>책을 못 찾아도 인용구 저장은 됨(나중에 연결). 시트엔 ISBN 직접 등록 출구도 (PR4에서 보강)</li>
+        <li>시트를 다녀와도 본문·페이지·무드는 그대로(모달이라 입력 화면 state 안 건드림)</li>
+      </ul>
+    </div>
+    <div class="phones">
+      <div>
+        <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen" style="justify-content:flex-end">
+          <div style="flex:1;background:rgba(28,25,23,.35)"></div>
+          <div class="sheet">
+            <div class="handle"></div>
+            <div class="field" style="min-height:auto;padding:8px 10px"><span class="ph">🔍 미드나잇 라이브러리</span></div>
+            <div style="font-size:10px;font-weight:600;color:var(--ink-500);margin:9px 1px 4px">알라딘 검색 결과</div>
+            <div class="card-mini" style="padding:7px 9px"><div class="cover c1" style="width:22px;height:32px;flex:0 0 22px"></div><div style="align-self:center;font-size:11px">미드나잇 라이브러리 · 매트 헤이그</div></div>
+            <div class="card-mini" style="padding:7px 9px"><div class="cover c1" style="width:22px;height:32px;flex:0 0 22px"></div><div style="align-self:center;font-size:11px">미드나잇 라이브러리 (개정판) · …</div></div>
+          </div>
+        </div></div>
+        <div class="cap">책 검색 시트</div>
+      </div>
+      <div>
+        <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen">
+          <div class="appbar"><span class="x">✕</span><span>인용구 추가</span><span class="ct">24 / 2000</span></div>
+          <div class="field serif">가장 깊은 밤에 가장 빛나는 별이 보인다.</div>
+          <div class="card-mini" style="margin-top:8px;padding:7px 9px"><div class="cover c1"></div><div style="flex:1;align-self:center"><div style="font-size:11px;font-weight:600">미드나잇 라이브러리</div><div class="meta">매트 헤이그 · 변경 ▸</div></div></div>
+          <div class="row" style="font-size:10.5px;color:var(--ink-500)">페이지 [ 132 ]  &nbsp;  무드</div>
+          <div class="chips"><span class="chip sel">위로</span><span class="chip">먹먹</span><span class="chip">새벽3시</span><span class="chip">통찰</span><span class="chip">설렘</span></div>
+          <div class="btn full" style="margin-top:10px">카드 만들기 →</div>
+          <div class="btn tert full" style="margin-top:4px">저장만 하기</div>
+        </div></div>
+        <div class="cap">책·페이지·무드까지 채운 상태 — "카드 만들기 →"</div>
+      </div>
+    </div>
+  </div>
+  <div class="arrowdown">↓</div>
+
+  <!-- ====================== 5 ====================== -->
+  <div class="step">
+    <div class="narr">
+      <div><span class="num">5</span><h2>카드 에디터 — 표지색 자동 팔레트가 이미 적용된 채로</h2></div>
+      <div class="rt"><code>/quote/:id/card</code> &nbsp; <span class="tag todo">설계만 (Stage 3)</span> — 지금은 인용구 저장은 되고 화면은 스텁</div>
+      <p class="body">"카드 만들기 →"를 누르면 인용구가 저장되고 카드 에디터로. <b>들어가자마자 그럴듯한 카드가 그려져 있다</b> — 이 책 표지에서 뽑은 색이 자동 적용된 상태(차별화 ①). 5종 템플릿이 가로 한 줄로, 각 칸은 와이어프레임이 아니라 <i>지금 그 인용구·표지로 실제 렌더된 미니 카드</i>. "색 변경 UI"를 따로 안 만든다 — 표지 5스와치 줄이 곧 컬러 패널.</p>
+      <div class="you"><b>민지</b>: 비율을 9:16(스토리)으로 두고, 마음에 드는 템플릿 1탭. "공유" 탭.</div>
+      <ul>
+        <li>언두 항상 있음(비율·템플릿 전환까지). 더블탭 숨김 같은 함정 없음 — 한 번 탭으로 다 됨</li>
+        <li>흑백 표지 책이면 Ink-Paper-Copper 기본 톤으로 폴백. 표지 없는 책이면 "표지 발췌" 템플릿만 비활성</li>
+      </ul>
+    </div>
+    <div class="phones">
+      <div>
+        <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen">
+          <div class="row" style="margin:1px 0 7px"><span style="font-size:14px;color:var(--ink-500)">←</span><div class="seg" style="margin:0 auto"><span>1:1</span><span>4:5</span><span class="on">9:16</span></div><span style="font-size:12px;color:var(--ink-400)">⤺</span><span class="btn" style="padding:4px 9px">공유</span></div>
+          <div class="cardprev"><div class="cq">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div><div class="cb">미드나잇 라이브러리 · 매트 헤이그</div><div class="wm">책귀에서 만들었어요 · bookgwi.app</div></div>
+          <div class="swatches"><span class="sw" style="background:#3D2817"></span><span class="sw" style="background:#6B4423"></span><span class="sw" style="background:#C9A876"></span><span class="sw" style="background:#8B5A3C"></span><span class="sw" style="background:#A08060"></span><span style="font-size:8.5px;color:var(--ink-400);margin-left:3px">↑ 이 책 표지에서 추출</span></div>
+          <div class="tmpls"><div class="tmpl m1">미니멀</div><div class="tmpl m2">웜</div><div class="tmpl m3">모노</div><div class="tmpl m4 on">표지<br>발췌</div><div class="tmpl m5">타이포</div></div>
+          <div class="row" style="font-size:9px;color:var(--ink-500);margin-top:5px"><span>텍스트</span><span>색</span><span>위치</span><span>워터마크 ●</span><span style="margin-left:auto;color:var(--copper)">다른 느낌 ↻</span></div>
+        </div></div>
+        <div class="cap">카드 에디터 (Stage 3 설계 — 현재 스텁)</div>
+      </div>
+    </div>
+  </div>
+  <div class="arrowdown">↓</div>
+
+  <!-- ====================== 6 ====================== -->
+  <div class="step">
+    <div class="narr">
+      <div><span class="num">6</span><h2>공유 — 카카오톡 단톡방으로 한 번에</h2></div>
+      <div class="rt">"공유" → 모달 시트 (V1: <code>share_plus</code> OS 시트) &nbsp; <span class="tag todo">설계만 (Stage 3/4)</span></div>
+      <p class="body">"공유"를 누르면 시트가 올라온다 — 1순위가 <b>카카오톡 단톡방으로 보내기</b>. 인스타 스토리(9:16 자동)·이미지 저장도. 사진 저장 권한을 거부해도 공유는 그대로 — 어디서도 막다른 골목 없음.</p>
+      <div class="you"><b>민지</b>: "카카오톡 단톡방으로 보내기" → 책 좋아하는 친구들 단톡방에 카드를 쏜다. 끝. (사진 찍은 시점부터 여기까지 1분.)</div>
+    </div>
+    <div class="phones">
+      <div>
+        <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen" style="justify-content:flex-end">
+          <div class="cardprev" style="max-height:150px;width:108px;margin:auto auto 0;padding:11px"><div class="cq" style="font-size:8.5px">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div><div class="wm">책귀에서 만들었어요</div></div>
+          <div class="sheet">
+            <div class="handle"></div>
+            <div class="btn kakao full" style="margin-bottom:7px">💬 카카오톡 단톡방으로 보내기</div>
+            <div class="btn ghost full" style="margin-bottom:7px">📷 인스타그램 스토리 (9:16)</div>
+            <div class="btn dim full">⬇ 이미지 저장 &nbsp;<span class="badge warn">권한 필요</span></div>
+            <div style="font-size:9px;color:var(--ink-400);text-align:center;margin-top:8px">저장 권한 없어도 공유는 그대로</div>
+          </div>
+        </div></div>
+        <div class="cap">공유·저장 시트</div>
+      </div>
+    </div>
+  </div>
+  <div class="arrowdown">↓</div>
+
+  <!-- ====================== 7 ====================== -->
+  <div class="step">
+    <div class="narr">
+      <div><span class="num">7</span><h2>받는 쪽 — 단톡방에서 카드 탭 → "내 서재에 담기" 한 번</h2></div>
+      <div class="rt">deep link <code>io.github.tgparkk.bookquote://book/:id?from=share</code> → <code>/book/:id</code> &nbsp; <span class="tag todo">설계만 (Stage 4 — 핸들러 일반화 필요)</span></div>
+      <p class="body">단톡방의 친구 수연(23, 대학생)이 카드를 탭한다 → 책귀가 열리며 그 책 정보 + 민지가 보낸 인용구. "내 서재에 담기" 한 번이면 자기 서재에 들어간다. 책귀가 없으면 책 정보를 먼저 보여주고 → "담기" 누르면 로그인 → 돌아와서 담기. 이게 입소문의 마지막 1cm(K-factor).</p>
+      <div class="you"><b>수연</b>: 카드 탭 → "📚 내 서재에 담기" → 담김. 며칠 뒤 이 책을 사서 자기 인용구를 만들어 또 단톡방에…</div>
+      <ul>
+        <li>북적북적이 "홈 화면을 우연히 캡처해 인스타에 올린다"로 1M 유저를 만든 그 등식을, 우리는 <b>deep link 메커닉으로 의도 설계</b>한다</li>
+      </ul>
+    </div>
+    <div class="phones">
+      <div>
+        <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen">
+          <div class="appbar"><span style="font-size:14px;font-weight:400">←</span><span style="font-size:12px">미드나잇 라이브러리</span><span></span></div>
+          <div style="background:var(--copper-100);border:1px solid var(--copper-300);border-radius:11px;padding:10px;margin-bottom:9px"><div style="font-size:10.5px;font-weight:600;color:var(--copper-700);margin-bottom:5px">💬 민지님이 이 책의 한 줄을 보냈어요</div><div class="q" style="font-size:11.5px">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div><div class="meta">─ 미드나잇 라이브러리, p.132</div></div>
+          <div class="btn full" style="margin-bottom:10px">📚 내 서재에 담기</div>
+          <div class="row" style="align-items:flex-start;gap:11px"><div class="cover c1 big"></div><div style="align-self:center"><div style="font-size:12.5px;font-weight:600">미드나잇 라이브러리</div><div class="meta">매트 헤이그 · 인플루엔셜</div></div></div>
+          <div style="font-size:9.5px;color:var(--ink-300);margin-top:10px;text-align:center">(미로그인이면 책 정보 먼저 → 로그인 → 복귀해 담기)</div>
+        </div></div>
+        <div class="cap">받은 카드 → 책 담기</div>
+      </div>
+    </div>
+  </div>
+  <div class="arrowdown">↓</div>
+
+  <!-- ====================== 8 ====================== -->
+  <div class="step">
+    <div class="narr">
+      <div><span class="num">8</span><h2>다시 내 홈·서재 — 쌓이고, 무드로 다시 본다</h2></div>
+      <div class="rt"><code>/</code> 피드 · <code>/library</code>(책 ↔ 인용구 세그먼트) &nbsp; <span class="tag todo">설계만 (PR3·PR4)</span></div>
+      <p class="body">며칠 뒤 민지가 홈을 열면 모은 인용구가 시간순으로 쌓여 있다. 각 항목에서 바로 [카드 만들기]. 서재 탭은 "책 ↔ 인용구" 세그먼트 — 책 보기, 또는 무드별로 인용구 다시 보기("위로 12 · 먹먹 8 · 새벽3시 5"). "사진은 찍는데 다시 안 봄" 페인의 답을 <b>테마 단위 다시 보기</b>로(차별화 ④).</p>
+      <div class="you"><b>민지</b>: 출퇴근길에 "새벽3시" 무드만 모아 보다가 한 구절을 다시 카드로 만들어 단톡방에. (Me 탭에선 언제든 Markdown으로 내보내기 — 데이터는 항상 내 것.)</div>
+    </div>
+    <div class="phones">
+      <div>
+        <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen">
+          <div class="appbar"><span style="font-family:var(--serif)">책귀</span><span class="ico">🔍</span></div>
+          <div class="card-mini"><div class="cover c1"></div><div><div class="q">"가장 깊은 밤에 가장 빛나는 별이…"</div><div class="meta">미드나잇 라이브러리 · p.132</div><div class="chips"><span class="chip calm">위로</span></div></div></div>
+          <div class="card-mini"><div class="cover c2"></div><div><div class="q">"우리는 우리가 반복하는 것이다."</div><div class="meta">니코마코스 윤리학 · p.55</div><div class="chips"><span class="chip">통찰</span></div></div></div>
+          <div class="card-mini"><div class="cover c3"></div><div><div class="q">"오래된 것은 사라지지 않는다…"</div><div class="meta">잃어버린 시간을 찾아서 · p.408</div><div class="chips"><span class="chip hope">새벽3시</span></div></div></div>
+          <div class="tabbar"><span class="t on"><span class="g">▦</span>홈</span><span class="t"><span class="g">▤</span>서재</span><span class="t"><span class="g">＋</span></span><span class="t"><span class="g">◔</span>나</span></div>
+        </div></div>
+        <div class="cap">홈 — 내 인용 피드 (며칠 뒤)</div>
+      </div>
+      <div>
+        <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen">
+          <div class="appbar"><span>서재</span><span style="font-size:10px;color:var(--ink-400);font-weight:400"><span class="seg" style="display:inline-flex;vertical-align:middle"><span>책</span><span class="on">인용구</span></span></span></div>
+          <div class="chips" style="margin:0 1px 8px"><span class="chip sel">전체</span><span class="chip calm">위로 12</span><span class="chip mel">먹먹 8</span><span class="chip hope">새벽3시 5</span><span class="chip">통찰 3</span></div>
+          <div class="card-mini"><div class="cover c1"></div><div><div class="q">"가장 깊은 밤에 가장 빛나는 별이…"</div><div class="meta">미드나잇 라이브러리 · p.132</div><div class="chips"><span class="chip calm">위로</span><span class="chip mel">먹먹</span></div><div class="memo">메모: 힘들 때 다시 읽으려고</div></div></div>
+          <div class="card-mini"><div class="cover c3"></div><div><div class="q">"오래된 것은 사라지지 않는다…"</div><div class="meta">잃어버린 시간을 찾아서 · p.408</div><div class="chips"><span class="chip hope">새벽3시</span></div></div></div>
+          <div class="tabbar"><span class="t"><span class="g">▦</span>홈</span><span class="t on"><span class="g">▤</span>서재</span><span class="t"><span class="g">＋</span></span><span class="t"><span class="g">◔</span>나</span></div>
+        </div></div>
+        <div class="cap">서재 — "인용구" 뷰 (무드 필터)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="src">
+    <b>구현 현황 요약</b> — <span class="tag done">구현됨</span>: 스플래시·로그인·콜백·서재·책 상세·책 검색 시트 (Stage 1). · <span class="tag new">방금 구현</span>: <code>quotes</code> 테이블(원격 적용)·인용구 데이터 레이어·인용구 입력 화면 (Stage 2 PR1·PR2 — 인용구 <b>저장은 실제로 동작</b>). · <span class="tag todo">설계만</span>: 홈 피드(PR3)·인용구 목록 뷰(PR4)·Me 보강(PR5)·책 상세 보강+deep link 핸들러(PR6)·카드 에디터·공유 시트(Stage 3)·받는 쪽 책담기(Stage 4).<br>
+    화면 명세: <code>docs/design/screens/*.md</code> · 와이어프레임 전체: <code>docs/design/mockups/screens.html</code> · 경쟁앱 비교: <code>competitor-references.html</code> · 흐름 텍스트: <code>docs/discovery/flows.md</code> · 결정: <code>docs/DECISIONS.md</code>.
+  </div>
+</div>
+</body>
+</html>
