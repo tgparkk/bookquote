@@ -23,6 +23,7 @@ import 'data/quote_repository.dart';
 import 'domain/quote.dart';
 import 'domain/quote_mood.dart';
 import 'presentation/widgets/mood_chips.dart';
+import 'state/quote_feed_provider.dart';
 import 'state/quote_providers.dart';
 
 class QuoteInputScreen extends ConsumerStatefulWidget {
@@ -279,7 +280,9 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
       return;
     }
 
+    if (!mounted) return;
     await _clearDraft();
+    ref.invalidate(quoteFeedProvider); // 홈 피드에 새 인용구 반영
     if (!mounted) return;
 
     if (created == null) {

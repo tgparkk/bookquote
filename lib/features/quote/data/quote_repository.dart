@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_init.dart';
+import '../../book/domain/book.dart';
 import '../domain/quote.dart';
 import '../domain/quote_mood.dart';
 
@@ -22,6 +23,9 @@ class QuoteRepositoryException implements Exception {
 
 /// 홈 피드·인용 목록 페이지네이션 커서. `(created_at desc, id desc)` 기준.
 typedef QuoteCursor = ({DateTime createdAt, String id});
+
+/// 인용구 + 연결된 책(있으면). 홈 피드·인용 목록 카드 렌더용 — N+1 회피.
+typedef QuoteWithBook = ({Quote quote, Book? book});
 
 class QuoteRepository {
   QuoteRepository(this._client);
@@ -136,6 +140,45 @@ class QuoteRepository {
           .order('id', ascending: false)
           .limit(limit);
       return rows.map((r) => Quote.fromJson(r)).toList();
+    } on PostgrestException catch (e) {
+      throw QuoteRepositoryException('LIST_FAILED', e.message);
+    }
+  }
+
+  /// [listMyQuotes]와 같지만 연결된 책을 임베드해 [QuoteWithBook]로 반환한다 —
+  /// 홈 피드·인용 목록 카드가 표지·제목을 N+1 없이 그리기 위함. `book_id`가 null이면
+  /// `book`도 null.
+  Future<List<QuoteWithBook>> listMyQuotesWithBook({
+    String? bookId,
+    Set<QuoteMood>? moods,
+    QuoteCursor? after,
+    int limit = 15,
+  }) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return const [];
+    try {
+      var query =
+          _client.from(_table).select('*, book:books(*)').eq('user_id', uid);
+      if (bookId != null) query = query.eq('book_id', bookId);
+      if (moods != null && moods.isNotEmpty) {
+        query = query.overlaps('moods', moods.map((m) => m.name).toList());
+      }
+      if (after != null) {
+        final ts = after.createdAt.toUtc().toIso8601String();
+        query = query
+            .or('created_at.lt.$ts,and(created_at.eq.$ts,id.lt.${after.id})');
+      }
+      final rows = await query
+          .order('created_at', ascending: false)
+          .order('id', ascending: false)
+          .limit(limit);
+      return rows.map((r) {
+        final bookJson = r['book'];
+        return (
+          quote: Quote.fromJson(r),
+          book: bookJson is Map<String, dynamic> ? Book.fromJson(bookJson) : null,
+        );
+      }).toList();
     } on PostgrestException catch (e) {
       throw QuoteRepositoryException('LIST_FAILED', e.message);
     }
