@@ -66,18 +66,17 @@
 - [x] (구현 전 정합) `flows.md`·`client-architecture.md` 상단에 V1.5 범위 정정 배너 — follow `timelineProvider`/`follows`/`useTimelineRealtime`/`publish to followers`는 V1.5(코드엔 0), V1 홈 = `myQuotesProvider` 기반·Realtime 없음, Flow C는 V1.5(deep link 받는 쪽 1탭 담기만 V1), OCR은 폰 기능+클립보드
 - (참고) 무드 태그 셋 작업 가정값: 위로 / 먹먹 / 새벽3시 / 통찰 / 설렘 — `quotes.moods text[]` + 앱 `enum QuoteMood`. 구현 전 최종 확정 가능
 
-## Stage 2 — 인용구 입력 (2–3주) — 설계 완료, 구현 대기
+## Stage 2 — 인용구 입력 (2–3주) — 진행 중
 
-구현 순서: `quotes` 테이블 마이그레이션(`book_id` nullable `on delete set null`, `manual_book_text`, `text` CHECK 1~2000, `source` manual/clipboard, `moods text[]`, RLS = user_books 패턴, `set_updated_at()` 재사용) → `quote.dart`(@freezed)/`quote_repository`(`listMyQuotes` cursor 시그니처 — DECISIONS 2026-05-12)/`quote_providers`/`createQuoteController`(낙관적)/`quote_outbox`(`shared_preferences`) → `quote_input_screen` 재작성 → `home_screen` 재작성("내 인용 피드") → `quote_list_view`(서재 탭 세그먼트). pubspec: `shared_preferences`·`connectivity_plus` 추가.
+구현 순서: `quotes` 테이블 마이그레이션 → `quote.dart`(@freezed)/`quote_repository`(`listMyQuotes` cursor 시그니처)/`quote_providers`/`createQuoteController`/`quote_outbox` → `quote_input_screen` 재작성 → `home_screen` 재작성("내 인용 피드") → `quote_list_view`(서재 탭 세그먼트) → `me_screen` 보강 → `book_detail_screen` 보강.
 
-- [ ] 직접 입력 폼 → 저장 → 책 매핑 (`showBookSearchSheet` 재사용, `suppressAddedToast` 옵션 추가) — 설계: `screens/quote-input.md`
-- [ ] 클립보드 붙여넣기 자동 감지 배너 (앱 내장 OCR 안 함 — OS 기능으로 복사 → 붙여넣기. DECISIONS 2026-05-11)
-- [ ] 무드 태그 (`quotes.moods text[]` + 앱 `enum QuoteMood` 화이트리스트 + `tokens.dart`의 `moodColors` 맵, 차별화 ④)
-- [ ] 인용구 목록 — 서재 탭 내 "책 ↔ 인용구" 세그먼트 (`/library?tab=quotes`, 무드/책/최근순 필터 + 검색) — 설계: `screens/quote-list.md`
-- [ ] 홈 화면 재작성 — "내 인용 피드"(시간순, cursor-after 페이지네이션, FAB 없음, Realtime 없음) — 설계: `screens/home.md`
-- [ ] 경량 오프라인 아웃박스 (`quote_outbox` — best-effort flush, 동기화 대기 뱃지). 일정 빠듯하면 2.1로(V1은 draft 1건 복구만). 완전 동기화 엔진(Flow F)은 V1.5. DECISIONS 2026-05-11
-- [ ] Me 화면 보강 — 프로필 + 내 데이터(인용/서재 count, Markdown 내보내기) + 약관·개인정보·버전·문의 + 회원 탈퇴 2단계. 친구 찾기 = 숨김. 다크모드 토글 = V1.5. pubspec: `url_launcher`·`package_info_plus`. 설계: `screens/me.md`
-- [ ] 책 상세 보강 — "내가 이 책에서 모은 N구절" 섹션 + "인용구 추가" CTA + `?from=share` deep link 분기 + 설명 점진적 공개 + raw `$e` 노출 제거. 설계: `screens/book-detail.md`
+- [x] **PR1** 인용구 데이터 레이어 — `supabase/migrations/20260512120000_quotes.sql`(book_id nullable on delete set null, manual_book_text, text CHECK 1~2000, page CHECK >0, source manual/clipboard, moods text[], RLS 4정책, 인덱스 3개) **remote 적용 완료**. `features/quote/{domain,data,state}` — Quote/QuoteInput/QuoteSource/QuoteMood + QuoteMoodListConverter, QuoteRepository(create/update/delete/getById/listMyQuotes cursor-after + moods overlaps), QuoteOutbox(SharedPreferences, 사용자별 키), bookQuotesProvider/quoteByIdProvider/createQuoteControllerProvider. pubspec: shared_preferences·connectivity_plus. quote_model_test 7개
+- [x] **PR2** 인용구 입력 화면 (`/quote/new[?bookId=]`) — 본문 멀티라인 + 글자수 카운터 + 클립보드 붙여넣기 감지 배너(Clipboard.hasStrings) + 책 연결(showBookSearchSheet 재사용 — `_onPick`의 잘못된 "서재 추가" 토스트 제거) + 페이지·무드 칩(최대 3개) + draft 자동저장/복원 + PopScope 폐기 확인 + "카드 만들기 →"(pushReplacement → /quote/:id/card) / "저장만 하기" + 오프라인 아웃박스 큐잉. `presentation/widgets/mood_chips.dart`(moodColors 단일 정의처), `data/quote_draft.dart`. quote_input_screen_test 3개
+- [ ] **PR3** 홈 화면 재작성 — "내 인용 피드"(시간순, cursor-after 페이지네이션 누적 Notifier, FAB 없음, Realtime 없음, RefreshIndicator, 빈 상태 CTA, 아웃박스 "동기화 대기" 뱃지) — 설계: `screens/home.md`
+- [ ] **PR4** 인용구 목록 — 서재 탭 내 "책 ↔ 인용구" 세그먼트 (`/library?tab=quotes&mood=&bookId=`, 무드/책/최근순 필터 + 검색, `quote_list_card.dart` 위젯 — 홈 피드와 공유). 무드별 컬렉션 = 차별화 ④. — 설계: `screens/quote-list.md`
+- [ ] **PR5** Me 화면 보강 — 프로필 + 내 데이터(인용/서재 count, Markdown 내보내기) + 약관·개인정보·버전·문의 + 회원 탈퇴 2단계(Edge Function `delete-account`) + 로그아웃 시 아웃박스 경고. 친구 찾기 = 숨김. 다크모드 토글 = V1.5. pubspec: `url_launcher`·`package_info_plus`. — 설계: `screens/me.md`
+- [ ] **PR6** 책 상세 보강 — "내가 이 책에서 모은 N구절" 섹션 + "인용구 추가" CTA + `?from=share` deep link 분기 + 설명 점진적 공개 + raw `$e` 노출 제거 + `isInLibrary` EXISTS. `deep_link_handler` 일반화(`/book/:id` 라우팅 + payload 보존). — 설계: `screens/book-detail.md`
+- [ ] (아웃박스 flush 트리거 배선 — `connectivity_plus` 연결 회복/포그라운드 시 `QuoteOutbox.flush`. PR3 또는 별도)
 
 ## Stage 3 — 카드 (3–4주, 가장 공들일 단계) — 설계 완료, 구현 대기
 
