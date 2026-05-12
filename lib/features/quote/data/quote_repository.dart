@@ -27,6 +27,28 @@ typedef QuoteCursor = ({DateTime createdAt, String id});
 /// 인용구 + 연결된 책(있으면). 홈 피드·인용 목록 카드 렌더용 — N+1 회피.
 typedef QuoteWithBook = ({Quote quote, Book? book});
 
+/// 내 인용구 무드 통계 — 전체 수 + 무드별 개수 (서재 인용 뷰 필터 칩용).
+typedef MoodCounts = ({int total, Map<QuoteMood, int> byMood});
+
+/// `my_quote_mood_counts` RPC 결과 행들을 파싱 — `'__total__'` 행은 전체 수,
+/// 나머지는 무드 name별 개수(알 수 없는 name은 무시).
+MoodCounts parseMoodCounts(List<dynamic> rows) {
+  var total = 0;
+  final byMood = <QuoteMood, int>{};
+  for (final r in rows) {
+    final map = r as Map;
+    final name = map['mood'] as String;
+    final n = (map['n'] as num).toInt();
+    if (name == '__total__') {
+      total = n;
+      continue;
+    }
+    final mood = QuoteMood.fromName(name);
+    if (mood != null) byMood[mood] = n;
+  }
+  return (total: total, byMood: byMood);
+}
+
 class QuoteRepository {
   QuoteRepository(this._client);
 
@@ -181,6 +203,18 @@ class QuoteRepository {
       }).toList();
     } on PostgrestException catch (e) {
       throw QuoteRepositoryException('LIST_FAILED', e.message);
+    }
+  }
+
+  /// 내 인용구 무드 통계 — 전체 수 + 무드별 개수 (서재 인용 뷰 필터 칩용).
+  Future<MoodCounts> getMoodCounts() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return (total: 0, byMood: <QuoteMood, int>{});
+    try {
+      final rows = await _client.rpc('my_quote_mood_counts') as List<dynamic>;
+      return parseMoodCounts(rows);
+    } on PostgrestException catch (e) {
+      throw QuoteRepositoryException('COUNT_FAILED', e.message);
     }
   }
 }

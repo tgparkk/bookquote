@@ -1,3 +1,10 @@
+// 서재 화면 — "책 ↔ 인용구" 세그먼트.
+//
+// 책 탭: 내가 담은 책 목록 (탭 → 책 상세, FAB → 책 검색 시트 → addToLibrary).
+// 인용구 탭: 내가 모은 인용구를 무드별로 — `QuoteListView` (차별화 ④).
+// `?tab=quotes&mood=<name>` 쿼리로 진입 시 초기 탭·무드 필터 설정.
+// 설계: docs/design/screens/library.md · quote-list.md
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,19 +15,40 @@ import '../book/domain/book.dart';
 import '../book/presentation/book_search_sheet.dart';
 import '../book/presentation/widgets/book_cover.dart';
 import '../book/state/book_providers.dart';
+import '../quote/domain/quote_mood.dart';
+import '../quote/presentation/quote_list_view.dart';
 
-class LibraryScreen extends ConsumerWidget {
+class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
 
-  Future<void> _onAddBook(BuildContext context, WidgetRef ref) async {
-    final book = await showBookSearchSheet(context);
-    if (book == null || !context.mounted) return;
+  @override
+  ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
+}
 
+class _LibraryScreenState extends ConsumerState<LibraryScreen> {
+  int _tab = 0; // 0 = 책, 1 = 인용구
+  QuoteMood? _initialMood;
+  bool _readQuery = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_readQuery) return;
+    _readQuery = true;
+    final q = GoRouterState.of(context).uri.queryParameters;
+    if (q['tab'] == 'quotes') _tab = 1;
+    final moodName = q['mood'];
+    if (moodName != null) _initialMood = QuoteMood.fromName(moodName);
+  }
+
+  Future<void> _onAddBook() async {
+    final book = await showBookSearchSheet(context);
+    if (book == null || !mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(bookRepositoryProvider).addToLibrary(book.id);
       ref.invalidate(myLibraryProvider);
-      if (!context.mounted) return;
+      if (!mounted) return;
       messenger
         ..clearSnackBars()
         ..showSnackBar(
@@ -29,39 +57,91 @@ class LibraryScreen extends ConsumerWidget {
             action: SnackBarAction(
               label: '열기',
               onPressed: () {
-                if (context.mounted) context.push('/book/${book.id}');
+                if (mounted) context.push('/book/${book.id}');
               },
             ),
           ),
         );
-    } on BookRepositoryException catch (e) {
-      if (!context.mounted) return;
+    } on BookRepositoryException {
+      if (!mounted) return;
       messenger
         ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text('서재 추가 실패: ${e.message}')));
+        ..showSnackBar(const SnackBar(content: Text('서재에 추가하지 못했어요.')));
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncLibrary = ref.watch(myLibraryProvider);
-
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('내 서재')),
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(myLibraryProvider),
-        child: asyncLibrary.when(
-          data: (books) =>
-              books.isEmpty ? const _EmptyView() : _BookList(books: books),
-          loading: () =>
-              const Center(child: CircularProgressIndicator(color: AppColors.accent500)),
-          error: (e, _) => _ErrorView(error: e),
-        ),
+      body: Column(
+        children: [
+          _SegmentHeader(
+            tab: _tab,
+            onChanged: (i) => setState(() => _tab = i),
+          ),
+          Expanded(
+            child: _tab == 0
+                ? const _BookTab()
+                : QuoteListView(initialMood: _initialMood),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _onAddBook(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('책 추가'),
+      floatingActionButton: _tab == 0
+          ? FloatingActionButton.extended(
+              onPressed: _onAddBook,
+              icon: const Icon(Icons.add),
+              label: const Text('책 추가'),
+            )
+          : null,
+    );
+  }
+}
+
+class _SegmentHeader extends StatelessWidget {
+  const _SegmentHeader({required this.tab, required this.onChanged});
+  final int tab;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.s4,
+        AppSpacing.s2,
+        AppSpacing.s4,
+        AppSpacing.s2,
+      ),
+      child: SegmentedButton<int>(
+        segments: const [
+          ButtonSegment(value: 0, label: Text('책')),
+          ButtonSegment(value: 1, label: Text('인용구')),
+        ],
+        selected: {tab},
+        showSelectedIcon: false,
+        onSelectionChanged: (s) => onChanged(s.first),
+      ),
+    );
+  }
+}
+
+// ── 책 탭 ────────────────────────────────────────────────
+
+class _BookTab extends ConsumerWidget {
+  const _BookTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncLibrary = ref.watch(myLibraryProvider);
+    return RefreshIndicator(
+      onRefresh: () async => ref.invalidate(myLibraryProvider),
+      child: asyncLibrary.when(
+        data: (books) =>
+            books.isEmpty ? const _EmptyView() : _BookList(books: books),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.accent500),
+        ),
+        error: (e, _) => _ErrorView(onRetry: () => ref.invalidate(myLibraryProvider)),
       ),
     );
   }
@@ -121,8 +201,7 @@ class _BookRow extends StatelessWidget {
                   const SizedBox(height: AppSpacing.s1),
                   if (book.author?.isNotEmpty ?? false)
                     Text(book.author!, style: textTheme.bodySmall),
-                  if (meta.isNotEmpty)
-                    Text(meta, style: textTheme.labelSmall),
+                  if (meta.isNotEmpty) Text(meta, style: textTheme.labelSmall),
                 ],
               ),
             ),
@@ -147,8 +226,7 @@ class _EmptyView extends StatelessWidget {
         AppSpacing.s8,
       ),
       children: [
-        Icon(Icons.menu_book_outlined,
-            size: 48, color: AppColors.primary300),
+        Icon(Icons.menu_book_outlined, size: 48, color: AppColors.primary300),
         const SizedBox(height: AppSpacing.s4),
         Text('아직 책이 없어요',
             textAlign: TextAlign.center, style: textTheme.headlineSmall),
@@ -164,21 +242,24 @@ class _EmptyView extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.error});
-  final Object error;
+  const _ErrorView({required this.onRetry});
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    return Padding(
+    return ListView(
       padding: const EdgeInsets.all(AppSpacing.s8),
-      child: Center(
-        child: Text(
-          '서재를 불러오지 못했어요. 잠시 후 다시 시도해주세요.\n($error)',
+      children: [
+        SizedBox(height: MediaQuery.sizeOf(context).height * 0.2),
+        Text(
+          '서재를 불러오지 못했어요. 잠시 후 다시 시도해주세요.',
           textAlign: TextAlign.center,
           style: textTheme.bodyMedium,
         ),
-      ),
+        const SizedBox(height: AppSpacing.s3),
+        Center(child: OutlinedButton(onPressed: onRetry, child: const Text('다시 시도'))),
+      ],
     );
   }
 }

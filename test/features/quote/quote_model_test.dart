@@ -1,3 +1,4 @@
+import 'package:bookquote/features/quote/data/quote_repository.dart';
 import 'package:bookquote/features/quote/domain/quote.dart';
 import 'package:bookquote/features/quote/domain/quote_mood.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -82,6 +83,28 @@ void main() {
       );
       final restored = QuoteInput.fromJson(input.toJson());
       expect(restored, input);
+    });
+  });
+
+  group('parseMoodCounts (my_quote_mood_counts RPC 결과)', () {
+    test('__total__ 행은 전체 수, 나머지는 무드별 개수, 알 수 없는 name은 무시', () {
+      final r = parseMoodCounts([
+        {'mood': '__total__', 'n': 42},
+        {'mood': 'comfort', 'n': 12},
+        {'mood': 'someFutureMood', 'n': 3}, // 무시
+        {'mood': 'insight', 'n': 5},
+      ]);
+      expect(r.total, 42);
+      expect(r.byMood[QuoteMood.comfort], 12);
+      expect(r.byMood[QuoteMood.insight], 5);
+      expect(r.byMood.containsKey(QuoteMood.wistful), isFalse); // 0인 무드는 행 없음
+      expect(r.byMood.length, 2);
+    });
+
+    test('빈 결과면 total 0, byMood 비어있음', () {
+      final r = parseMoodCounts(const []);
+      expect(r.total, 0);
+      expect(r.byMood, isEmpty);
     });
   });
 
