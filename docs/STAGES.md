@@ -58,12 +58,13 @@
 - [x] 모바일 native 셋업 — Android `AndroidManifest.xml` deep-link intent filter (`io.github.tgparkk.bookquote://auth/callback`) + iOS `Info.plist` URL Types + `app_links` + `lib/app/deep_link_handler.dart`. 첫 debug APK 빌드 검증
 - [x] Supabase CLI 배포 파이프라인 — `supabase init` + `link` + `db push` + `secrets set ALADIN_TTB_KEY` + `functions deploy aladin-search` 모두 통과. 마이그레이션은 `YYYYMMDDHHMMSS` 14자리 timestamp로 표준 명명
 
-## 화면 세부 설계 (Stage 0b 연장 — 2026-05-12 1차 완료)
+## 화면 세부 설계 (Stage 0b 연장 — 2026-05-12 완료)
 
 - [x] 경쟁앱 화면 해부 (`docs/discovery/competitor-screen-analysis-2026-05-11.md` + `competitor-references.html`)
-- [x] 화면별 설계 문서 13개 (`docs/design/screens/*.md` — 그룹 1: 인용입력·인용목록·카드에디터·카드공유·deep link받기 / 그룹 2: 홈·Me·책상세 / 그룹 3 역정리: 스플래시·로그인·콜백·서재·책검색시트). 7섹션 구조(목적·와이어프레임·상태·인터랙션·토큰·재사용·엣지/접근성). `docs/design/mockups/screens.html`(그룹 1 와이어프레임)
-- [ ] `screens.html`에 그룹 2·3 와이어프레임 추가
-- [ ] (구현 전 정합 작업) `flows.md`/`client-architecture.md`의 `timelineProvider`·`publish to followers` Realtime 절을 "V1.5"로 마킹 (코드엔 0 — 문서 정합만)
+- [x] 화면별 설계 문서 13개 (`docs/design/screens/*.md` — 그룹 1: 인용입력·인용목록·카드에디터·카드공유·deep link받기 / 그룹 2: 홈·Me·책상세 / 그룹 3 역정리: 스플래시·로그인·콜백·서재·책검색시트). 7섹션 구조(목적·와이어프레임·상태·인터랙션·토큰·재사용·엣지/접근성)
+- [x] `docs/design/mockups/screens.html` — 전 13화면 와이어프레임 (그룹 1·2·3)
+- [x] (구현 전 정합) `flows.md`·`client-architecture.md` 상단에 V1.5 범위 정정 배너 — follow `timelineProvider`/`follows`/`useTimelineRealtime`/`publish to followers`는 V1.5(코드엔 0), V1 홈 = `myQuotesProvider` 기반·Realtime 없음, Flow C는 V1.5(deep link 받는 쪽 1탭 담기만 V1), OCR은 폰 기능+클립보드
+- (참고) 무드 태그 셋 작업 가정값: 위로 / 먹먹 / 새벽3시 / 통찰 / 설렘 — `quotes.moods text[]` + 앱 `enum QuoteMood`. 구현 전 최종 확정 가능
 
 ## Stage 2 — 인용구 입력 (2–3주) — 설계 완료, 구현 대기
 

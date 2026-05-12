@@ -291,7 +291,282 @@
     </div>
   </section>
 
-  <div class="src">전체 명세: <code>docs/design/screens/README.md</code> (인덱스+IA) · <code>quote-input.md</code> · <code>card-editor.md</code> · <code>card-share.md</code> · <code>deep-link-receive.md</code> · <code>quote-list.md</code>. 근거: <code>docs/discovery/competitor-screen-analysis-2026-05-11.md</code>. 그룹 2(홈·Me·책상세 보강), 그룹 3(스플래시·로그인·콜백·서재·책검색시트 역정리)는 다음 세션.</div>
+  <!-- ============================ 그룹 2 ============================ -->
+  <h2 style="font-size:18px;color:var(--copper-700);margin:44px 0 0;padding-top:14px;border-top:3px double var(--copper-300)">그룹 2 — 홈 · Me · 책 상세 (보강)</h2>
+
+  <!-- ===== 홈 ===== -->
+  <section>
+    <h2>6. 홈 <code>/</code> (내 인용 피드)</h2>
+    <div class="rt">명세: <code>screens/home.md</code> · 받은 카드 함은 V1.5 / V1 홈 = 내 인용 피드(시간순) · FAB 없음 · cursor-after 페이지네이션 · Realtime 없음</div>
+    <div class="lay">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>● ● ●</span></div>
+        <div class="screen">
+          <div class="appbar"><span style="font-family:var(--serif)">책귀</span><span class="ico">🔍</span></div>
+          <div class="card-mini"><div class="cover c1"></div><div><div class="q">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div><div class="meta">미드나잇 라이브러리 · p.132</div><div class="chips"><span class="chip calm">위로</span><span class="chip mel">먹먹</span></div><div class="row" style="margin:5px 0 0;justify-content:flex-end"><span style="font-size:10px;color:var(--copper)">✦ 카드 만들기</span></div></div></div>
+          <div class="card-mini"><div class="cover c2"></div><div><div class="q">"우리는 우리가 반복하는 것이다."</div><div class="meta">니코마코스 윤리학 · p.55</div><div class="chips"><span class="chip">통찰</span></div><div class="row" style="margin:5px 0 0;justify-content:flex-end"><span style="font-size:10px;color:var(--copper)">✦ 카드 만들기</span></div></div></div>
+          <div class="card-mini" style="background:var(--paper-300)"><div style="flex:1"><div class="q" style="font-size:12px;color:var(--ink-600)">"오래된 것은 사라지지 않는다…"</div><div class="meta">잃어버린 시간을 찾아서 &nbsp;<span class="badge warn">⏳ 동기화 대기</span></div></div></div>
+          <div class="row" style="margin-top:auto;justify-content:center;font-size:10px;color:var(--ink-300)">… 무한 스크롤 (페이지 15, cursor-after)</div>
+          <div class="tabbar"><span class="t on"><span class="g">▦</span>홈</span><span class="t"><span class="g">▤</span>서재</span><span class="t"><span class="g">＋</span></span><span class="t"><span class="g">◔</span>나</span></div>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>● ● ●</span></div>
+        <div class="screen">
+          <div class="appbar"><span style="font-family:var(--serif)">책귀</span><span class="ico">🔍</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px">
+            <div style="font-size:40px;color:var(--ink-300)">❝</div>
+            <div style="font-weight:600;color:var(--ink-900)">아직 인용구가 없어요</div>
+            <div style="font-size:12px;color:var(--ink-500)">좋아하는 책의 한 줄을 저장해보세요.</div>
+            <div class="btn" style="margin-top:6px">＋ 인용구 추가</div>
+          </div>
+          <div class="tabbar"><span class="t on"><span class="g">▦</span>홈</span><span class="t"><span class="g">▤</span>서재</span><span class="t"><span class="g">＋</span></span><span class="t"><span class="g">◔</span>나</span></div>
+        </div>
+      </div>
+      <div class="notes">
+        <h4>주요 인터랙션</h4>
+        <ul>
+          <li>피드 항목 = <code>quote_list_card.dart</code>(서재 인용구 뷰와 같은 위젯). 탭 → 인라인 확장(전체 텍스트 + 메모 + [수정]/[무드 변경]/[공유]/[삭제]). 우하단 [✦ 카드 만들기] → <code>/quote/:id/card</code></li>
+          <li>무드 칩 탭 → <code>context.go('/library?tab=quotes&amp;mood=...')</code>(서재 인용구 뷰로, 그 무드 필터). 홈 안에서 필터링 X</li>
+          <li><b>FAB 없음</b> — BottomNav [＋] sentinel과 중복 + 마지막 항목 가림. 빈 상태엔 큰 버튼 1개(<code>flows.md</code> Flow A 3.1, 튜토리얼 없음)</li>
+          <li>pull-to-refresh → <code>ref.invalidate(myQuotesProvider)</code> + 아웃박스 flush. AppBar 🔍 = 서재 인용구 뷰 검색과 같은 위젯</li>
+        </ul>
+        <h4>상태</h4>
+        <ul>
+          <li><span class="sev mid">중간</span> 빈: 인용 0개 → empty 페이지(아이콘+카피+버튼 1개)</li>
+          <li><span class="sev mid">중간</span> 오프라인: stale-while-revalidate(마지막 캐시) + 배너 + 아웃박스 항목 "동기화 대기" 뱃지 → flush 성공 시 실제 행으로 swap</li>
+          <li><span class="sev mid">중간</span> RLS 거부(<code>PGRST301</code>) → <code>onAuthStateChange</code> 한 곳에서 <code>/auth/login</code>(화면마다 중복 처리 X)</li>
+          <li><span class="sev lo">낮음</span> BOOK_UNRESOLVED 항목 → 표지 placeholder + "책 연결하기"</li>
+        </ul>
+        <h4>신규</h4>
+        <ul><li><code>home_screen.dart</code> 재작성(<code>ConsumerStatefulWidget</code> + 무한스크롤 가드), <code>myQuotesProvider</code> 누적 상태(<code>Notifier&lt;AsyncValue&lt;List&lt;Quote&gt;&gt;&gt;</code>). follow <code>timelineProvider</code> 의존 0 — Realtime 코드 금지</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Me ===== -->
+  <section>
+    <h2>7. Me <code>/me</code> (계정·내보내기·약관·탈퇴)</h2>
+    <div class="rt">명세: <code>screens/me.md</code> · ⚠️ 출시 블로커: in-app 계정 삭제 + 약관/개인정보 페이지 · 친구 찾기 = 숨김 · 다크모드 토글 = V1.5</div>
+    <div class="lay">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>● ● ●</span></div>
+        <div class="screen">
+          <div class="appbar"><span>내 정보</span></div>
+          <div class="row" style="gap:12px;margin:2px 2px 14px"><div style="width:42px;height:42px;border-radius:50%;background:var(--copper-100);color:var(--copper-700);display:flex;align-items:center;justify-content:center;font-weight:600">S</div><div><div style="font-weight:600;color:var(--ink-900);font-size:13px">sttgpark@gmail.com</div><div style="font-size:10.5px;color:var(--ink-400)">로그인됨</div></div></div>
+          <div style="font-size:10px;color:var(--ink-400);letter-spacing:.06em;margin:8px 2px 4px">내 데이터</div>
+          <div class="row" style="margin:0;padding:8px 2px;border-bottom:1px solid var(--ink-100);font-size:12.5px">📝 인용구 <span style="margin-left:auto;color:var(--ink-400)">128개 ▸</span></div>
+          <div class="row" style="margin:0;padding:8px 2px;border-bottom:1px solid var(--ink-100);font-size:12.5px">📚 서재 <span style="margin-left:auto;color:var(--ink-400)">23권 ▸</span></div>
+          <div class="row" style="margin:0;padding:8px 2px;border-bottom:1px solid var(--ink-100);font-size:12.5px">⬇ Markdown으로 내보내기 <span style="margin-left:auto;color:var(--ink-400)">▸</span></div>
+          <div style="font-size:10px;color:var(--ink-400);letter-spacing:.06em;margin:12px 2px 4px">정보</div>
+          <div class="row" style="margin:0;padding:7px 2px;font-size:12.5px;color:var(--ink-700)">ℹ 앱 버전 <span style="margin-left:auto;color:var(--ink-400)">1.0.0 (12)</span></div>
+          <div class="row" style="margin:0;padding:7px 2px;font-size:12.5px;color:var(--ink-700)">✉ 문의하기 / 📄 이용약관 / 🔒 개인정보처리방침</div>
+          <div class="btn ghost" style="margin:14px 0 6px;text-align:center">로그아웃</div>
+          <div style="font-size:11px;color:var(--err);text-align:right;padding:2px">회원 탈퇴 ▸</div>
+        </div>
+      </div>
+      <div class="notes">
+        <h4>구성 (현행 → 보강)</h4>
+        <ul>
+          <li>현행 = 이메일 표시 + "친구 찾기"(빈 onTap) + 로그아웃. → 섹션형 ListView: 프로필 / 내 데이터(인용·서재 count, Markdown export) / 설정(다크모드 시스템 표시·알림 V1.5) / 정보(버전·문의·약관·개인정보) / 계정(로그아웃·회원 탈퇴 2단계)</li>
+          <li>"친구 찾기" = <b>숨김</b>(렌더 안 함) — 현행 빈 <code>onTap: () {}</code>(무반응=버그처럼 보임) 제거. 카카오 로그인 placeholder가 이미 하나 있어 미완성 인상 최소화</li>
+          <li>회원 탈퇴 = 2단계 확인 → Edge Function <code>delete-account</code>(JWT 검증 → <code>auth.admin.deleteUser</code>, cascade로 quotes/user_books/cards/profiles 삭제). 클라이언트 직접 불가</li>
+          <li>Markdown export = 인용구 전체 fetch → 책별 그룹 <code>.md</code> → <code>share_plus</code> (차별화 ③)</li>
+        </ul>
+        <h4>상태</h4>
+        <ul>
+          <li><span class="sev hi">높음</span> <b>로그아웃 시 아웃박스 대기 N개면 경고 Modal</b> "로그아웃하면 이 기기에서 사라질 수 있어요" (데이터 유실 방지)</li>
+          <li><span class="sev hi">높음</span> 약관/개인정보 URL 미확보 채로 출시 = 스토어 리젝 — STAGES Stage 5 to-do</li>
+          <li><span class="sev mid">중간</span> 로그아웃 실패(네트워크) → 로컬 세션은 그래도 클리어 / 탈퇴 실패 → 세션 유지 + 재시도 / url_launcher 실패 → "브라우저를 열 수 없어요" + URL 복사</li>
+          <li><span class="sev lo">낮음</span> 긴 이메일 → 1줄 말줄임(현행 미처리 — 수정 항목)</li>
+        </ul>
+        <h4>신규</h4>
+        <ul><li><code>me_screen.dart</code> 확장, <code>markdown_exporter.dart</code>, <code>account_deletion.dart</code>, Edge Function <code>delete-account</code>, count 쿼리(<code>CountOption.exact, head:true</code>). pubspec: <code>url_launcher</code>·<code>package_info_plus</code></li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 책 상세 ===== -->
+  <section>
+    <h2>8. 책 상세 <code>/book/:id</code> (보강 — <code>deep-link-receive.md</code>와 같은 컴포넌트의 두 진입 모드)</h2>
+    <div class="rt">명세: <code>screens/book-detail.md</code> · 일반 진입(서재·검색) vs deep link 진입(<code>?from=share</code>) · 게스트 허용 라우트 · raw <code>$e</code> 노출 제거</div>
+    <div class="lay">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>● ● ●</span></div>
+        <div class="screen">
+          <div class="appbar"><span style="font-size:16px;font-weight:400">←</span><span>책 상세</span><span style="font-size:16px;color:var(--ink-400)">⋮</span></div>
+          <div class="row" style="align-items:flex-start;gap:14px;margin:6px 2px 14px"><div class="cover c1 big"></div><div style="align-self:center"><div style="font-size:15px;font-weight:600">미드나잇 라이브러리</div><div class="meta">매트 헤이그</div><div class="meta">인플루엔셜 · 2021</div><div class="meta">ISBN 9791159…  더 보기 ▾</div></div></div>
+          <div class="btn" style="margin-bottom:12px;text-align:center">＋ 이 책 인용구 추가</div>
+          <div style="font-size:12px;font-weight:600;color:var(--ink-800);margin:0 2px 6px">이 책에서 모은 구절 &nbsp;<span style="color:var(--ink-400);font-weight:400">3</span></div>
+          <div class="card-mini" style="padding:8px 12px"><div style="flex:1"><div class="q" style="font-size:12px">"가장 깊은 밤에 가장 빛나는 별이…"</div><div class="meta">p.132 &nbsp;<span class="chip calm" style="font-size:8.5px">위로</span></div></div></div>
+          <div class="card-mini" style="padding:8px 12px"><div style="flex:1"><div class="q" style="font-size:12px">"후회는 인생에서 가장 무거운 짐…"</div><div class="meta">p.87</div></div></div>
+          <div style="font-size:10.5px;color:var(--ink-400);text-align:center">[ 전체 보기 ▸ ] &nbsp; (→ /library?tab=quotes&bookId=)</div>
+          <div style="font-size:11px;color:var(--ink-600);margin-top:10px">설명: 미드나잇 라이브러리는 삶과 죽음 사이의 도서관에 관한 이야기다. 노라 시드는… <span style="color:var(--copper)">더 보기</span> &nbsp;<i>(4줄 클램프 + fade)</i></div>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>● ● ●</span></div>
+        <div class="screen">
+          <div class="appbar"><span style="font-size:16px;font-weight:400">←</span><span style="font-size:13px">미드나잇 라이브러리</span><span></span></div>
+          <div style="background:var(--copper-100);border:1px solid var(--copper-300);border-radius:12px;padding:12px;margin-bottom:10px"><div style="font-size:11.5px;font-weight:600;color:var(--copper-700);margin-bottom:6px">💬 지윤님이 이 책의 한 줄을 보냈어요</div><div class="q" style="font-size:13px">"가장 깊은 밤에 가장 빛나는 별이 보인다."</div><div class="meta">─ 미드나잇 라이브러리, p.132</div></div>
+          <div class="btn" style="margin-bottom:12px;text-align:center">📚 내 서재에 담기</div>
+          <div style="font-size:10.5px;color:var(--ink-400);text-align:center">비로그인이면: 책 정보 먼저 → "담기" 누르면 로그인 → 원래 화면 복귀해 담기</div>
+          <div class="row" style="align-items:flex-start;gap:14px;margin:14px 2px 0"><div class="cover c1 big"></div><div style="align-self:center"><div style="font-size:14px;font-weight:600">미드나잇 라이브러리</div><div class="meta">매트 헤이그 · 인플루엔셜</div></div></div>
+          <div style="font-size:10.5px;color:var(--ink-300);margin-top:14px;text-align:center">(이하 일반 진입과 동일: 메타·구절·설명)</div>
+        </div>
+      </div>
+      <div class="notes">
+        <h4>두 진입 모드</h4>
+        <ul>
+          <li><b>일반 진입</b>(서재·검색·인용구 카드): read-only 메타 + "내가 이 책에서 모은 N구절"(<code>myQuotesProvider(bookId)</code> — RLS상 본인 것만) + [＋ 인용구 추가](→ <code>/quote/new?bookId=</code>) + 설명 점진적 공개. 담겼으면 "✓ 서재에 있음"</li>
+          <li><b>deep link 진입</b>(<code>?from=share</code>): 최상단에 보낸 사람 컨텍스트 + "내 서재에 담기" 1급 CTA. 미로그인 → read-only로 다 보이고 "담기"·"추가"는 로그인 유도 + <b>payload 보존</b>(현행 미구현). deep link 1회 consume, redirect 1홉</li>
+          <li>두 모드 = <code>book_detail_screen.dart</code> 한 파일이 <code>?from=</code>으로 분기. <code>deep-link-receive.md</code>와 모순 없게</li>
+        </ul>
+        <h4>상태 / 수정 항목</h4>
+        <ul>
+          <li><span class="sev mid">중간</span> 책 없음(<code>PGRST116</code>) → "더 이상 볼 수 없어요" + [홈]/[검색] · 인용 fetch 부분 실패 → 책 정보는 그대로(격리)</li>
+          <li><span class="sev mid">중간</span> "담기" 이미 있음(<code>23505</code>) → "이미 서재에 있어요" 정보성 Toast(에러 아님) · 표지 깨짐 → <code>BookCover</code> placeholder</li>
+          <li><span class="sev mid">수정</span> 현행 <code>'책을 불러오지 못했어요: $e'</code> raw 노출 → userMessage만 · 설명 무제한 노출 → 4줄 클램프 · <code>router.dart</code>의 <code>/book/:id</code> builder가 <code>?from=</code>도 넘기게</li>
+        </ul>
+        <h4>신규</h4>
+        <ul><li><code>book_detail_screen.dart</code> 보강, <code>sender_context_box.dart</code>, <code>deep_link_handler.dart</code> 일반화(<code>/book/:id</code> 라우팅 + payload 보존 + 1회 consume), <code>book_repository</code>에 <code>isInLibrary(bookId)</code> EXISTS</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ 그룹 3 ============================ -->
+  <h2 style="font-size:18px;color:var(--copper-700);margin:44px 0 0;padding-top:14px;border-top:3px double var(--copper-300)">그룹 3 — 이미 구현된 화면 (역정리 + 수정·보강 권고)</h2>
+  <p class="rt" style="margin-top:8px">아래는 <b>현행 동작</b>(코드 기준)이다. "수정·보강 권고"(현행 ≠ 권고)는 각 화면의 <code>screens/*.md §7</code>에 분리해 담았다 — 코드 레벨 버그 목록은 <code>docs/sessions/2026-05-12-screen-design-b.md</code>.</p>
+
+  <section>
+    <h2>9. 스플래시 <code>/splash</code></h2>
+    <div class="rt">명세: <code>screens/splash.md</code> · cold-start 세션 hydrate 게이트 · <code>initialLocation</code> · transient</div>
+    <div class="lay">
+      <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen" style="align-items:center;justify-content:center"><div style="font-family:var(--serif);font-size:24px;color:var(--ink-900);margin-bottom:14px">책귀 <i style="font-size:10px;color:var(--ink-400)">(권고: 워드마크 — 현행 없음)</i></div><div style="font-size:24px;color:var(--copper)">◌</div></div></div>
+      <div class="notes">
+        <h4>현행 동작 (코드 기준)</h4>
+        <ul>
+          <li><code>isSupabaseReady == false</code> → 다음 프레임에 <code>/auth/login</code>. <code>true</code> → <code>Timer(500ms, _resolve)</code> 안전망 + <code>ref.listen(authStateProvider)</code> 첫 이벤트 시 <code>_resolve()</code></li>
+          <li><code>_resolve()</code>: <code>_resolved</code> 가드(1회) → <code>loggedIn = currentSession != null</code> → <code>context.go(loggedIn ? '/' : '/auth/login')</code>. <code>_redirect</code>는 <code>loc=='/splash'</code>면 무조건 통과</li>
+        </ul>
+        <h4>수정·보강 권고 (현행 ≠ 권고)</h4>
+        <ul>
+          <li><span class="sev mid">중간</span> 500ms 안전망이 느린 기기에서 hydrate 초과 시 로그인 화면 깜빡임 — commit <code>231aaaa</code> 로그로 실측 후 값 조정 / 첫 SIGNED_IN·INITIAL 이벤트 더 신뢰</li>
+          <li><span class="sev mid">중간</span> deep link cold start payload 보존 경로 없음 — handler 일반화와 함께 보강</li>
+          <li><span class="sev lo">낮음</span> 브랜딩 0 — "책귀" 워드마크 추가(차분한 톤)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>10. 로그인 <code>/auth/login</code></h2>
+    <div class="rt">명세: <code>screens/login.md</code> · 이메일 매직링크 단일(가입·로그인 통합) · 카카오 = V1.5 비활성 placeholder(DECISIONS 2026-05-10) · 게스트 라우트</div>
+    <div class="lay">
+      <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen">
+        <div style="margin-top:30px"><div style="font-family:var(--serif);font-size:22px;color:var(--ink-900)">책귀</div><div style="font-size:12px;color:var(--ink-500);margin-bottom:18px">좋은 구절을 모으세요</div></div>
+        <div class="field" style="min-height:auto;padding:11px 12px"><span class="ph">이메일</span></div>
+        <div class="btn full" style="margin-top:10px;text-align:center">로그인 링크 받기</div>
+        <div style="margin-top:14px;font-size:12px;color:var(--ink-300);border-top:1px solid var(--ink-100);padding-top:14px">⊗ 카카오로 시작 (곧 지원)</div>
+        <div style="margin-top:auto;font-size:10px;color:var(--ink-300)">전송 후 → "메일을 보냈어요" _SentNotice 화면 (같은 라우트, state 전환)</div>
+      </div></div>
+      <div class="notes">
+        <h4>현행 동작 (코드 기준)</h4>
+        <ul>
+          <li><code>_sendLink</code> → <code>authControllerProvider.sendMagicLink(email, redirectTo: _redirectUrl())</code> (<code>kIsWeb</code>면 <code>${origin}/auth/callback</code>, 아니면 커스텀 스킴). 성공 → <code>_SentNotice</code>. 실패 → SnackBar(<code>authErrorMessage</code> — rate limit / invalid email / kDebugMode raw / 일반 분기)</li>
+          <li>validator: 빈값·<code>!@ || !.</code> → 느슨. <code>shouldCreateUser: true</code>. 카카오 버튼 <code>onPressed: null</code>(코드 주석에 KOE205 사유 기록)</li>
+          <li><code>?from=</code>은 LoginScreen이 안 건드림 — <code>_redirect</code>가 로그인 후 <code>queryParameters['from'] ?? '/'</code>로 복귀</li>
+        </ul>
+        <h4>수정·보강 권고</h4>
+        <ul>
+          <li><span class="sev mid">중간</span> <b>매직링크 재전송 출구 없음</b> — <code>_SentNotice</code>에 [다른 이메일로 다시 보내기] + "메일이 안 와요?" 안내 + 재전송 쿨다운(30s). 막다른 골목 성향</li>
+          <li><span class="sev mid">중간</span> <code>?from=</code> 미보존(매직링크 흐름) — 콜백 URL에 <code>from</code>이 없으면 로그인 후 항상 <code>/</code>로 → <code>/quote/new</code>에서 시작한 흐름 복귀 못 함. <code>from</code>을 매직링크 redirectTo 쿼리/로컬에 보존</li>
+          <li><span class="sev lo">낮음</span> 이메일 검증 강화(<code>\S+@\S+\.\S+</code>) · 카카오 버튼 시각 무게 줄임 · 에러 inline 영역 병행</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>11. 인증 콜백 <code>/auth/callback</code> · <code>/callback</code></h2>
+    <div class="rt">명세: <code>screens/auth-callback.md</code> · 매직링크 클릭 직후 transient 로딩 · 세션 교환은 이 화면이 안 함(웹=SDK <code>detectSessionInUri</code> / 모바일=<code>DeepLinkHandler</code>) · 게스트 라우트</div>
+    <div class="lay">
+      <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen" style="align-items:center;justify-content:center"><div style="font-size:24px;color:var(--copper)">◌</div><div style="font-size:14px;color:var(--ink-500);margin-top:8px">로그인 중…</div><div style="font-size:10px;color:var(--ink-300);margin-top:30px">(권고: 8초+ → "조금 더 걸리고 있어요…" / 12초 → [다시 로그인])</div></div></div>
+      <div class="notes">
+        <h4>현행 동작 (코드 기준)</h4>
+        <ul>
+          <li><code>isSupabaseReady==false</code> → 즉시 <code>/auth/login</code>. <code>true</code> → <code>Timer(10s, () => /auth/login)</code> 안전망, <code>dispose</code>에서 cancel</li>
+          <li><code>/callback</code> 별도 라우트 = Dart URI 파서가 <code>...://auth/callback?code=</code>를 <code>host=auth, path=/callback</code>로 쪼개므로 둘 다 매핑(commit <code>bee0404</code>). <code>isAuthPath</code>도 둘 다 포함</li>
+          <li><code>DeepLinkHandler</code>: <code>kIsWeb</code> no-op, <code>getInitialLink()</code> + <code>uriLinkStream.listen(_handle)</code>. <code>_handle</code>: <code>/auth/callback</code> 또는 <code>host==auth</code> 또는 <code>code=</code> 포함 아니면 무시 → 맞으면 <code>getSessionFromUrl</code> try/catch(<code>debugPrint</code>만)</li>
+        </ul>
+        <h4>수정·보강 권고</h4>
+        <ul>
+          <li><span class="sev mid">중간</span> 타임아웃/실패 시 사유 안내 없음(만료된 링크인지 느린 네트워크인지 구분 X) → <code>/auth/login?error=link_expired</code> 또는 콜백 화면 8초+ 단계 카피</li>
+          <li><span class="sev mid">중간</span> <code>from</code>/deep link payload 손실 — 콜백 URL의 비-auth 쿼리 보존 → 세션 후 그 경로로</li>
+          <li><span class="sev mid">중간</span> <b><code>DeepLinkHandler</code> 미일반화</b> — <code>/auth/callback</code>만 처리, <code>book/...</code>는 무시 → 받는 사람 deep link 흐름이 V1엔 동작 X. "URI dispatcher"로(auth code면 <code>getSessionFromUrl</code>, 아니면 <code>router.go</code>) + 콜드스타트 미로그인 시 pending 보관</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>12. 서재 <code>/library</code> (보강 — "책 ↔ 인용구" 세그먼트)</h2>
+    <div class="rt">명세: <code>screens/library.md</code> · <code>RefreshIndicator + asyncX.when(data/loading/error)</code> 패턴은 홈·인용목록·책상세의 레퍼런스 · DECISIONS 2026-05-12: 인용구 목록 = 서재 안 세그먼트</div>
+    <div class="lay">
+      <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen">
+        <div class="appbar"><span>내 서재</span><span style="font-size:11px;color:var(--ink-400);font-weight:400"><span class="seg" style="display:inline-flex;vertical-align:middle"><span class="on">책</span><span>인용구</span></span></span></div>
+        <div class="card-mini"><div style="width:5px;border-radius:3px;background:#4a6491"></div><div class="cover c1"></div><div style="flex:1;align-self:center"><div style="font-size:12px;font-weight:600">미드나잇 라이브러리</div><div class="meta">매트 헤이그 · 인플루엔셜 · 2021</div></div><div style="align-self:center"><span class="badge ok">7구절</span></div></div>
+        <div class="card-mini"><div style="width:5px;border-radius:3px;background:#b5654a"></div><div class="cover c2"></div><div style="flex:1;align-self:center"><div style="font-size:12px;font-weight:600">니코마코스 윤리학</div><div class="meta">아리스토텔레스 · 길</div></div><div style="align-self:center"><span class="badge ok">3구절</span></div></div>
+        <div class="row" style="margin-top:auto;justify-content:flex-end"><span class="fab">＋ 책 추가</span></div>
+        <div class="tabbar"><span class="t"><span class="g">▦</span>홈</span><span class="t on"><span class="g">▤</span>서재</span><span class="t"><span class="g">＋</span></span><span class="t"><span class="g">◔</span>나</span></div>
+      </div></div>
+      <div class="notes">
+        <h4>현행 동작 (코드 기준)</h4>
+        <ul>
+          <li><code>myLibraryProvider</code>(<code>FutureProvider.autoDispose&lt;List&lt;Book&gt;&gt;</code> → <code>listMyLibrary()</code>, limit 50, <code>added_at desc</code>). <code>RefreshIndicator(onRefresh: invalidate)</code> + <code>asyncLibrary.when</code>(빈→<code>_EmptyView</code> / 로딩→spinner / 에러→<code>_ErrorView</code>("…($error)" — raw 노출))</li>
+          <li><code>_BookRow</code> 탭 → <code>/book/:id</code>. FAB → <code>showBookSearchSheet</code> → <code>addToLibrary</code> → invalidate + SnackBar(action 열기). <code>BookRepositoryException</code> → SnackBar("서재 추가 실패: ${e.message}" raw)</li>
+        </ul>
+        <h4>수정·보강 권고</h4>
+        <ul>
+          <li><span class="sev mid">중간</span> <code>_ErrorView</code> raw <code>$error</code> 노출 + [다시 시도] 없음 → userMessage만 + 재시도 버튼 / "서재 추가 실패: ${e.message}" → userMessage 매핑</li>
+          <li><span class="sev mid">중간</span> "책 ↔ 인용구" 세그먼트 + <code>quote_list_view.dart</code> 추가(<code>?tab=quotes</code>) · 책 카드에 "N구절 배지 + 표지색 띠"(저비용, V1.5 인용 서가 발판)</li>
+          <li><span class="sev lo">낮음</span> <code>listMyLibrary(limit:50)</code> 하드캡(V1 수용) · 시트 토스트 2번(시트 <code>suppressAddedToast</code>) · 오프라인 stale-while-revalidate 미적용 · 책 제거 UI 없음(책상세 ⋮로 커버)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>13. 책 검색 시트 (모달)</h2>
+    <div class="rt">명세: <code>screens/book-search-sheet.md</code> · 알라딘 검색 + 캐시 + ISBN 자동 분기 · <code>showBookSearchSheet(context) → Future&lt;Book?&gt;</code> · 서재 FAB·인용구 입력에서 호출</div>
+    <div class="lay">
+      <div class="phone"><div class="status"><span>9:41</span><span>● ● ●</span></div><div class="screen">
+        <div style="width:32px;height:4px;background:var(--ink-200);border-radius:2px;margin:0 auto 12px"></div>
+        <div class="field" style="min-height:auto;padding:10px 12px"><span class="ph">🔍 책 제목, 저자, ISBN</span></div>
+        <div style="font-size:11px;font-weight:600;color:var(--ink-500);margin:12px 2px 4px">내 서재 카탈로그</div>
+        <div class="card-mini" style="padding:8px 12px"><div class="cover c1" style="width:24px;height:34px;flex:0 0 24px"></div><div style="align-self:center;font-size:12px">미드나잇 라이브러리 · 매트 헤이그</div></div>
+        <div style="font-size:11px;font-weight:600;color:var(--ink-500);margin:8px 2px 4px">알라딘 검색 결과</div>
+        <div class="card-mini" style="padding:8px 12px"><div class="cover c2" style="width:24px;height:34px;flex:0 0 24px"></div><div style="align-self:center;font-size:12px">미드나잇 라이브러리 (개정판) · …</div></div>
+        <div style="font-size:10px;color:var(--ink-300);margin-top:8px">결과 0건 시(권고): + [ISBN으로 등록] [직접 입력해서 등록] 버튼</div>
+      </div></div>
+      <div class="notes">
+        <h4>현행 동작 (코드 기준)</h4>
+        <ul>
+          <li><code>bookSearchProvider</code>: <code>query.trim().length &lt; 2</code>면 empty. 아니면 <code>findCachedByQuery</code>(ilike, limit 5) + <code>searchBooks</code>(Edge Function) 동시 호출 → 같은 <code>isbn13</code>은 캐시 우선. 400ms 디바운스</li>
+          <li><code>_onPick</code>: <code>_saving</code> 가드 → cached면 그대로 / fresh면 <code>upsertBook</code>(<code>upsert_book</code> RPC) → SnackBar("…서재에 추가했어요") → <code>pop(book)</code>. <code>_ErrorView</code>: code=='RATE_LIMIT'면 안내, 그 외 "검색 실패…네트워크 확인"</li>
+        </ul>
+        <h4>수정·보강 권고</h4>
+        <ul>
+          <li><span class="sev hi">높음</span> <b>0건/알라딘 다운 시 정상 경로 출구 없음</b> — [ISBN으로 등록]·[직접 입력해서 등록] 버튼 + 알라딘 다운 시 [다시 시도]. 막다른 골목 금지(현행 위반)</li>
+          <li><span class="sev mid">중간</span> 검색 전(query empty)인데 "찾는 책이 없어요" 노출 위험 → cached 카탈로그 + "검색해보세요" 안내. "0건"은 검색 후에만 · ISBN 13자리 패턴 → <code>lookupByIsbn</code> 자동 전환</li>
+          <li><span class="sev mid">중간</span> <code>_onPick</code> 토스트 카피 부정확("서재에 추가" — 실제론 <code>public.books</code> upsert) → <code>suppressAddedToast</code> 옵션 / 문구 "이 책을 선택했어요" · 오프라인 시 cached도 안 보임 → <code>_safeRemote</code>가 네트워크 오류도 흡수 + cached만 + "직접 입력"</li>
+          <li><span class="sev lo">낮음</span> 로딩 중 캐시 못 봄(<code>when(loading:)</code>이 전체 덮음) · <code>_saving</code> 중 닫기 차단(<code>PopScope</code>) · "내 서재 카탈로그" 라벨이 실제론 books 전체 ilike — "이전 검색 결과"로</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="src">전체 명세: <code>docs/design/screens/README.md</code> (인덱스 + IA + 공통 8원칙) · 화면별 <code>screens/*.md</code> 13개. 근거: <code>docs/discovery/competitor-screen-analysis-2026-05-11.md</code> + <code>competitor-references.html</code>(경쟁앱 비교 버전). 결정: <code>docs/DECISIONS.md</code> 2026-05-11·2026-05-12. 코드 레벨 버그 목록: <code>docs/sessions/2026-05-12-screen-design-b.md</code>. 픽셀·세부 제스처는 추정 — V1 출시 후 실사용 데이터로 검증.</div>
 </div>
 </body>
 </html>

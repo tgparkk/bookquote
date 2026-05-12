@@ -4,6 +4,12 @@
 **연계**: `architecture.md` (시스템 전체) · 본 문서는 Flutter 앱 내부 설계
 **스택 변경 이력**: 0.1 (RN+Expo+TS+Zustand+TanStack Query) → 0.2 (Flutter+Dart+Riverpod+go_router)
 
+> **⚠️ V1 범위 정정 (DECISIONS 2026-05-12 — 화면 설계 Phase B 반영).** 이 문서 0.2(2026-05-09)는 follow/타임라인/Realtime을 V1처럼 적었으나 V1에는 들어가지 않는다:
+> - **`features/quotes/.../timeline_provider.dart`·`timeline_realtime.dart`·`timelineProvider`·`watchTimeline()`·`features/friends/...`(followers_provider·follow_controller·follow_button)·"서버 상태 프로바이더 (StreamProvider + Realtime)" §A·"Realtime invalidation" = 전부 V1.5.** V1 코드에 넣지 말 것.
+> - **V1 홈** = "내 인용 피드"(`screens/home.md`) — `myQuotesProvider` 기반(`FutureProvider`/`Notifier<AsyncValue<List<Quote>>>` + cursor-after 페이지네이션, **Realtime 없음**). follow 타임라인은 V1.5에 같은 피드에 합류. Realtime 상시 구독은 V2(DECISIONS 2026-05-10).
+> - **V1 동기화 상태(5종 중 "동기화")** = 경량 로컬 아웃박스(`shared_preferences` JSON 리스트, best-effort flush — DECISIONS 2026-05-11). 완전 동기화 엔진은 V1.5.
+> - 화면 단위 세부 설계(데이터 모델 포함)는 `docs/design/screens/*.md` + `docs/design/screens/README.md`가 갱신본. `quotes` 테이블 스키마는 `screens/quote-input.md §6`.
+
 ---
 
 ## 1. 핵심 결정 요약

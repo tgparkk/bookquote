@@ -82,6 +82,6 @@
 
 ## 진행 메모
 
-- 그룹 1·2·3 화면 설계 문서 1차 작성 완료(2026-05-12). 다음: `screens.html`에 그룹 2·3 와이어프레임 추가 → Stage 2 구현 착수(우선순위: `quotes` 테이블 + `quote_repository`/`quote_providers`/`createQuoteController`/`quote_outbox` → `quote_input_screen` 재작성 → `home_screen` 재작성 → `quote_list_view`).
+- 그룹 1·2·3 화면 설계 문서 + `screens.html`(전 13화면 와이어프레임) + `flows.md`·`client-architecture.md` V1.5 범위 정정 배너 완료(2026-05-12). 다음: Stage 2 구현 착수(우선순위: `quotes` 테이블 + `quote_repository`/`quote_providers`/`createQuoteController`/`quote_outbox` → `quote_input_screen` 재작성 → `home_screen` 재작성 → `quote_list_view` → `me_screen` 보강 → `book_detail_screen` 보강).
 - 미해결 결정 전부 해소(DECISIONS 2026-05-11·2026-05-12): ① OCR 내장 안 함(클립보드 붙여넣기) ② 오프라인 = 경량 아웃박스 V1 ③ 카드 텍스트 앵커 = V1.5(V1은 폰트 크기 ±·정렬만) ④ 표지 없는 책 T4 = 비활성화 ⑤ 인용 AI = "AI" 단어/곧 출시 약속 안 함 ⑥ 홈 받은 카드 함 = V1.5(V1 홈 = 내 인용 피드) ⑦ 인용구 목록 = 서재 탭 내 세그먼트 ⑧ `listMyQuotes` cursor 시그니처 확정.
 - **출시 블로커 (STAGES Stage 5 / 출시 전 필수)**: in-app 계정 삭제(Edge Function `delete-account`), 개인정보처리방침·이용약관 호스팅 URL, `cards`/`quotes` 마이그레이션의 `on delete cascade auth.users`.
