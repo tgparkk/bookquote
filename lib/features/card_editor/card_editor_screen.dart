@@ -13,6 +13,7 @@ import '../../core/theme/tokens.dart';
 import 'domain/card_template.dart';
 import 'domain/quote_card_data.dart';
 import 'presentation/widgets/quote_card.dart';
+import 'state/palette_providers.dart';
 
 class CardEditorScreen extends ConsumerStatefulWidget {
   const CardEditorScreen({super.key, required this.quoteId});
@@ -112,7 +113,7 @@ class _RatioSegment extends StatelessWidget {
   }
 }
 
-class _PreviewBox extends StatelessWidget {
+class _PreviewBox extends ConsumerWidget {
   const _PreviewBox({
     required this.template,
     required this.data,
@@ -124,7 +125,14 @@ class _PreviewBox extends StatelessWidget {
   final CardRatio ratio;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 표지 색 추출(있으면) → 미도착 동안엔 templateId 폴백 팔레트로 즉시 렌더.
+    // `card-editor.md §3 로딩: 팔레트 추출 대기` — fallback 렌더 후 cross-fade.
+    final paletteAsync = ref.watch(extractedPaletteProvider((
+      coverUrl: data.coverUrl,
+      templateId: template.id,
+    )));
+    final palette = paletteAsync.value ?? QuoteCard.fallbackFor(template);
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.md),
@@ -136,11 +144,15 @@ class _PreviewBox extends StatelessWidget {
           aspectRatio: ratio.size.aspectRatio,
           child: FittedBox(
             fit: BoxFit.contain,
-            child: QuoteCard(
-              template: template,
-              data: data,
-              palette: QuoteCard.fallbackFor(template),
-              ratio: ratio,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: QuoteCard(
+                key: ValueKey<String>('${template.id}-${data.coverUrl ?? ""}'),
+                template: template,
+                data: data,
+                palette: palette,
+                ratio: ratio,
+              ),
             ),
           ),
         ),
@@ -191,7 +203,7 @@ class _TemplateStrip extends StatelessWidget {
   }
 }
 
-class _MiniCard extends StatelessWidget {
+class _MiniCard extends ConsumerWidget {
   const _MiniCard({
     required this.template,
     required this.data,
@@ -209,7 +221,16 @@ class _MiniCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = enabled
+        ? (ref
+                .watch(extractedPaletteProvider((
+                  coverUrl: data.coverUrl,
+                  templateId: template.id,
+                )))
+                .value ??
+            QuoteCard.fallbackFor(template))
+        : QuoteCard.fallbackFor(template);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -237,7 +258,7 @@ class _MiniCard extends StatelessWidget {
                         child: QuoteCard(
                           template: template,
                           data: data,
-                          palette: QuoteCard.fallbackFor(template),
+                          palette: palette,
                           ratio: CardRatio.story,
                           watermarkEnabled: false,
                         ),
