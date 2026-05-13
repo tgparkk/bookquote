@@ -1,10 +1,13 @@
-// 카드 에디터 — Stage 3 PR7 단계.
+// 카드 에디터 — Stage 3 PR9.
 //
-// 이번 PR(7): 5종 템플릿 위젯·디스패처를 만들어 시각적 검증을 가능하게 한다.
-// quote 본문은 mock 데이터(`_mock`)를 쓰며, 실제 `quoteByIdProvider` +
-// 책 join은 PR9(에디터 MVP)에서 controller와 함께 들어온다.
-// PR8: palette_service(LRU 표지 색 추출 + ensureContrast)
-// PR10: card_renderer (RepaintBoundary PNG) + share_sheet
+// quote+book 실데이터(`quoteCardDataProvider`)를 기반으로 `CardEditorController`가
+// templateId/ratio/watermarkEnabled를 보유. 진입 시 저장된 draft가 있으면
+// "이어서 만들기" 다이얼로그(`card-editor.md §4 편집 상태 영속화`).
+//
+// 후속 PR:
+// - PR10: card_renderer (RepaintBoundary.toImage) + share_sheet — AppBar 공유 버튼
+// - PR11: cards 테이블 + 공유 성공 시 비차단 INSERT
+// - PR12: 5스와치 적용/다른 느낌 ↻/언두·redo/폰트 ±/auto-fit 경고/접근성
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,7 +16,9 @@ import '../../core/theme/tokens.dart';
 import 'domain/card_template.dart';
 import 'domain/quote_card_data.dart';
 import 'presentation/widgets/quote_card.dart';
+import 'state/card_editor_controller.dart';
 import 'state/palette_providers.dart';
+import 'state/quote_card_data_provider.dart';
 
 class CardEditorScreen extends ConsumerStatefulWidget {
   const CardEditorScreen({super.key, required this.quoteId});
@@ -25,62 +30,156 @@ class CardEditorScreen extends ConsumerStatefulWidget {
 }
 
 class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
-  // PR7 임시 데이터. PR9에서 quoteByIdProvider(widget.quoteId) +
-  // bookByIdProvider(quote.bookId)를 합쳐 QuoteCardData로 변환한다.
-  static const QuoteCardData _mock = QuoteCardData(
-    quoteText: '우리는 누군가의 가장 좋은 시절을 잘 모르는 채로도, 그 사람을 사랑할 수 있다.',
-    bookTitle: '작별하지 않는다',
-    bookAuthor: '한강',
-    bookPublisher: '문학동네',
-  );
+  bool _initialized = false;
 
-  CardRatio _ratio = CardRatio.story;
-  late CardTemplate _template = CardTemplate.recommended(
-    charCount: _mock.charCount,
-    hasCover: _mock.hasCover,
-  );
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(cardEditorControllerProvider.notifier).attach(widget.quoteId);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final dataAsync = ref.watch(quoteCardDataProvider(widget.quoteId));
     return Scaffold(
       backgroundColor: AppColors.secondary300,
-      appBar: AppBar(
-        title: const Text('카드 만들기'),
-        actions: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.s3),
-            child: Center(child: _RatioSegment(
-              value: _ratio,
-              onChanged: (r) => setState(() => _ratio = r),
-            )),
-          ),
-        ],
-      ),
+      appBar: _buildAppBar(dataAsync.value != null),
       body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.s6),
-                  child: _PreviewBox(
-                    template: _template,
-                    data: _mock,
-                    ratio: _ratio,
-                  ),
-                ),
-              ),
-            ),
-            _TemplateStrip(
-              selected: _template,
-              data: _mock,
-              ratio: _ratio,
-              onSelect: (t) => setState(() => _template = t),
-            ),
-            const SizedBox(height: AppSpacing.s4),
-          ],
+        child: dataAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => _ErrorView(
+            onRetry: () =>
+                ref.invalidate(quoteCardDataProvider(widget.quoteId)),
+          ),
+          data: (data) {
+            if (data == null) return const _NotFoundView();
+            if (!_initialized) {
+              _initialized = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _initializeFromData(data);
+              });
+            }
+            return _Editor(data: data);
+          },
         ),
       ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(bool dataReady) {
+    if (!dataReady) {
+      return AppBar(title: const Text('카드 만들기'));
+    }
+    final state = ref.watch(cardEditorControllerProvider);
+    final controller = ref.read(cardEditorControllerProvider.notifier);
+    return AppBar(
+      title: const Text('카드 만들기'),
+      actions: <Widget>[
+        IconButton(
+          tooltip: state.watermarkEnabled ? '워터마크 끄기' : '워터마크 켜기',
+          onPressed: controller.toggleWatermark,
+          icon: Icon(
+            state.watermarkEnabled
+                ? Icons.copyright_rounded
+                : Icons.copyright_outlined,
+            color: state.watermarkEnabled
+                ? AppColors.accent500
+                : AppColors.primary400,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(right: AppSpacing.s3),
+          child: Center(
+            child: _RatioSegment(
+              value: state.ratio,
+              onChanged: controller.setRatio,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _initializeFromData(QuoteCardData data) async {
+    final controller = ref.read(cardEditorControllerProvider.notifier);
+    final draft = await controller.readDraft();
+    if (!mounted) return;
+    if (draft != null) {
+      final restore = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogCtx) => AlertDialog(
+          title: const Text('편집하던 카드가 있어요'),
+          content: const Text('이어서 만들까요, 새로 시작할까요?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(false),
+              child: const Text('새로 시작'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(true),
+              child: const Text('이어서 만들기'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted) return;
+      if (restore == true) {
+        controller.applyState(draft);
+      } else {
+        await controller.clearDraft();
+        if (!mounted) return;
+        controller.applyRecommended(
+          charCount: data.charCount,
+          hasCover: data.hasCover,
+        );
+      }
+    } else {
+      controller.applyRecommended(
+        charCount: data.charCount,
+        hasCover: data.hasCover,
+      );
+    }
+  }
+}
+
+class _Editor extends ConsumerWidget {
+  const _Editor({required this.data});
+
+  final QuoteCardData data;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(cardEditorControllerProvider);
+    final controller = ref.read(cardEditorControllerProvider.notifier);
+    final template = CardTemplate.byId(state.templateId);
+
+    return Column(
+      children: <Widget>[
+        Expanded(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.s6),
+              child: _PreviewBox(
+                template: template,
+                data: data,
+                ratio: state.ratio,
+                watermarkEnabled: state.watermarkEnabled,
+              ),
+            ),
+          ),
+        ),
+        _TemplateStrip(
+          selected: template,
+          data: data,
+          ratio: state.ratio,
+          onSelect: (t) => controller.setTemplate(t.id),
+        ),
+        const SizedBox(height: AppSpacing.s4),
+      ],
     );
   }
 }
@@ -118,16 +217,16 @@ class _PreviewBox extends ConsumerWidget {
     required this.template,
     required this.data,
     required this.ratio,
+    required this.watermarkEnabled,
   });
 
   final CardTemplate template;
   final QuoteCardData data;
   final CardRatio ratio;
+  final bool watermarkEnabled;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 표지 색 추출(있으면) → 미도착 동안엔 templateId 폴백 팔레트로 즉시 렌더.
-    // `card-editor.md §3 로딩: 팔레트 추출 대기` — fallback 렌더 후 cross-fade.
     final paletteAsync = ref.watch(extractedPaletteProvider((
       coverUrl: data.coverUrl,
       templateId: template.id,
@@ -147,11 +246,14 @@ class _PreviewBox extends ConsumerWidget {
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: QuoteCard(
-                key: ValueKey<String>('${template.id}-${data.coverUrl ?? ""}'),
+                key: ValueKey<String>(
+                  '${template.id}-${data.coverUrl ?? ""}-$watermarkEnabled',
+                ),
                 template: template,
                 data: data,
                 palette: palette,
                 ratio: ratio,
+                watermarkEnabled: watermarkEnabled,
               ),
             ),
           ),
@@ -297,6 +399,71 @@ class _MiniCard extends ConsumerWidget {
                 width: 24,
                 color: AppColors.accent500,
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotFoundView extends StatelessWidget {
+  const _NotFoundView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.s8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Icon(
+              Icons.search_off_rounded,
+              size: 56,
+              color: AppColors.primary400,
+            ),
+            const SizedBox(height: AppSpacing.s4),
+            Text(
+              '이 인용구를 찾을 수 없어요',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.s2),
+            const Text(
+              '삭제됐거나 권한이 없는 인용구일 수 있어요.',
+              style: TextStyle(color: AppColors.primary500),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.s8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 56,
+              color: AppColors.primary400,
+            ),
+            const SizedBox(height: AppSpacing.s4),
+            Text(
+              '카드 정보를 불러오지 못했어요',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.s4),
+            FilledButton(onPressed: onRetry, child: const Text('다시 시도')),
           ],
         ),
       ),

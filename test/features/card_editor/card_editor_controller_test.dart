@@ -1,0 +1,207 @@
+// CardEditorController — 상태 변경 / persist round-trip / cycle 게이트.
+// shared_preferences는 setMockInitialValues로 in-memory.
+
+import 'package:bookquote/core/theme/tokens.dart';
+import 'package:bookquote/features/card_editor/state/card_editor_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+  });
+
+  group('CardEditorState', () {
+    test('JSON round-trip 보존', () {
+      const s = CardEditorState(
+        templateId: 'mono',
+        ratio: CardRatio.feed,
+        watermarkEnabled: false,
+      );
+      expect(CardEditorState.fromJson(s.toJson()), s);
+    });
+
+    test('빈/손상 JSON은 default로 채워짐', () {
+      final s = CardEditorState.fromJson(<String, Object?>{});
+      expect(s, CardEditorState.initial);
+    });
+
+    test('모르는 ratio name은 story 폴백', () {
+      final s = CardEditorState.fromJson(<String, Object?>{
+        'templateId': 'warm',
+        'ratio': 'unknown',
+        'watermarkEnabled': true,
+      });
+      expect(s.ratio, CardRatio.story);
+      expect(s.templateId, 'warm');
+    });
+  });
+
+  group('CardEditorController 상태 변경', () {
+    late ProviderContainer container;
+    setUp(() {
+      container = ProviderContainer();
+    });
+    tearDown(() => container.dispose());
+
+    test('initial = CardEditorState.initial', () {
+      expect(
+        container.read(cardEditorControllerProvider),
+        CardEditorState.initial,
+      );
+    });
+
+    test('setTemplate/setRatio/toggleWatermark — 모두 반영', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl.setTemplate('mono');
+      ctrl.setRatio(CardRatio.feed);
+      ctrl.toggleWatermark();
+      expect(
+        container.read(cardEditorControllerProvider),
+        const CardEditorState(
+          templateId: 'mono',
+          ratio: CardRatio.feed,
+          watermarkEnabled: false,
+        ),
+      );
+    });
+
+    test('동일 값 setter는 state를 안 흔든다', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      final before = container.read(cardEditorControllerProvider);
+      ctrl.setTemplate(before.templateId);
+      ctrl.setRatio(before.ratio);
+      expect(
+        identical(container.read(cardEditorControllerProvider), before),
+        isTrue,
+      );
+    });
+
+    test('applyRecommended — 짧고 표지 없으면 Typography', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl.applyRecommended(charCount: 10, hasCover: false);
+      expect(
+        container.read(cardEditorControllerProvider).templateId,
+        'typography',
+      );
+    });
+
+    test('applyRecommended — 표지 있고 길면 CoverExtract', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl.applyRecommended(charCount: 100, hasCover: true);
+      expect(
+        container.read(cardEditorControllerProvider).templateId,
+        'coverExtract',
+      );
+    });
+  });
+
+  group('cycleTemplate — supports 게이트', () {
+    late ProviderContainer container;
+    setUp(() => container = ProviderContainer());
+    tearDown(() => container.dispose());
+
+    test('모든 템플릿 enable 상태에서 5번 cycle → 원점', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl.setTemplate('minimal');
+      for (var i = 0; i < 5; i++) {
+        ctrl.cycleTemplate(charCount: 20, hasCover: true);
+      }
+      expect(
+        container.read(cardEditorControllerProvider).templateId,
+        'minimal',
+      );
+    });
+
+    test('표지 없고 long quote — coverExtract/typography 건너뛰기', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl.setTemplate('mono');
+      // 다음 = coverExtract(no cover 건너뜀) → typography(>50자 건너뜀) → minimal
+      ctrl.cycleTemplate(charCount: 200, hasCover: false);
+      expect(
+        container.read(cardEditorControllerProvider).templateId,
+        'minimal',
+      );
+    });
+  });
+
+  group('영속화', () {
+    late ProviderContainer container;
+    setUp(() => container = ProviderContainer());
+    tearDown(() => container.dispose());
+
+    test('flushPersist 후 readDraft가 동일 상태 반환', () async {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl.setTemplate('warm');
+      ctrl.setRatio(CardRatio.post);
+      ctrl.toggleWatermark();
+      await ctrl.debugFlushPersist();
+
+      final draft = await ctrl.readDraft();
+      expect(
+        draft,
+        const CardEditorState(
+          templateId: 'warm',
+          ratio: CardRatio.post,
+          watermarkEnabled: false,
+        ),
+      );
+    });
+
+    test('clearDraft 후 readDraft = null', () async {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl.setTemplate('warm');
+      await ctrl.debugFlushPersist();
+      expect(await ctrl.readDraft(), isNotNull);
+      await ctrl.clearDraft();
+      expect(await ctrl.readDraft(), isNull);
+    });
+
+    test('attach 안 하면 persist/read 모두 no-op', () async {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.setTemplate('warm');
+      await ctrl.debugFlushPersist();
+      expect(await ctrl.readDraft(), isNull);
+    });
+
+    test('quoteId가 다르면 draft도 별개', () async {
+      // q1으로 저장
+      final c1 = ProviderContainer();
+      final ctrl1 = c1.read(cardEditorControllerProvider.notifier);
+      ctrl1.attach('q1');
+      ctrl1.setTemplate('warm');
+      await ctrl1.debugFlushPersist();
+      c1.dispose();
+
+      // q2 controller에서는 q1 draft가 보이지 않아야
+      final c2 = ProviderContainer();
+      final ctrl2 = c2.read(cardEditorControllerProvider.notifier);
+      ctrl2.attach('q2');
+      expect(await ctrl2.readDraft(), isNull);
+      c2.dispose();
+    });
+
+    test('applyState — persist 트리거 안 함(복원은 새 편집 아님)', () async {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      const restored = CardEditorState(
+        templateId: 'mono',
+        ratio: CardRatio.feed,
+        watermarkEnabled: false,
+      );
+      ctrl.applyState(restored);
+      expect(container.read(cardEditorControllerProvider), restored);
+      // persist debounce가 호출되지 않았으므로 cleared 상태에서 readDraft = null
+      expect(await ctrl.readDraft(), isNull);
+    });
+  });
+}
