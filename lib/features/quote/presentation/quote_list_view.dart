@@ -263,6 +263,7 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
           onTap: () => setState(
             () => _expandedId = _expandedId == e.quote.id ? null : e.quote.id,
           ),
+          onShare: () => context.push('/quote/${e.quote.id}/share'),
           onMakeCard: () => context.push('/quote/${e.quote.id}/card'),
           onDelete: () => _confirmDelete(e),
         );

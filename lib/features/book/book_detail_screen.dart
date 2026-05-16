@@ -474,6 +474,7 @@ class _BookQuotesSectionState extends ConsumerState<_BookQuotesSection> {
                     onTap: () => setState(
                       () => _expandedId = _expandedId == q.id ? null : q.id,
                     ),
+                    onShare: () => context.push('/quote/${q.id}/share'),
                     onMakeCard: () => context.push('/quote/${q.id}/card'),
                   ),
                 ),

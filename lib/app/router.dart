@@ -21,6 +21,7 @@ import '../features/auth/auth_callback_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/book/book_detail_screen.dart';
 import '../features/card_editor/card_editor_screen.dart';
+import '../features/card_editor/quick_share_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/me/me_screen.dart';
@@ -84,6 +85,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (_, state) =>
             CardEditorScreen(quoteId: state.pathParameters['id']!),
+      ),
+      // PR10.5 — 바로 공유. 홈 카드 [📤 바로 공유 ↗] 진입점.
+      GoRoute(
+        path: '/quote/:id/share',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (_, state) =>
+            QuickShareScreen(quoteId: state.pathParameters['id']!),
       ),
       StatefulShellRoute.indexedStack(
         builder: (_, _, navigationShell) =>

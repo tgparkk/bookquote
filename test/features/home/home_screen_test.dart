@@ -57,16 +57,17 @@ void main() {
     expect(find.text('아직 인용구가 없어요'), findsNothing);
   });
 
-  testWidgets('카드를 탭하면 펼쳐져 [카드 만들기]/[삭제] 노출', (tester) async {
+  testWidgets('카드를 탭하면 펼쳐져 [바로 공유]/[카드 디자인]/[삭제] 노출', (tester) async {
     await pumpHome(tester, AsyncValue.data([
       (quote: _quote('q1', '가장 깊은 밤에 가장 빛나는 별이 보인다.'), book: _book),
     ]));
-    expect(find.text('카드 만들기'), findsNothing);
+    expect(find.text('바로 공유'), findsNothing);
 
     await tester.tap(find.textContaining('가장 깊은 밤에'));
     await tester.pump();
 
-    expect(find.text('카드 만들기'), findsOneWidget);
+    expect(find.text('바로 공유'), findsOneWidget);
+    expect(find.text('카드 디자인'), findsOneWidget);
     expect(find.text('삭제'), findsOneWidget);
   });
 }
