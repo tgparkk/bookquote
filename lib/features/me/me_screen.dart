@@ -19,7 +19,9 @@ import '../quote/data/quote_outbox.dart';
 import 'data/quote_export.dart';
 import 'state/me_providers.dart';
 
-// TODO(출시 블로커): 실제 호스팅된 정적 페이지 URL로 교체 (스토어 심사 필수). STAGES Stage 5.
+// 정적 페이지는 `docs/terms/index.html` + `docs/privacy/index.html`에 작성됨(2026-05-16).
+// 실제 URL이 동작하려면 GitHub 저장소 Settings > Pages에서 Source = `main /docs` 활성화 필요.
+// (Pages 활성화 후엔 본 URL이 자동으로 살아남 — STAGES Stage 5의 두 번째 블로커 해제.)
 const String _termsUrl = 'https://tgparkk.github.io/bookquote/terms';
 const String _privacyUrl = 'https://tgparkk.github.io/bookquote/privacy';
 const String _supportEmail = 'sttgpark@gmail.com';

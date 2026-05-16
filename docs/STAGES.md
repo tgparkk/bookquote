@@ -17,7 +17,7 @@
 
 **⚠️ PR5 남긴 출시 블로커 (Stage 5 전 처리 필수)**:
 - `supabase/functions/delete-account/` — **함수 코드 작성 완료, 아직 배포 안 함**. `npx --yes supabase functions deploy delete-account` 필요(`SUPABASE_SERVICE_ROLE_KEY` 등은 Edge Function에 자동 주입 — 별도 시크릿 설정 불필요). 미배포 상태에선 회원 탈퇴 시 invoke 404 → "탈퇴 처리에 실패했어요" 토스트.
-- 이용약관·개인정보처리방침 — `me_screen.dart`의 `_termsUrl`/`_privacyUrl`이 **placeholder URL**(`https://tgparkk.github.io/bookquote/{terms,privacy}`). 실제 정적 페이지 호스팅 + 상수 교체 + 스토어 등록 폼 필요.
+- 이용약관·개인정보처리방침 — **정적 페이지 작성 완료** (2026-05-16, `docs/terms/index.html` + `docs/privacy/index.html`). 남은 일: GitHub 저장소 Settings > Pages에서 Source = `main /docs` 활성화 + 스토어 등록 폼에 URL 기입. URL은 `https://tgparkk.github.io/bookquote/{terms,privacy}` 그대로 동작 예정.
 
 **문서 지도** (2026-05-14 정리): `docs/app-scenarios.md`(현재 V1 동선 — `discovery/flows.md` 초안 대체) · `docs/db-schema.md`(현재 DB 설계서 — `discovery/api-design.md`·`architecture.md` 초안 대체) · `docs/design/screens/README.md`(화면 13개 인덱스 + 구현 상태 + 실제 파일 경로) · `docs/design/screens/*.md`(화면별 7섹션 명세). `discovery/`의 architecture·api-design·flows는 시점 고정 초안(상단 배너).
 
@@ -134,7 +134,7 @@
 ## Stage 5 — 출시 (1–2주)
 
 - [~] **(출시 블로커) in-app 계정 삭제** — Edge Function `supabase/functions/delete-account/index.ts` **작성 완료**(PR5 — JWT로 호출자 확인 → service_role `auth.admin.deleteUser`, cascade로 `quotes`/`user_books`/`profiles` 자동 삭제; `cards`는 Stage 3에서 `on delete cascade` 챙길 것), Me 화면에서 2단계 확인 후 invoke. **남은 일: 배포** — `npx --yes supabase functions deploy delete-account` (Edge Function에 `SUPABASE_*` 자동 주입이라 시크릿 설정 불필요). Apple Guideline 5.1.1(v) + Google Play 둘 다 요구.
-- [ ] **(출시 블로커) 개인정보처리방침·이용약관 페이지** — 호스팅(GitHub Pages/Notion 등). PR5에서 Me 화면 `url_launcher` 링크는 이미 연결돼 있으나 URL이 placeholder(`me_screen.dart` `_termsUrl`/`_privacyUrl`) — 실제 페이지 만들고 상수 교체 + 스토어 등록 폼
+- [~] **(출시 블로커) 개인정보처리방침·이용약관 페이지** — 정적 HTML **작성 완료** (`docs/terms/index.html` + `docs/privacy/index.html`, 2026-05-16). 남은 일: GitHub 저장소 Settings > Pages에서 Source = `main /docs` 활성화. URL 활성화 후 스토어 등록 폼에 기입.
 - [ ] 앱스토어·플레이스토어 등록
 - [ ] PostHog 연동, 핵심 funnel 측정 setup (PII 미전송 — 인용구 텍스트·검색어 raw 안 보냄)
 - [ ] 인스타 본인 인용구 카드 매일 1개 (W-4부터)
