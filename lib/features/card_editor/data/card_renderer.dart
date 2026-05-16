@@ -77,11 +77,9 @@ RenderRepaintBoundary _resolveBoundary(GlobalKey key) {
 }
 
 /// 폰트 atlas가 GPU에 올라온 뒤 다음 프레임이 그려질 때까지 기다린다.
-/// 첫 시도에서 boundary가 아직 paint 되지 않았으면(`debugNeedsPaint`) 한 번 더 시도.
-/// 메모: "PR10 폰트 로드 보장(NotoSerifKR 미로드 시 1회 재시도)" 명세.
+/// endOfFrame 2회로 첫 layout/paint + 폰트 적용까지 안전망. `debugNeedsPaint`는
+/// release 빌드에서 LateInitializationError를 던지므로 사용 금지(assert로 stripping됨).
 Future<void> _waitForReadyFrame(RenderRepaintBoundary boundary) async {
   await WidgetsBinding.instance.endOfFrame;
-  if (boundary.debugNeedsPaint) {
-    await WidgetsBinding.instance.endOfFrame;
-  }
+  await WidgetsBinding.instance.endOfFrame;
 }
