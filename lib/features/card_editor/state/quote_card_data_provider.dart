@@ -24,6 +24,7 @@ final quoteCardDataProvider = FutureProvider.autoDispose
 
   return QuoteCardData(
     quoteText: quote.text,
+    bookId: book?.id,
     bookTitle: book?.title ?? quote.manualBookText,
     bookAuthor: book?.author,
     bookPublisher: book?.publisher,

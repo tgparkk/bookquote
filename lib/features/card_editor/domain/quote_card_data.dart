@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 class QuoteCardData {
   const QuoteCardData({
     required this.quoteText,
+    this.bookId,
     this.bookTitle,
     this.bookAuthor,
     this.bookPublisher,
@@ -13,6 +14,8 @@ class QuoteCardData {
   });
 
   final String quoteText;
+  /// PR11에서 추가 — `cards.book_id` INSERT용. book이 join되지 않으면 null.
+  final String? bookId;
   final String? bookTitle;
   final String? bookAuthor;
   final String? bookPublisher;

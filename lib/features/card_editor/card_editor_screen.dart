@@ -9,11 +9,14 @@
 // - PR11: cards 테이블 + 공유 성공 시 비차단 INSERT
 // - PR12: 5스와치 적용/다른 느낌 ↻/언두·redo/폰트 ±/auto-fit 경고/접근성
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/tokens.dart';
 import 'data/card_renderer.dart';
+import 'data/card_repository.dart';
 import 'domain/card_template.dart';
 import 'domain/quote_card_data.dart';
 import 'presentation/widgets/quote_card.dart';
@@ -148,6 +151,15 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
         ratio: ratio,
       );
       if (!mounted) return;
+      // PR11: 시트가 열리는 시점에 fire-and-forget으로 공유 이력 기록.
+      // await 안 함 — 실패해도 공유 자체 흐름엔 영향 없음(repository에서 swallow).
+      unawaited(
+        ref.read(cardRepositoryProvider).recordShare(
+              quoteId: widget.quoteId,
+              bookId: data.bookId,
+              design: ref.read(cardEditorControllerProvider),
+            ),
+      );
       await showCardShareSheet(
         context: context,
         file: file,

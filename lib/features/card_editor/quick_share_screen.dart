@@ -5,12 +5,15 @@
 // 렌더 → 공유 시트를 자동으로 띄운다. 시트 dismiss 후에도 화면을 유지해
 // [다시 공유]/[디자인 편집] 출구를 제공(④ 막다른 골목 금지).
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/tokens.dart';
 import 'data/card_renderer.dart';
+import 'data/card_repository.dart';
 import 'domain/card_template.dart';
 import 'domain/quote_card_data.dart';
 import 'presentation/widgets/quote_card.dart';
@@ -99,6 +102,14 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
         ratio: state.ratio,
       );
       if (!mounted) return;
+      // PR11: 시트 직전 fire-and-forget으로 공유 이력 기록.
+      unawaited(
+        ref.read(cardRepositoryProvider).recordShare(
+              quoteId: widget.quoteId,
+              bookId: _data!.bookId,
+              design: state,
+            ),
+      );
       await showCardShareSheet(
         context: context,
         file: file,
