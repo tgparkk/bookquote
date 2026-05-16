@@ -13,6 +13,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/tokens.dart';
 import 'data/card_renderer.dart';
@@ -24,6 +25,8 @@ import 'presentation/widgets/share_sheet.dart';
 import 'state/card_editor_controller.dart';
 import 'state/palette_providers.dart';
 import 'state/quote_card_data_provider.dart';
+
+enum _AppBarAction { editQuote, toggleWatermark }
 
 class CardEditorScreen extends ConsumerStatefulWidget {
   const CardEditorScreen({super.key, required this.quoteId});
@@ -85,20 +88,8 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
     return AppBar(
       title: const Text('카드 만들기'),
       actions: <Widget>[
-        IconButton(
-          tooltip: state.watermarkEnabled ? '워터마크 끄기' : '워터마크 켜기',
-          onPressed: controller.toggleWatermark,
-          icon: Icon(
-            state.watermarkEnabled
-                ? Icons.copyright_rounded
-                : Icons.copyright_outlined,
-            color: state.watermarkEnabled
-                ? AppColors.accent500
-                : AppColors.primary400,
-          ),
-        ),
         Padding(
-          padding: const EdgeInsets.only(right: AppSpacing.s2),
+          padding: const EdgeInsets.only(right: AppSpacing.s1),
           child: Center(
             child: _RatioSegment(
               value: state.ratio,
@@ -107,7 +98,7 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(right: AppSpacing.s3),
+          padding: const EdgeInsets.only(right: AppSpacing.s1),
           child: Center(
             child: FilledButton.icon(
               onPressed: _isSharing ? null : () => _onShareTap(data, state.ratio),
@@ -137,8 +128,60 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
             ),
           ),
         ),
+        // 부차 액션은 overflow 메뉴로 묶어 폭 확보.
+        PopupMenuButton<_AppBarAction>(
+          tooltip: '더보기',
+          icon: const Icon(Icons.more_vert, color: AppColors.primary600),
+          onSelected: (v) {
+            switch (v) {
+              case _AppBarAction.editQuote:
+                _onEditQuoteTap();
+              case _AppBarAction.toggleWatermark:
+                controller.toggleWatermark();
+            }
+          },
+          itemBuilder: (_) => <PopupMenuEntry<_AppBarAction>>[
+            const PopupMenuItem<_AppBarAction>(
+              value: _AppBarAction.editQuote,
+              child: Row(
+                children: <Widget>[
+                  Icon(Icons.edit_outlined,
+                      size: 18, color: AppColors.primary600),
+                  SizedBox(width: AppSpacing.s2),
+                  Text('본문 수정'),
+                ],
+              ),
+            ),
+            PopupMenuItem<_AppBarAction>(
+              value: _AppBarAction.toggleWatermark,
+              child: Row(
+                children: <Widget>[
+                  Icon(
+                    state.watermarkEnabled
+                        ? Icons.copyright_rounded
+                        : Icons.copyright_outlined,
+                    size: 18,
+                    color: state.watermarkEnabled
+                        ? AppColors.accent500
+                        : AppColors.primary600,
+                  ),
+                  const SizedBox(width: AppSpacing.s2),
+                  Text(state.watermarkEnabled ? '워터마크 끄기' : '워터마크 켜기'),
+                ],
+              ),
+            ),
+          ],
+        ),
       ],
     );
+  }
+
+  /// 본문 수정 진입점. quote 입력 화면을 편집 모드로 열고, 복귀 시 카드 데이터를
+  /// invalidate해 미리보기에 변경 본문이 즉시 반영되도록 한다.
+  Future<void> _onEditQuoteTap() async {
+    await context.push('/quote/new?quoteId=${widget.quoteId}');
+    if (!mounted) return;
+    ref.invalidate(quoteCardDataProvider(widget.quoteId));
   }
 
   Future<void> _onShareTap(QuoteCardData data, CardRatio ratio) async {

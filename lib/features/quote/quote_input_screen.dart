@@ -27,10 +27,14 @@ import 'state/quote_feed_provider.dart';
 import 'state/quote_providers.dart';
 
 class QuoteInputScreen extends ConsumerStatefulWidget {
-  const QuoteInputScreen({super.key, this.bookId});
+  const QuoteInputScreen({super.key, this.bookId, this.quoteId});
 
   /// 진입 시 미리 연결할 책의 ID (책 상세/서재의 "이 책 인용구 추가").
   final String? bookId;
+
+  /// 편집 모드 — 이 값이 있으면 기존 quote를 prefill하고 저장 시 update 호출.
+  /// 신규 작성에선 null. (백로그: docs/STAGES.md "인용구 [수정]")
+  final String? quoteId;
 
   @override
   ConsumerState<QuoteInputScreen> createState() => _QuoteInputScreenState();
@@ -75,9 +79,16 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
     if (state == AppLifecycleState.resumed) _checkClipboard();
   }
 
+  bool get _isEditMode => widget.quoteId != null;
+
   // ── 초기화 ──────────────────────────────────────────────
 
   Future<void> _bootstrap() async {
+    if (_isEditMode) {
+      // 편집 모드: draft 무시(편집용 draft는 V1.x 백로그) + 기존 quote prefill.
+      await _loadExistingQuote();
+      return;
+    }
     await _maybeRestoreDraft();
     if (mounted && widget.bookId != null && _book == null) {
       try {
@@ -89,6 +100,46 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
       }
     }
     await _checkClipboard();
+  }
+
+  /// 편집 모드 — `widget.quoteId`로 기존 인용구를 가져와 입력 필드를 채운다.
+  /// 책도 연결돼 있으면 함께 prefill. 실패 시 SnackBar로 알리고 화면 닫음.
+  Future<void> _loadExistingQuote() async {
+    try {
+      final quote =
+          await ref.read(quoteByIdProvider(widget.quoteId!).future);
+      if (!mounted) return;
+      if (quote == null) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(const SnackBar(content: Text('이 인용구를 찾지 못했어요.')));
+        Navigator.of(context).maybePop();
+        return;
+      }
+      _textController.text = quote.text;
+      _textController.selection =
+          TextSelection.collapsed(offset: _textController.text.length);
+      _pageController.text = quote.page?.toString() ?? '';
+      _moods
+        ..clear()
+        ..addAll(quote.moods);
+      _source = quote.source;
+      if (quote.bookId != null) {
+        try {
+          _book =
+              await ref.read(bookRepositoryProvider).getById(quote.bookId!);
+        } catch (_) {/* 책 prefill 실패 무시 */}
+      }
+      if (!mounted) return;
+      setState(() {});
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(content: Text('인용구를 불러오지 못했어요.')),
+        );
+    }
   }
 
   Future<void> _maybeRestoreDraft() async {
@@ -226,18 +277,20 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
       );
 
   void _scheduleDraftSave() {
+    if (_isEditMode) return;  // 편집 모드는 draft 안 만든다.
     _draftDebounce?.cancel();
     _draftDebounce = Timer(const Duration(seconds: 1), _saveDraft);
   }
 
   Future<void> _saveDraft() async {
-    if (!mounted || !_hasEdits) return;
+    if (!mounted || !_hasEdits || _isEditMode) return;
     try {
       (await ref.read(quoteDraftStoreProvider.future)).save(_buildInput());
     } catch (_) {/* ignore — draft는 best-effort */}
   }
 
   Future<void> _clearDraft() async {
+    if (_isEditMode) return;
     try {
       (await ref.read(quoteDraftStoreProvider.future)).clear();
     } catch (_) {/* ignore */}
@@ -253,11 +306,48 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
     final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
     final navigator = Navigator.of(context);
+    final controller = ref.read(createQuoteControllerProvider.notifier);
 
+    // ── 편집 모드 ── 기존 quote update + invalidate + pop으로 카드 디자인 복귀.
+    if (_isEditMode) {
+      try {
+        await controller.submitUpdate(widget.quoteId!, _buildInput());
+      } on QuoteRepositoryException catch (e) {
+        if (!mounted) return;
+        messenger
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text(
+              e.code == 'NOT_AUTHENTICATED'
+                  ? '로그인이 필요해요.'
+                  : '수정 저장에 실패했어요. 잠시 후 다시 시도해주세요.',
+            ),
+          ));
+        return;
+      } catch (_) {
+        if (!mounted) return;
+        messenger
+          ..clearSnackBars()
+          ..showSnackBar(
+            const SnackBar(content: Text('수정 저장에 실패했어요. 다시 시도해주세요.')),
+          );
+        return;
+      }
+      if (!mounted) return;
+      ref
+        ..invalidate(quoteFeedProvider)
+        ..invalidate(quoteByIdProvider(widget.quoteId!));
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(const SnackBar(content: Text('수정 내용을 저장했어요.')));
+      navigator.pop();
+      return;
+    }
+
+    // ── 신규 작성 ──
     Quote? created;
     try {
-      created =
-          await ref.read(createQuoteControllerProvider.notifier).submit(_buildInput());
+      created = await controller.submit(_buildInput());
     } on QuoteRepositoryException catch (e) {
       if (!mounted) return;
       messenger
@@ -371,7 +461,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
             tooltip: '닫기',
             onPressed: () => Navigator.of(context).maybePop(),
           ),
-          title: const Text('인용구 추가'),
+          title: Text(_isEditMode ? '인용구 수정' : '인용구 추가'),
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.s4),
@@ -465,7 +555,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
 
               const SizedBox(height: AppSpacing.s8),
 
-              // CTA
+              // CTA — 편집 모드면 [수정 저장] 단일, 신규는 [카드 만들기 →] + [저장만]
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent500,
@@ -485,15 +575,17 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
                           color: AppColors.secondary50,
                         ),
                       )
-                    : const Text('카드 만들기 →'),
+                    : Text(_isEditMode ? '수정 저장' : '카드 만들기 →'),
               ),
-              const SizedBox(height: AppSpacing.s2),
-              TextButton(
-                onPressed: (canSave && !saving)
-                    ? () => _submit(thenCard: false)
-                    : null,
-                child: const Text('저장만 하기'),
-              ),
+              if (!_isEditMode) ...[
+                const SizedBox(height: AppSpacing.s2),
+                TextButton(
+                  onPressed: (canSave && !saving)
+                      ? () => _submit(thenCard: false)
+                      : null,
+                  child: const Text('저장만 하기'),
+                ),
+              ],
             ],
           ),
         ),

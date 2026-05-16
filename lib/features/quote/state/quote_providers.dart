@@ -62,6 +62,32 @@ class CreateQuoteController extends AsyncNotifier<void> {
       }
     }
   }
+
+  /// 기존 인용구 수정. 신규 생성과 달리 outbox 큐잉은 하지 않는다(편집은 사용자가
+  /// 다시 시도하는 게 자연스러움). 성공 시 갱신된 [Quote]를, 인증·서버 오류는
+  /// [QuoteRepositoryException]을 그대로 던진다.
+  Future<Quote> submitUpdate(String quoteId, QuoteInput input) async {
+    state = const AsyncLoading();
+    final repo = ref.read(quoteRepositoryProvider);
+    try {
+      final updated = await repo.updateQuote(
+        quoteId,
+        text: input.text,
+        page: input.page,
+        moods: input.moods.toSet(),
+        bookId: input.bookId,
+        clearBook: input.bookId == null,
+      );
+      state = const AsyncData(null);
+      return updated;
+    } on QuoteRepositoryException {
+      state = const AsyncData(null);
+      rethrow;
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      rethrow;
+    }
+  }
 }
 
 final createQuoteControllerProvider =

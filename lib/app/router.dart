@@ -78,6 +78,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (_, state) => QuoteInputScreen(
           bookId: state.uri.queryParameters['bookId'],
+          // `?quoteId=...` 있으면 편집 모드(기존 quote prefill + update).
+          quoteId: state.uri.queryParameters['quoteId'],
         ),
       ),
       GoRoute(
