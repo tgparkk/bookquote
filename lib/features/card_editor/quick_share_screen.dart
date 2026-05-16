@@ -38,6 +38,7 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
   bool _ready = false;
   bool _notFound = false;
   bool _loadError = false;
+  String? _diagMessage;  // 진단용 — release logcat에 flutter 로그가 안 잡혀서 화면 직접 표시.
   bool _sharing = false;
   bool _autoSheetTriggered = false;
 
@@ -82,10 +83,11 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
       if (!mounted || _autoSheetTriggered) return;
       _autoSheetTriggered = true;
       await _share();
-    } catch (_) {
+    } catch (e, st) {
       if (!mounted) return;
       setState(() {
         _loadError = true;
+        _diagMessage = '${e.runtimeType}: $e\n${st.toString().split('\n').take(4).join('\n')}';
         _ready = true;
       });
     }
@@ -133,6 +135,16 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // autoDispose 프로바이더 2개를 항상 watch해 listener를 active로 유지한다.
+    // - cardEditorControllerProvider: _bootstrap이 ref.read(...notifier) 후
+    //   applyState/applyRecommended를 부르는데, watch 없으면 disposed notifier
+    //   대입으로 throw.
+    // - quoteCardDataProvider: family라 read만 하면 첫 async gap에서 ref가 dispose →
+    //   provider 본문의 두 번째 ref.watch가 UnmountedRefException throw.
+    // (2026-05-16 실기기에서 양쪽 모두 재현 — release에선 마이크로태스크 타이밍 차이로
+    // debug보다 발현 빈도 높음.)
+    ref.watch(cardEditorControllerProvider);
+    ref.watch(quoteCardDataProvider(widget.quoteId));
     return Scaffold(
       backgroundColor: AppColors.secondary300,
       appBar: AppBar(
@@ -162,14 +174,18 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
     }
     if (_notFound) return const _NotFoundView();
     if (_loadError) {
-      return _ErrorView(onRetry: () {
-        setState(() {
-          _loadError = false;
-          _ready = false;
-          _autoSheetTriggered = false;
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
-      });
+      return _ErrorView(
+        diagMessage: _diagMessage,
+        onRetry: () {
+          setState(() {
+            _loadError = false;
+            _diagMessage = null;
+            _ready = false;
+            _autoSheetTriggered = false;
+          });
+          WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+        },
+      );
     }
 
     final state = ref.watch(cardEditorControllerProvider);
@@ -312,9 +328,10 @@ class _NotFoundView extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.onRetry});
+  const _ErrorView({required this.onRetry, this.diagMessage});
 
   final VoidCallback onRetry;
+  final String? diagMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -334,6 +351,24 @@ class _ErrorView extends StatelessWidget {
               '카드 정보를 불러오지 못했어요',
               style: Theme.of(context).textTheme.titleMedium,
             ),
+            if (diagMessage != null) ...<Widget>[
+              const SizedBox(height: AppSpacing.s3),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.s3),
+                decoration: BoxDecoration(
+                  color: AppColors.semanticErrorLight,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: SelectableText(
+                  diagMessage!,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                    color: AppColors.semanticError,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.s4),
             FilledButton(onPressed: onRetry, child: const Text('다시 시도')),
           ],

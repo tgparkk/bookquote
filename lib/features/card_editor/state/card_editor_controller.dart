@@ -88,11 +88,26 @@ class CardEditorState {
 class CardEditorController extends Notifier<CardEditorState> {
   String? _quoteId;
   Timer? _persistTimer;
+  // setter가 호출되는 시점에 캡처한 마지막 변경분(아직 IO로 안 나간). onDispose에서
+  // state getter는 lifecycle 위반(Riverpod 3 assert)이므로 snapshot만 읽는다.
+  CardEditorState? _pendingSnapshot;
+  String? _pendingKey;
 
   @override
   CardEditorState build() {
     ref.onDispose(() {
+      // 사용자가 디자인 바꾼 직후 500ms 안에 화면을 나가면 디바운스 타이머가
+      // 그대로 cancel되어 마지막 변경분이 영구 손실되던 문제(2026-05-16 실기기 발견).
+      // 활성 타이머가 있으면 즉시 fire-and-forget으로 persist. SharedPreferences는
+      // 글로벌 인스턴스라 화면이 사라져도 IO는 정상 완료된다.
       _persistTimer?.cancel();
+      final s = _pendingSnapshot;
+      final k = _pendingKey;
+      _pendingSnapshot = null;
+      _pendingKey = null;
+      if (s != null && k != null) {
+        unawaited(_persistRaw(k, s));
+      }
     });
     return CardEditorState.initial;
   }
@@ -179,14 +194,30 @@ class CardEditorController extends Notifier<CardEditorState> {
 
   void _persistDebounced() {
     _persistTimer?.cancel();
-    _persistTimer = Timer(const Duration(milliseconds: 500), _persist);
+    _pendingSnapshot = state;
+    _pendingKey = _key;
+    _persistTimer = Timer(const Duration(milliseconds: 500), () {
+      final s = _pendingSnapshot;
+      final k = _pendingKey;
+      _pendingSnapshot = null;
+      _pendingKey = null;
+      if (s != null && k != null) {
+        unawaited(_persistRaw(k, s));
+      }
+    });
   }
 
   Future<void> _persist() async {
     final key = _key;
     if (key == null) return;
+    await _persistRaw(key, state);
+  }
+
+  /// `state`와 `key`를 미리 받아 ref 없이 IO만 수행 — dispose 직후 fire-and-forget
+  /// 경로(`ref.onDispose` → unawaited)에서도 안전.
+  static Future<void> _persistRaw(String key, CardEditorState snapshot) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(key, jsonEncode(state.toJson()));
+    await prefs.setString(key, jsonEncode(snapshot.toJson()));
   }
 
   /// 테스트 hook — 타이머 기다리지 않고 즉시 저장.
