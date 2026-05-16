@@ -14,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CardEditorState → cards.design jsonb 페이로드', () {
-    test('templateId/ratio/watermarkEnabled/fontStep 4키 포함 (PR12-B에서 fontStep 추가)', () {
+    test('design jsonb 페이로드 키 셋 (PR12-A~C 누적)', () {
       const state = CardEditorState(
         templateId: 'mono',
         ratio: CardRatio.post,
@@ -23,7 +23,13 @@ void main() {
       final json = state.toJson();
       expect(
         json.keys.toSet(),
-        {'templateId', 'ratio', 'watermarkEnabled', 'fontStep'},
+        {
+          'templateId',
+          'ratio',
+          'watermarkEnabled',
+          'fontStep',
+          'paletteSlotIndex',
+        },
       );
     });
 

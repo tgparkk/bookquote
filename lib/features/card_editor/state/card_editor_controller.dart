@@ -27,6 +27,7 @@ class CardEditorState {
     required this.ratio,
     required this.watermarkEnabled,
     this.fontStep = 0,
+    this.paletteSlotIndex = 0,
     this.undoDepth = 0,
   });
 
@@ -39,6 +40,10 @@ class CardEditorState {
   /// [A−]/[A+]로 조정 가능. `templates/*.md §4 텍스트 ±` 명세.
   final int fontStep;
 
+  /// 표지 5스와치 중 어느 색을 dominant 슬롯으로 쓸지 (0=dominant 기본, 1=secondary,
+  /// 2=vibrant, 3=darkVibrant, 4=muted). PR12-C.
+  final int paletteSlotIndex;
+
   /// 현재 controller `_undoStack`의 깊이를 mirror — UI가 `canUndo`로 ⤺ 버튼 활성을
   /// 결정한다. 영속화 대상 아님(재진입 시 stack 비어 있어 항상 0).
   final int undoDepth;
@@ -48,6 +53,9 @@ class CardEditorState {
   /// fontStep 가감 한계 — 명세 "보간 범위 안 ±2~3 step". V1은 ±3.
   static const int fontStepMin = -3;
   static const int fontStepMax = 3;
+
+  /// paletteSlotIndex 범위 — 0~4(5색).
+  static const int paletteSlotCount = 5;
 
   /// 첫 진입 default — 사용자 인용구를 보기 전. screen이 데이터 도착 후
   /// `applyRecommended`로 갱신.
@@ -62,6 +70,7 @@ class CardEditorState {
     CardRatio? ratio,
     bool? watermarkEnabled,
     int? fontStep,
+    int? paletteSlotIndex,
     int? undoDepth,
   }) =>
       CardEditorState(
@@ -69,6 +78,7 @@ class CardEditorState {
         ratio: ratio ?? this.ratio,
         watermarkEnabled: watermarkEnabled ?? this.watermarkEnabled,
         fontStep: fontStep ?? this.fontStep,
+        paletteSlotIndex: paletteSlotIndex ?? this.paletteSlotIndex,
         undoDepth: undoDepth ?? this.undoDepth,
       );
 
@@ -77,12 +87,14 @@ class CardEditorState {
         'ratio': ratio.name,
         'watermarkEnabled': watermarkEnabled,
         'fontStep': fontStep,
+        'paletteSlotIndex': paletteSlotIndex,
         // undoDepth는 영속화 안 함 — 재진입 시 stack은 비어 있음.
       };
 
   factory CardEditorState.fromJson(Map<String, Object?> json) {
     final ratioName = json['ratio'] as String? ?? CardRatio.story.name;
     final rawStep = (json['fontStep'] as num?)?.toInt() ?? 0;
+    final rawSlot = (json['paletteSlotIndex'] as num?)?.toInt() ?? 0;
     return CardEditorState(
       templateId: json['templateId'] as String? ?? 'minimal',
       ratio: CardRatio.values.firstWhere(
@@ -91,6 +103,7 @@ class CardEditorState {
       ),
       watermarkEnabled: json['watermarkEnabled'] as bool? ?? true,
       fontStep: rawStep.clamp(fontStepMin, fontStepMax),
+      paletteSlotIndex: rawSlot.clamp(0, paletteSlotCount - 1),
     );
   }
 
@@ -102,15 +115,22 @@ class CardEditorState {
           other.ratio == ratio &&
           other.watermarkEnabled == watermarkEnabled &&
           other.fontStep == fontStep &&
+          other.paletteSlotIndex == paletteSlotIndex &&
           other.undoDepth == undoDepth;
 
   @override
-  int get hashCode =>
-      Object.hash(templateId, ratio, watermarkEnabled, fontStep, undoDepth);
+  int get hashCode => Object.hash(
+        templateId,
+        ratio,
+        watermarkEnabled,
+        fontStep,
+        paletteSlotIndex,
+        undoDepth,
+      );
 
   @override
   String toString() =>
-      'CardEditorState($templateId, ${ratio.label}, wm:$watermarkEnabled, step:$fontStep, undo:$undoDepth)';
+      'CardEditorState($templateId, ${ratio.label}, wm:$watermarkEnabled, step:$fontStep, slot:$paletteSlotIndex, undo:$undoDepth)';
 }
 
 class CardEditorController extends Notifier<CardEditorState> {
@@ -185,6 +205,18 @@ class CardEditorController extends Notifier<CardEditorState> {
   /// 한 단계당 ~2px (위젯에서 step×2px 가감).
   void increaseFont() => _setFontStep(state.fontStep + 1);
   void decreaseFont() => _setFontStep(state.fontStep - 1);
+
+  /// 5스와치 중 하나를 dominant 슬롯으로 적용 (PR12-C). 같은 index면 no-op.
+  void setPaletteSlot(int index) {
+    if (index < 0 || index >= CardEditorState.paletteSlotCount) return;
+    if (state.paletteSlotIndex == index) return;
+    _pushUndo(state);
+    state = state.copyWith(
+      paletteSlotIndex: index,
+      undoDepth: _undoStack.length,
+    );
+    _persistDebounced();
+  }
 
   void _setFontStep(int next) {
     final clamped = next.clamp(

@@ -14,6 +14,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/tokens.dart';
 import 'data/card_renderer.dart';
 import 'data/card_repository.dart';
+import 'data/color_utils.dart';
 import 'domain/card_template.dart';
 import 'domain/quote_card_data.dart';
 import 'presentation/widgets/quote_card.dart';
@@ -205,6 +206,7 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
                 ratio: state.ratio,
                 watermarkEnabled: state.watermarkEnabled,
                 fontStep: state.fontStep,
+                paletteSlotIndex: state.paletteSlotIndex,
               ),
             ),
           ),
@@ -253,6 +255,7 @@ class _PreviewBox extends ConsumerWidget {
     required this.ratio,
     required this.watermarkEnabled,
     required this.fontStep,
+    required this.paletteSlotIndex,
   });
 
   final GlobalKey captureKey;
@@ -261,6 +264,7 @@ class _PreviewBox extends ConsumerWidget {
   final CardRatio ratio;
   final bool watermarkEnabled;
   final int fontStep;
+  final int paletteSlotIndex;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -268,7 +272,8 @@ class _PreviewBox extends ConsumerWidget {
       coverUrl: data.coverUrl,
       templateId: template.id,
     )));
-    final palette = paletteAsync.value ?? QuoteCard.fallbackFor(template);
+    final rawPalette = paletteAsync.value ?? QuoteCard.fallbackFor(template);
+    final palette = applyPaletteSlot(rawPalette, paletteSlotIndex);
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.md),

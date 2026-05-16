@@ -8,6 +8,33 @@ import '../../../core/theme/tokens.dart';
 // 배경 조정 — 추출 팔레트의 dominant/muted를 템플릿 배경에 쓸 수 있는 톤으로 정렬
 // ─────────────────────────────────────────────
 
+/// 5스와치 중 하나를 dominant 슬롯으로 적용 (PR12-C). slotIndex 0이면 원본 그대로.
+/// 0=dominant·1=secondary·2=vibrant·3=darkVibrant·4=muted. 새 dominant에 맞춰
+/// `textOnBackground`는 `getTextColorForBackground`로 재계산(subtext는 원본 유지 —
+/// 보조 텍스트는 카드 위젯이 `ensureContrast`로 자체 보정).
+ExtractedPalette applyPaletteSlot(ExtractedPalette palette, int slotIndex) {
+  if (slotIndex <= 0) return palette;
+  const count = 5;
+  final i = slotIndex.clamp(0, count - 1);
+  final colors = <Color>[
+    palette.dominant,
+    palette.secondary,
+    palette.vibrant,
+    palette.darkVibrant,
+    palette.muted,
+  ];
+  final newDominant = colors[i];
+  return ExtractedPalette(
+    dominant: newDominant,
+    secondary: palette.secondary,
+    vibrant: palette.vibrant,
+    darkVibrant: palette.darkVibrant,
+    muted: palette.muted,
+    textOnBackground: getTextColorForBackground(newDominant),
+    subtextOnBackground: palette.subtextOnBackground,
+  );
+}
+
 /// T2 따뜻 배경용: dominant 색을 HSL L 0.94로 밝혀 카드 배경 종이톤으로 변환.
 /// 채도 S<0.10이면 토큰 폴백(secondary400) 사용.
 /// (`docs/design/color-extraction.md` §6.lightenToBackground)
