@@ -17,6 +17,7 @@ class MonoCard extends StatelessWidget {
     required this.ratio,
     this.watermarkConfig = AppWatermark.minimal,
     this.watermarkEnabled = true,
+    this.fontStep = 0,
   });
 
   final QuoteCardData data;
@@ -24,6 +25,7 @@ class MonoCard extends StatelessWidget {
   final CardRatio ratio;
   final WatermarkConfig watermarkConfig;
   final bool watermarkEnabled;
+  final int fontStep;
 
   static const Map<CardRatio, _Variant> _variants = <CardRatio, _Variant>{
     CardRatio.story: _Variant(
@@ -58,7 +60,7 @@ class MonoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final v = _variants[ratio]!;
-    final fontSize = getQuoteFontSize(data.charCount);
+    final fontSize = getEffectiveQuoteFontSize(data.charCount, fontStep);
     final lineHeight = getQuoteLineHeight(fontSize);
     final hasTitle = data.bookTitle != null && data.bookTitle!.isNotEmpty;
     final hasAuthor = data.bookAuthor != null && data.bookAuthor!.isNotEmpty;

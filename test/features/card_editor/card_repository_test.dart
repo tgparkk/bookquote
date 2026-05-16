@@ -14,14 +14,17 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CardEditorState → cards.design jsonb 페이로드', () {
-    test('templateId/ratio/watermarkEnabled 3키만 포함', () {
+    test('templateId/ratio/watermarkEnabled/fontStep 4키 포함 (PR12-B에서 fontStep 추가)', () {
       const state = CardEditorState(
         templateId: 'mono',
         ratio: CardRatio.post,
         watermarkEnabled: false,
       );
       final json = state.toJson();
-      expect(json.keys.toSet(), {'templateId', 'ratio', 'watermarkEnabled'});
+      expect(
+        json.keys.toSet(),
+        {'templateId', 'ratio', 'watermarkEnabled', 'fontStep'},
+      );
     });
 
     test('ratio는 enum.name 문자열(story/feed/post)로 직렬화', () {

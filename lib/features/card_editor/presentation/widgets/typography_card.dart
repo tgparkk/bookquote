@@ -19,6 +19,7 @@ class TypographyCard extends StatelessWidget {
     required this.ratio,
     this.watermarkConfig = AppWatermark.minimal,
     this.watermarkEnabled = true,
+    this.fontStep = 0,
   });
 
   final QuoteCardData data;
@@ -26,6 +27,7 @@ class TypographyCard extends StatelessWidget {
   final CardRatio ratio;
   final WatermarkConfig watermarkConfig;
   final bool watermarkEnabled;
+  final int fontStep;
 
   static const Map<CardRatio, _Variant> _variants = <CardRatio, _Variant>{
     CardRatio.story: _Variant(
@@ -58,7 +60,7 @@ class TypographyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final v = _variants[ratio]!;
     final background = toMidTone(palette.muted);
-    final fontSize = getTypographyFontSize(data.charCount);
+    final fontSize = getEffectiveTypographyFontSize(data.charCount, fontStep);
     final lines = splitIntoPoetryLines(data.quoteText, v.maxCharsPerLine);
 
     return SizedBox(
@@ -187,6 +189,12 @@ double getTypographyFontSize(int charCount) {
   if (charCount <= 15) return 36.0;
   if (charCount <= 30) return 28.0;
   return 22.0;
+}
+
+/// T5 전용 — fontStep 반영. step 1당 2px 가감, [15, 48] clamp. PR12-B.
+double getEffectiveTypographyFontSize(int charCount, int fontStep) {
+  final base = getTypographyFontSize(charCount);
+  return (base + fontStep * 2).clamp(15.0, 48.0);
 }
 
 /// 인용구를 시(詩) 배치용 줄 목록으로 변환.

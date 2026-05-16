@@ -308,6 +308,13 @@ double getQuoteFontSize(int charCount) {
   }
 }
 
+/// 사용자가 [A−]/[A+]로 미세조정한 step을 반영한 최종 인용구 폰트 크기.
+/// step 1당 2px 가감. 보간 범위 안에 clamp(9~36px). PR12-B.
+double getEffectiveQuoteFontSize(int charCount, int fontStep) {
+  final base = getQuoteFontSize(charCount);
+  return (base + fontStep * 2).clamp(9.0, 36.0);
+}
+
 /// 인용구 폰트 크기에 따라 최적 행간을 반환한다.
 /// Flutter TextStyle.height 값 (fontSize 배율)
 ///

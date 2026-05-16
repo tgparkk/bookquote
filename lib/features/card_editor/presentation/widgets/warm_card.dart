@@ -18,6 +18,7 @@ class WarmCard extends StatelessWidget {
     required this.ratio,
     this.watermarkConfig = AppWatermark.minimal,
     this.watermarkEnabled = true,
+    this.fontStep = 0,
   });
 
   final QuoteCardData data;
@@ -25,6 +26,7 @@ class WarmCard extends StatelessWidget {
   final CardRatio ratio;
   final WatermarkConfig watermarkConfig;
   final bool watermarkEnabled;
+  final int fontStep;
 
   static const Map<CardRatio, _Variant> _variants = <CardRatio, _Variant>{
     CardRatio.story: _Variant(
@@ -54,7 +56,7 @@ class WarmCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final v = _variants[ratio]!;
     final background = lightenToBackground(palette.dominant);
-    final fontSize = getQuoteFontSize(data.charCount);
+    final fontSize = getEffectiveQuoteFontSize(data.charCount, fontStep);
     final lineHeight = getQuoteLineHeight(fontSize);
 
     final cover = _CoverPanel(mode: v.mode, data: data, palette: palette);
@@ -178,6 +180,17 @@ class _TextPanel extends StatelessWidget {
     final hasTitle = data.bookTitle != null && data.bookTitle!.isNotEmpty;
     final hasAuthor = data.bookAuthor != null && data.bookAuthor!.isNotEmpty;
 
+    // palette.textOnBackground 등은 표지의 *원본* dominant 기준으로 계산되는데
+    // 실제 배경은 `lightenToBackground(palette.dominant)`로 밝혀진 톤이라
+    // 그대로 쓰면 대비가 부족해 텍스트가 거의 안 보이는 케이스(특히 어두운 표지)
+    // 가 발생. 실 배경 기준으로 재보정한다(2026-05-16 실기기 발견).
+    final quoteColor =
+        ensureContrast(background, palette.textOnBackground, minRatio: 4.5);
+    final titleColor =
+        ensureContrast(background, palette.darkVibrant, minRatio: 4.5);
+    final authorColor =
+        ensureContrast(background, palette.subtextOnBackground, minRatio: 3.0);
+
     return Container(
       color: background,
       padding: EdgeInsets.fromLTRB(48, variant.paddingTop, 48, 120),
@@ -193,7 +206,7 @@ class _TextPanel extends StatelessWidget {
                 fontWeight: FontWeight.w500,
                 fontSize: fontSize,
                 height: lineHeight,
-                color: palette.textOnBackground,
+                color: quoteColor,
               ),
             ),
           ),
@@ -211,7 +224,7 @@ class _TextPanel extends StatelessWidget {
                 fontFamily: AppFonts.quote,
                 fontWeight: FontWeight.w500,
                 fontSize: AppFontSize.md,
-                color: palette.darkVibrant,
+                color: titleColor,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -224,7 +237,7 @@ class _TextPanel extends StatelessWidget {
                 fontFamily: AppFonts.ui,
                 fontWeight: FontWeight.w400,
                 fontSize: AppFontSize.sm,
-                color: palette.subtextOnBackground,
+                color: authorColor,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

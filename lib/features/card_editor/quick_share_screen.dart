@@ -204,6 +204,7 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
                 data: data,
                 ratio: state.ratio,
                 watermarkEnabled: state.watermarkEnabled,
+                fontStep: state.fontStep,
               ),
             ),
           ),
@@ -251,6 +252,7 @@ class _PreviewBox extends ConsumerWidget {
     required this.data,
     required this.ratio,
     required this.watermarkEnabled,
+    required this.fontStep,
   });
 
   final GlobalKey captureKey;
@@ -258,6 +260,7 @@ class _PreviewBox extends ConsumerWidget {
   final QuoteCardData data;
   final CardRatio ratio;
   final bool watermarkEnabled;
+  final int fontStep;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -285,6 +288,7 @@ class _PreviewBox extends ConsumerWidget {
                 palette: palette,
                 ratio: ratio,
                 watermarkEnabled: watermarkEnabled,
+                fontStep: fontStep,
               ),
             ),
           ),

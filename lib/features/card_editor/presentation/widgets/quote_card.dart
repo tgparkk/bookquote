@@ -20,6 +20,7 @@ class QuoteCard extends StatelessWidget {
     required this.ratio,
     this.watermarkConfig = AppWatermark.minimal,
     this.watermarkEnabled = true,
+    this.fontStep = 0,
   });
 
   final CardTemplate template;
@@ -28,6 +29,8 @@ class QuoteCard extends StatelessWidget {
   final CardRatio ratio;
   final WatermarkConfig watermarkConfig;
   final bool watermarkEnabled;
+  /// 사용자 폰트 미세조정 step(±3). PR12-B.
+  final int fontStep;
 
   /// 템플릿 id에 해당하는 fallback 팔레트. PR8 `palette_service` 도입 전까지 모든 색의 소스.
   static ExtractedPalette fallbackFor(CardTemplate template) =>
@@ -42,6 +45,7 @@ class QuoteCard extends StatelessWidget {
           ratio: ratio,
           watermarkConfig: watermarkConfig,
           watermarkEnabled: watermarkEnabled,
+          fontStep: fontStep,
         ),
       WarmTemplate() => WarmCard(
           data: data,
@@ -49,6 +53,7 @@ class QuoteCard extends StatelessWidget {
           ratio: ratio,
           watermarkConfig: watermarkConfig,
           watermarkEnabled: watermarkEnabled,
+          fontStep: fontStep,
         ),
       MonoTemplate() => MonoCard(
           data: data,
@@ -56,6 +61,7 @@ class QuoteCard extends StatelessWidget {
           ratio: ratio,
           watermarkConfig: watermarkConfig,
           watermarkEnabled: watermarkEnabled,
+          fontStep: fontStep,
         ),
       CoverExtractTemplate() => CoverExtractCard(
           data: data,
@@ -63,6 +69,7 @@ class QuoteCard extends StatelessWidget {
           ratio: ratio,
           watermarkConfig: watermarkConfig,
           watermarkEnabled: watermarkEnabled,
+          fontStep: fontStep,
         ),
       TypographyTemplate() => TypographyCard(
           data: data,
@@ -70,6 +77,7 @@ class QuoteCard extends StatelessWidget {
           ratio: ratio,
           watermarkConfig: watermarkConfig,
           watermarkEnabled: watermarkEnabled,
+          fontStep: fontStep,
         ),
     };
   }

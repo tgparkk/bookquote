@@ -29,6 +29,7 @@ class CoverExtractCard extends StatelessWidget {
     required this.ratio,
     this.watermarkConfig = AppWatermark.minimal,
     this.watermarkEnabled = true,
+    this.fontStep = 0,
   });
 
   final QuoteCardData data;
@@ -36,6 +37,7 @@ class CoverExtractCard extends StatelessWidget {
   final CardRatio ratio;
   final WatermarkConfig watermarkConfig;
   final bool watermarkEnabled;
+  final int fontStep;
 
   static const Map<CardRatio, _Variant> _variants = <CardRatio, _Variant>{
     CardRatio.story: _Variant(
@@ -70,7 +72,7 @@ class CoverExtractCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final v = _variants[ratio]!;
-    final rawSize = getQuoteFontSize(data.charCount);
+    final rawSize = getEffectiveQuoteFontSize(data.charCount, fontStep);
     final fontSize = math.max(rawSize, 15.0);
     final lineHeight = getQuoteLineHeight(fontSize);
 

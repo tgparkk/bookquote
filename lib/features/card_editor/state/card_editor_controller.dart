@@ -26,6 +26,7 @@ class CardEditorState {
     required this.templateId,
     required this.ratio,
     required this.watermarkEnabled,
+    this.fontStep = 0,
     this.undoDepth = 0,
   });
 
@@ -33,11 +34,20 @@ class CardEditorState {
   final CardRatio ratio;
   final bool watermarkEnabled;
 
+  /// 인용구 폰트 크기 미세조정 — `getQuoteFontSize(charCount)`에서 step×2px 가감.
+  /// `[fontStepMin, fontStepMax]` 안에 clamp. 자동 계산이 기본(0)이며 사용자가
+  /// [A−]/[A+]로 조정 가능. `templates/*.md §4 텍스트 ±` 명세.
+  final int fontStep;
+
   /// 현재 controller `_undoStack`의 깊이를 mirror — UI가 `canUndo`로 ⤺ 버튼 활성을
   /// 결정한다. 영속화 대상 아님(재진입 시 stack 비어 있어 항상 0).
   final int undoDepth;
 
   bool get canUndo => undoDepth > 0;
+
+  /// fontStep 가감 한계 — 명세 "보간 범위 안 ±2~3 step". V1은 ±3.
+  static const int fontStepMin = -3;
+  static const int fontStepMax = 3;
 
   /// 첫 진입 default — 사용자 인용구를 보기 전. screen이 데이터 도착 후
   /// `applyRecommended`로 갱신.
@@ -51,12 +61,14 @@ class CardEditorState {
     String? templateId,
     CardRatio? ratio,
     bool? watermarkEnabled,
+    int? fontStep,
     int? undoDepth,
   }) =>
       CardEditorState(
         templateId: templateId ?? this.templateId,
         ratio: ratio ?? this.ratio,
         watermarkEnabled: watermarkEnabled ?? this.watermarkEnabled,
+        fontStep: fontStep ?? this.fontStep,
         undoDepth: undoDepth ?? this.undoDepth,
       );
 
@@ -64,11 +76,13 @@ class CardEditorState {
         'templateId': templateId,
         'ratio': ratio.name,
         'watermarkEnabled': watermarkEnabled,
+        'fontStep': fontStep,
         // undoDepth는 영속화 안 함 — 재진입 시 stack은 비어 있음.
       };
 
   factory CardEditorState.fromJson(Map<String, Object?> json) {
     final ratioName = json['ratio'] as String? ?? CardRatio.story.name;
+    final rawStep = (json['fontStep'] as num?)?.toInt() ?? 0;
     return CardEditorState(
       templateId: json['templateId'] as String? ?? 'minimal',
       ratio: CardRatio.values.firstWhere(
@@ -76,6 +90,7 @@ class CardEditorState {
         orElse: () => CardRatio.story,
       ),
       watermarkEnabled: json['watermarkEnabled'] as bool? ?? true,
+      fontStep: rawStep.clamp(fontStepMin, fontStepMax),
     );
   }
 
@@ -86,15 +101,16 @@ class CardEditorState {
           other.templateId == templateId &&
           other.ratio == ratio &&
           other.watermarkEnabled == watermarkEnabled &&
+          other.fontStep == fontStep &&
           other.undoDepth == undoDepth;
 
   @override
   int get hashCode =>
-      Object.hash(templateId, ratio, watermarkEnabled, undoDepth);
+      Object.hash(templateId, ratio, watermarkEnabled, fontStep, undoDepth);
 
   @override
   String toString() =>
-      'CardEditorState($templateId, ${ratio.label}, wm:$watermarkEnabled, undo:$undoDepth)';
+      'CardEditorState($templateId, ${ratio.label}, wm:$watermarkEnabled, step:$fontStep, undo:$undoDepth)';
 }
 
 class CardEditorController extends Notifier<CardEditorState> {
@@ -162,6 +178,22 @@ class CardEditorController extends Notifier<CardEditorState> {
       watermarkEnabled: !state.watermarkEnabled,
       undoDepth: _undoStack.length,
     );
+    _persistDebounced();
+  }
+
+  /// 폰트 step ±1. clamp 한계에 도달하면 no-op(언두 stack 노이즈 방지).
+  /// 한 단계당 ~2px (위젯에서 step×2px 가감).
+  void increaseFont() => _setFontStep(state.fontStep + 1);
+  void decreaseFont() => _setFontStep(state.fontStep - 1);
+
+  void _setFontStep(int next) {
+    final clamped = next.clamp(
+      CardEditorState.fontStepMin,
+      CardEditorState.fontStepMax,
+    );
+    if (state.fontStep == clamped) return;
+    _pushUndo(state);
+    state = state.copyWith(fontStep: clamped, undoDepth: _undoStack.length);
     _persistDebounced();
   }
 

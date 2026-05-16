@@ -285,11 +285,20 @@ class _Editor extends ConsumerWidget {
             AppSpacing.s4,
             0,
           ),
-          child: Center(
-            child: _RatioSegment(
-              value: state.ratio,
-              onChanged: controller.setRatio,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              _RatioSegment(
+                value: state.ratio,
+                onChanged: controller.setRatio,
+              ),
+              const SizedBox(width: AppSpacing.s3),
+              _FontSteppers(
+                step: state.fontStep,
+                onDecrease: controller.decreaseFont,
+                onIncrease: controller.increaseFont,
+              ),
+            ],
           ),
         ),
         Expanded(
@@ -302,6 +311,7 @@ class _Editor extends ConsumerWidget {
                 data: data,
                 ratio: state.ratio,
                 watermarkEnabled: state.watermarkEnabled,
+                fontStep: state.fontStep,
               ),
             ),
           ),
@@ -346,6 +356,52 @@ class _RatioSegment extends StatelessWidget {
   }
 }
 
+/// 비율 행에 함께 노출하는 [A−][A+] 폰트 미세조정. PR12-B.
+class _FontSteppers extends StatelessWidget {
+  const _FontSteppers({
+    required this.step,
+    required this.onDecrease,
+    required this.onIncrease,
+  });
+
+  final int step;
+  final VoidCallback onDecrease;
+  final VoidCallback onIncrease;
+
+  @override
+  Widget build(BuildContext context) {
+    final canDecrease = step > CardEditorState.fontStepMin;
+    final canIncrease = step < CardEditorState.fontStepMax;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        IconButton(
+          tooltip: '글자 작게',
+          onPressed: canDecrease ? onDecrease : null,
+          icon: Icon(
+            Icons.text_decrease_rounded,
+            color: canDecrease
+                ? AppColors.primary600
+                : AppColors.primary300,
+          ),
+          visualDensity: VisualDensity.compact,
+        ),
+        IconButton(
+          tooltip: '글자 크게',
+          onPressed: canIncrease ? onIncrease : null,
+          icon: Icon(
+            Icons.text_increase_rounded,
+            color: canIncrease
+                ? AppColors.primary600
+                : AppColors.primary300,
+          ),
+          visualDensity: VisualDensity.compact,
+        ),
+      ],
+    );
+  }
+}
+
 class _PreviewBox extends ConsumerWidget {
   const _PreviewBox({
     required this.captureKey,
@@ -353,6 +409,7 @@ class _PreviewBox extends ConsumerWidget {
     required this.data,
     required this.ratio,
     required this.watermarkEnabled,
+    required this.fontStep,
   });
 
   final GlobalKey captureKey;
@@ -360,6 +417,7 @@ class _PreviewBox extends ConsumerWidget {
   final QuoteCardData data;
   final CardRatio ratio;
   final bool watermarkEnabled;
+  final int fontStep;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -387,13 +445,14 @@ class _PreviewBox extends ConsumerWidget {
                 duration: const Duration(milliseconds: 200),
                 child: QuoteCard(
                   key: ValueKey<String>(
-                    '${template.id}-${data.coverUrl ?? ""}-$watermarkEnabled',
+                    '${template.id}-${data.coverUrl ?? ""}-$watermarkEnabled-$fontStep',
                   ),
                   template: template,
                   data: data,
                   palette: palette,
                   ratio: ratio,
                   watermarkEnabled: watermarkEnabled,
+                  fontStep: fontStep,
                 ),
               ),
             ),
