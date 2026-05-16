@@ -64,7 +64,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.s6),
           child: _linkSent
-              ? _SentNotice(email: _emailController.text.trim())
+              ? _SentNotice(
+                  email: _emailController.text.trim(),
+                  onResetEmail: () => setState(() => _linkSent = false),
+                )
               : Form(
                   key: _formKey,
                   child: Column(
@@ -147,9 +150,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 }
 
 class _SentNotice extends StatelessWidget {
-  const _SentNotice({required this.email});
+  const _SentNotice({required this.email, required this.onResetEmail});
 
   final String email;
+  final VoidCallback onResetEmail;
 
   @override
   Widget build(BuildContext context) {
@@ -170,6 +174,15 @@ class _SentNotice extends StatelessWidget {
         Text(
           '메일이 안 보이면 스팸함도 확인해주세요. 몇 분 안에 도착해요.',
           style: textTheme.bodySmall,
+        ),
+        const SizedBox(height: AppSpacing.s6),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: onResetEmail,
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text('이메일이 다른가요? 다시 입력'),
+          ),
         ),
       ],
     );

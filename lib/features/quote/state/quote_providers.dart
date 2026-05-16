@@ -66,7 +66,16 @@ class CreateQuoteController extends AsyncNotifier<void> {
   /// 기존 인용구 수정. 신규 생성과 달리 outbox 큐잉은 하지 않는다(편집은 사용자가
   /// 다시 시도하는 게 자연스러움). 성공 시 갱신된 [Quote]를, 인증·서버 오류는
   /// [QuoteRepositoryException]을 그대로 던진다.
-  Future<Quote> submitUpdate(String quoteId, QuoteInput input) async {
+  ///
+  /// [clearBook]은 사용자가 명시적으로 책 연결을 해제할 때만 `true`. 기본 `false`로
+  /// 둬서 `input.bookId == null`이 prefill 실패(저속 회선·일시 미응답)에서 와도
+  /// 책 연결이 silent 해제되지 않게 한다. V1엔 책 해제 UI 자체가 없으므로 호출자가
+  /// 명시하지 않으면 항상 false.
+  Future<Quote> submitUpdate(
+    String quoteId,
+    QuoteInput input, {
+    bool clearBook = false,
+  }) async {
     state = const AsyncLoading();
     final repo = ref.read(quoteRepositoryProvider);
     try {
@@ -76,7 +85,7 @@ class CreateQuoteController extends AsyncNotifier<void> {
         page: input.page,
         moods: input.moods.toSet(),
         bookId: input.bookId,
-        clearBook: input.bookId == null,
+        clearBook: clearBook,
       );
       state = const AsyncData(null);
       return updated;
