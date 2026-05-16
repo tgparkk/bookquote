@@ -510,14 +510,11 @@ class _PaletteRow extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           for (var i = 0; i < colors.length; i++)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: _Swatch(
-                color: colors[i],
-                selected: i == selectedIndex,
-                onTap: () => onSelect(i),
-                index: i,
-              ),
+            _Swatch(
+              color: colors[i],
+              selected: i == selectedIndex,
+              onTap: () => onSelect(i),
+              index: i,
             ),
           const SizedBox(width: AppSpacing.s2),
           IconButton(
@@ -556,21 +553,30 @@ class _Swatch extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
-        child: Container(
-          width: 28,
-          height: 28,
-          padding: const EdgeInsets.all(2),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: selected ? AppColors.accent500 : const Color(0x14000000),
-              width: selected ? 2 : 1,
-            ),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
+        // PR12-E: hit area 48dp 보장(WCAG/Material). visual은 28dp 유지.
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Center(
+            child: Container(
+              width: 28,
+              height: 28,
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: selected
+                      ? AppColors.accent500
+                      : const Color(0x14000000),
+                  width: selected ? 2 : 1,
+                ),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
             ),
           ),
         ),
@@ -652,7 +658,9 @@ class _PreviewBox extends ConsumerWidget {
     )));
     final rawPalette = paletteAsync.value ?? QuoteCard.fallbackFor(template);
     final palette = applyPaletteSlot(rawPalette, paletteSlotIndex);
-    return DecoratedBox(
+    return Semantics(
+      label: '카드 미리보기, ${template.name} 템플릿, 인용구: ${data.quoteText}',
+      child: DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.md),
         boxShadow: const <BoxShadow>[AppShadows.card],
@@ -685,6 +693,7 @@ class _PreviewBox extends ConsumerWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -759,7 +768,12 @@ class _MiniCard extends ConsumerWidget {
                 .value ??
             QuoteCard.fallbackFor(template))
         : QuoteCard.fallbackFor(template);
-    return GestureDetector(
+    return Semantics(
+      label:
+          '${template.name} 템플릿${isSelected ? ", 선택됨" : ""}${enabled ? "" : ", 표지 필요"}',
+      button: true,
+      selected: isSelected,
+      child: GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
@@ -828,6 +842,7 @@ class _MiniCard extends ConsumerWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }
