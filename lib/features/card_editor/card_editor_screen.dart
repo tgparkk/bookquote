@@ -29,6 +29,26 @@ import 'state/quote_card_data_provider.dart';
 
 enum _AppBarAction { editQuote, toggleWatermark }
 
+/// 비율별 안전한 인용구 길이 휴리스틱 — 이 임계를 넘으면 카드에 다 안 들어갈 위험.
+/// 1080×{1920/1080/1350} 캔버스에서 NotoSerifKR 15~22px·행간 1.6~1.8 기준 측정값.
+/// `screens/card-editor.md §7`의 auto-fit 경고 트리거. PR12-D.
+const Map<CardRatio, int> _ratioCharLimit = <CardRatio, int>{
+  CardRatio.feed: 300,
+  CardRatio.post: 450,
+  CardRatio.story: 600,
+};
+
+/// 현재 인용구 길이와 비율로 "더 잘 어울리는" 비율을 추천. 현재가 충분히 크면 null.
+/// 모든 비율 초과 시에도 가장 큰 비율(story) 추천 — 사용자가 그 다음 어떻게 할지 결정.
+CardRatio? _recommendRatio(int charCount, CardRatio current) {
+  final entries = _ratioCharLimit.entries.toList()
+    ..sort((a, b) => a.value.compareTo(b.value));
+  for (final e in entries) {
+    if (e.value >= charCount && e.key != current) return e.key;
+  }
+  return null;
+}
+
 class CardEditorScreen extends ConsumerStatefulWidget {
   const CardEditorScreen({super.key, required this.quoteId});
 
@@ -302,6 +322,12 @@ class _Editor extends ConsumerWidget {
             ],
           ),
         ),
+        if (data.charCount > (_ratioCharLimit[state.ratio] ?? 600))
+          _AutoFitWarning(
+            currentRatio: state.ratio,
+            charCount: data.charCount,
+            onApplyRatio: controller.setRatio,
+          ),
         Expanded(
           child: Center(
             child: Padding(
@@ -365,6 +391,84 @@ class _RatioSegment extends StatelessWidget {
       selected: <CardRatio>{value},
       onSelectionChanged: (s) => onChanged(s.first),
       showSelectedIcon: false,
+    );
+  }
+}
+
+/// 인용구가 현재 비율에 다 안 들어갈 위험을 알린다. 더 잘 어울리는 비율이 있으면
+/// 1탭으로 적용. `screens/card-editor.md §7` 명세 — "잘린 채 조용히 export 금지".
+/// PR12-D.
+class _AutoFitWarning extends StatelessWidget {
+  const _AutoFitWarning({
+    required this.currentRatio,
+    required this.charCount,
+    required this.onApplyRatio,
+  });
+
+  final CardRatio currentRatio;
+  final int charCount;
+  final ValueChanged<CardRatio> onApplyRatio;
+
+  @override
+  Widget build(BuildContext context) {
+    final recommended = _recommendRatio(charCount, currentRatio);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.s4,
+        AppSpacing.s2,
+        AppSpacing.s4,
+        0,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.s3,
+          vertical: AppSpacing.s2,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.semanticWarningLight,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          border: Border.all(
+            color: AppColors.semanticWarning.withValues(alpha: 0.30),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: <Widget>[
+            const Icon(
+              Icons.warning_amber_rounded,
+              size: 18,
+              color: AppColors.semanticWarning,
+            ),
+            const SizedBox(width: AppSpacing.s2),
+            Expanded(
+              child: Text(
+                recommended != null
+                    ? '이 인용구는 ${currentRatio.label}에서 잘릴 수 있어요. ${recommended.label}을 추천해요.'
+                    : '카드에 다 안 들어갈 수 있어요. 텍스트를 줄이거나 비율을 바꿔 보세요.',
+                style: const TextStyle(
+                  fontFamily: AppFonts.ui,
+                  fontSize: AppFontSize.sm,
+                  color: AppColors.semanticWarning,
+                ),
+              ),
+            ),
+            if (recommended != null) ...<Widget>[
+              const SizedBox(width: AppSpacing.s2),
+              TextButton(
+                onPressed: () => onApplyRatio(recommended),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.s2,
+                  ),
+                  foregroundColor: AppColors.semanticWarning,
+                ),
+                child: Text('${recommended.label} 적용'),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
