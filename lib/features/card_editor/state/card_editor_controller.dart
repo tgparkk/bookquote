@@ -26,11 +26,18 @@ class CardEditorState {
     required this.templateId,
     required this.ratio,
     required this.watermarkEnabled,
+    this.undoDepth = 0,
   });
 
   final String templateId;
   final CardRatio ratio;
   final bool watermarkEnabled;
+
+  /// 현재 controller `_undoStack`의 깊이를 mirror — UI가 `canUndo`로 ⤺ 버튼 활성을
+  /// 결정한다. 영속화 대상 아님(재진입 시 stack 비어 있어 항상 0).
+  final int undoDepth;
+
+  bool get canUndo => undoDepth > 0;
 
   /// 첫 진입 default — 사용자 인용구를 보기 전. screen이 데이터 도착 후
   /// `applyRecommended`로 갱신.
@@ -44,17 +51,20 @@ class CardEditorState {
     String? templateId,
     CardRatio? ratio,
     bool? watermarkEnabled,
+    int? undoDepth,
   }) =>
       CardEditorState(
         templateId: templateId ?? this.templateId,
         ratio: ratio ?? this.ratio,
         watermarkEnabled: watermarkEnabled ?? this.watermarkEnabled,
+        undoDepth: undoDepth ?? this.undoDepth,
       );
 
   Map<String, Object?> toJson() => <String, Object?>{
         'templateId': templateId,
         'ratio': ratio.name,
         'watermarkEnabled': watermarkEnabled,
+        // undoDepth는 영속화 안 함 — 재진입 시 stack은 비어 있음.
       };
 
   factory CardEditorState.fromJson(Map<String, Object?> json) {
@@ -75,14 +85,16 @@ class CardEditorState {
       other is CardEditorState &&
           other.templateId == templateId &&
           other.ratio == ratio &&
-          other.watermarkEnabled == watermarkEnabled;
+          other.watermarkEnabled == watermarkEnabled &&
+          other.undoDepth == undoDepth;
 
   @override
-  int get hashCode => Object.hash(templateId, ratio, watermarkEnabled);
+  int get hashCode =>
+      Object.hash(templateId, ratio, watermarkEnabled, undoDepth);
 
   @override
   String toString() =>
-      'CardEditorState($templateId, ${ratio.label}, wm:$watermarkEnabled)';
+      'CardEditorState($templateId, ${ratio.label}, wm:$watermarkEnabled, undo:$undoDepth)';
 }
 
 class CardEditorController extends Notifier<CardEditorState> {
@@ -92,6 +104,12 @@ class CardEditorController extends Notifier<CardEditorState> {
   // state getter는 lifecycle 위반(Riverpod 3 assert)이므로 snapshot만 읽는다.
   CardEditorState? _pendingSnapshot;
   String? _pendingKey;
+
+  /// 사용자의 명시적 변경(템플릿/비율/워터마크)을 push. ⤺ 언두로 되돌릴 대상.
+  /// 자동 분기(applyRecommended)나 복원(applyState)은 푸시하지 않는다.
+  /// 깊이 [_maxUndoDepth] 초과 시 가장 오래된 항목부터 제거.
+  static const int _maxUndoDepth = 20;
+  final List<CardEditorState> _undoStack = <CardEditorState>[];
 
   @override
   CardEditorState build() {
@@ -123,19 +141,46 @@ class CardEditorController extends Notifier<CardEditorState> {
 
   void setTemplate(String templateId) {
     if (state.templateId == templateId) return;
-    state = state.copyWith(templateId: templateId);
+    _pushUndo(state);
+    state = state.copyWith(
+      templateId: templateId,
+      undoDepth: _undoStack.length,
+    );
     _persistDebounced();
   }
 
   void setRatio(CardRatio ratio) {
     if (state.ratio == ratio) return;
-    state = state.copyWith(ratio: ratio);
+    _pushUndo(state);
+    state = state.copyWith(ratio: ratio, undoDepth: _undoStack.length);
     _persistDebounced();
   }
 
   void toggleWatermark() {
-    state = state.copyWith(watermarkEnabled: !state.watermarkEnabled);
+    _pushUndo(state);
+    state = state.copyWith(
+      watermarkEnabled: !state.watermarkEnabled,
+      undoDepth: _undoStack.length,
+    );
     _persistDebounced();
+  }
+
+  /// 직전 변경(템플릿/비율/워터마크)을 되돌린다. 스택이 비면 no-op.
+  /// redo는 V1.5 백로그.
+  void undo() {
+    if (_undoStack.isEmpty) return;
+    final prev = _undoStack.removeLast();
+    state = prev.copyWith(undoDepth: _undoStack.length);
+    _persistDebounced();
+  }
+
+  void _pushUndo(CardEditorState snapshot) {
+    // undoDepth 차이로 인한 노이즈 제거 — push 시점엔 stack 깊이만 다른 동일 상태
+    // 비교를 위해 undoDepth: 0으로 정규화한 사본을 저장.
+    _undoStack.add(snapshot.copyWith(undoDepth: 0));
+    if (_undoStack.length > _maxUndoDepth) {
+      _undoStack.removeAt(0);
+    }
   }
 
   /// 인용구 길이·표지 유무로 추천 템플릿을 선택. data 도착 시 screen이 호출.

@@ -64,6 +64,7 @@ void main() {
           templateId: 'mono',
           ratio: CardRatio.feed,
           watermarkEnabled: false,
+          undoDepth: 3,
         ),
       );
     });
@@ -98,6 +99,96 @@ void main() {
         container.read(cardEditorControllerProvider).templateId,
         'coverExtract',
       );
+    });
+  });
+
+  group('undo (PR12-A)', () {
+    late ProviderContainer container;
+    setUp(() => container = ProviderContainer());
+    tearDown(() => container.dispose());
+
+    test('초기 상태는 canUndo=false', () {
+      expect(container.read(cardEditorControllerProvider).canUndo, isFalse);
+    });
+
+    test('setTemplate 후 canUndo=true → undo로 원상복귀', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl.setTemplate('mono');
+      expect(container.read(cardEditorControllerProvider).canUndo, isTrue);
+      expect(container.read(cardEditorControllerProvider).templateId, 'mono');
+      ctrl.undo();
+      final s = container.read(cardEditorControllerProvider);
+      expect(s.templateId, 'minimal');
+      expect(s.canUndo, isFalse);
+    });
+
+    test('비율·워터마크·템플릿 3변경 → undo 3번 → 모두 복귀', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl.setTemplate('warm');
+      ctrl.setRatio(CardRatio.post);
+      ctrl.toggleWatermark();
+      expect(container.read(cardEditorControllerProvider).undoDepth, 3);
+
+      ctrl
+        ..undo()
+        ..undo()
+        ..undo();
+      expect(
+        container.read(cardEditorControllerProvider),
+        CardEditorState.initial,
+      );
+    });
+
+    test('빈 스택에서 undo는 no-op', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl.undo();
+      expect(
+        container.read(cardEditorControllerProvider),
+        CardEditorState.initial,
+      );
+    });
+
+    test('20단계 cap — 25번 변경 후 undo 25번 시도해도 20번까지만 복귀', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      // 워터마크 토글을 25번 — 매 호출이 _pushUndo.
+      for (var i = 0; i < 25; i++) {
+        ctrl.toggleWatermark();
+      }
+      expect(container.read(cardEditorControllerProvider).undoDepth, 20);
+      for (var i = 0; i < 25; i++) {
+        ctrl.undo();
+      }
+      // 처음 5번 변경은 stack에서 evict됐으므로 그 상태가 "되돌릴 수 있는 가장 오래된"
+      // 시점. 짝수 토글 → watermark=true 유지 또는 짝수 횟수만큼 토글된 결과.
+      // 핵심: undoDepth가 0이고 더 이상 undo 불가.
+      expect(container.read(cardEditorControllerProvider).undoDepth, 0);
+      expect(container.read(cardEditorControllerProvider).canUndo, isFalse);
+    });
+
+    test('applyRecommended는 언두 stack에 push 안 함(자동 분기)', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl.applyRecommended(charCount: 10, hasCover: false);
+      expect(
+        container.read(cardEditorControllerProvider).canUndo,
+        isFalse,
+        reason: 'applyRecommended는 자동 분기 — 사용자 명시 액션 아님',
+      );
+    });
+
+    test('applyState(이어서 만들기)도 언두 stack에 push 안 함', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl.applyState(const CardEditorState(
+        templateId: 'mono',
+        ratio: CardRatio.feed,
+        watermarkEnabled: false,
+      ));
+      expect(container.read(cardEditorControllerProvider).canUndo, isFalse);
     });
   });
 

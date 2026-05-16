@@ -88,13 +88,14 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
     return AppBar(
       title: const Text('카드 만들기'),
       actions: <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(right: AppSpacing.s1),
-          child: Center(
-            child: _RatioSegment(
-              value: state.ratio,
-              onChanged: controller.setRatio,
-            ),
+        IconButton(
+          tooltip: state.canUndo ? '되돌리기' : '되돌릴 작업 없음',
+          onPressed: state.canUndo ? controller.undo : null,
+          icon: Icon(
+            Icons.undo_rounded,
+            color: state.canUndo
+                ? AppColors.primary600
+                : AppColors.primary300,
           ),
         ),
         Padding(
@@ -277,6 +278,20 @@ class _Editor extends ConsumerWidget {
 
     return Column(
       children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.s4,
+            AppSpacing.s3,
+            AppSpacing.s4,
+            0,
+          ),
+          child: Center(
+            child: _RatioSegment(
+              value: state.ratio,
+              onChanged: controller.setRatio,
+            ),
+          ),
+        ),
         Expanded(
           child: Center(
             child: Padding(
