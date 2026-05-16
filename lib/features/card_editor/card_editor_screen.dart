@@ -13,9 +13,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/tokens.dart';
+import 'data/card_renderer.dart';
 import 'domain/card_template.dart';
 import 'domain/quote_card_data.dart';
 import 'presentation/widgets/quote_card.dart';
+import 'presentation/widgets/share_sheet.dart';
 import 'state/card_editor_controller.dart';
 import 'state/palette_providers.dart';
 import 'state/quote_card_data_provider.dart';
@@ -31,6 +33,8 @@ class CardEditorScreen extends ConsumerStatefulWidget {
 
 class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
   bool _initialized = false;
+  bool _isSharing = false;
+  final GlobalKey _captureKey = GlobalKey();
 
   @override
   void initState() {
@@ -46,7 +50,7 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
     final dataAsync = ref.watch(quoteCardDataProvider(widget.quoteId));
     return Scaffold(
       backgroundColor: AppColors.secondary300,
-      appBar: _buildAppBar(dataAsync.value != null),
+      appBar: _buildAppBar(dataAsync.value),
       body: SafeArea(
         child: dataAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -62,15 +66,15 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
                 _initializeFromData(data);
               });
             }
-            return _Editor(data: data);
+            return _Editor(data: data, captureKey: _captureKey);
           },
         ),
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(bool dataReady) {
-    if (!dataReady) {
+  PreferredSizeWidget _buildAppBar(QuoteCardData? data) {
+    if (data == null) {
       return AppBar(title: const Text('카드 만들기'));
     }
     final state = ref.watch(cardEditorControllerProvider);
@@ -91,7 +95,7 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(right: AppSpacing.s3),
+          padding: const EdgeInsets.only(right: AppSpacing.s2),
           child: Center(
             child: _RatioSegment(
               value: state.ratio,
@@ -99,8 +103,66 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
             ),
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.only(right: AppSpacing.s3),
+          child: Center(
+            child: FilledButton.icon(
+              onPressed: _isSharing ? null : () => _onShareTap(data, state.ratio),
+              icon: _isSharing
+                  ? const SizedBox.square(
+                      dimension: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.ios_share_rounded, size: 16),
+              label: const Text('공유'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.accent500,
+                foregroundColor: Colors.white,
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.s3,
+                ),
+                textStyle: const TextStyle(
+                  fontFamily: AppFonts.ui,
+                  fontWeight: FontWeight.w600,
+                  fontSize: AppFontSize.sm,
+                ),
+              ),
+            ),
+          ),
+        ),
       ],
     );
+  }
+
+  Future<void> _onShareTap(QuoteCardData data, CardRatio ratio) async {
+    if (_isSharing) return;
+    setState(() => _isSharing = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final file = await renderCardPng(
+        boundaryKey: _captureKey,
+        ratio: ratio,
+      );
+      if (!mounted) return;
+      await showCardShareSheet(
+        context: context,
+        file: file,
+        shareText: data.quoteText,
+      );
+    } on CardRenderException {
+      if (!mounted) return;
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(content: Text('카드 만들기에 실패했어요. 다시 시도해 주세요.')),
+        );
+    } finally {
+      if (mounted) setState(() => _isSharing = false);
+    }
   }
 
   Future<void> _initializeFromData(QuoteCardData data) async {
@@ -147,9 +209,10 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
 }
 
 class _Editor extends ConsumerWidget {
-  const _Editor({required this.data});
+  const _Editor({required this.data, required this.captureKey});
 
   final QuoteCardData data;
+  final GlobalKey captureKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -164,6 +227,7 @@ class _Editor extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.s6),
               child: _PreviewBox(
+                captureKey: captureKey,
                 template: template,
                 data: data,
                 ratio: state.ratio,
@@ -214,12 +278,14 @@ class _RatioSegment extends StatelessWidget {
 
 class _PreviewBox extends ConsumerWidget {
   const _PreviewBox({
+    required this.captureKey,
     required this.template,
     required this.data,
     required this.ratio,
     required this.watermarkEnabled,
   });
 
+  final GlobalKey captureKey;
   final CardTemplate template;
   final QuoteCardData data;
   final CardRatio ratio;
@@ -241,19 +307,24 @@ class _PreviewBox extends ConsumerWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: AspectRatio(
           aspectRatio: ratio.size.aspectRatio,
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: QuoteCard(
-                key: ValueKey<String>(
-                  '${template.id}-${data.coverUrl ?? ""}-$watermarkEnabled',
+          // `card_renderer.renderCardPng`이 toImage 로 캡처하는 지점.
+          // boundary.size = 화면 표시 크기, pixelRatio 로 1080 폭까지 업스케일.
+          child: RepaintBoundary(
+            key: captureKey,
+            child: FittedBox(
+              fit: BoxFit.contain,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: QuoteCard(
+                  key: ValueKey<String>(
+                    '${template.id}-${data.coverUrl ?? ""}-$watermarkEnabled',
+                  ),
+                  template: template,
+                  data: data,
+                  palette: palette,
+                  ratio: ratio,
+                  watermarkEnabled: watermarkEnabled,
                 ),
-                template: template,
-                data: data,
-                palette: palette,
-                ratio: ratio,
-                watermarkEnabled: watermarkEnabled,
               ),
             ),
           ),
