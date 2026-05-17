@@ -148,6 +148,37 @@ npx --yes supabase db dump --linked --data-only -f backup/data_$(Get-Date -Forma
 
 **백업 저장 위치**: `backup/` 디렉터리 `.gitignore`로 제외하고 로컬/개인 클라우드. 백업 파일에 사용자 개인정보 포함 — repo push 절대 금지.
 
+### 3-2-1. 한국 환경 우회 — Docker pull CloudFront EOF 시
+
+2026-05-17 첫 백업 시도에서 Supabase CLI v2가 띄우는 docker pull(`public.ecr.aws/supabase/postgres:17.6.1.121`, ~500MB)이 CloudFront 한국 엣지에서 반복 EOF로 실패. CLI 자체는 우회 불가. PostgreSQL 17 client tools를 호스트에 설치하고 CLI dry-run의 dump 스크립트를 추출·교정해 직접 실행하면 Docker 완전 우회 가능.
+
+**전제 — 1회만 설치**:
+```powershell
+winget install --id PostgreSQL.PostgreSQL.17 -e --accept-source-agreements --accept-package-agreements
+```
+
+**매번 백업 시 절차**:
+```bash
+# 1) CLI dry-run으로 임시 dump 스크립트 + connection token 받기 (PGPASSWORD ~1시간 expire)
+npx --yes supabase db dump --linked --dry-run 2>/dev/null > /tmp/dump_schema.sh
+npx --yes supabase db dump --linked --data-only --dry-run 2>/dev/null > /tmp/dump_data.sh
+
+# 2) Supabase 내장 pg_dump 패치 옵션을 호스트 pg_dump 17 표준 옵션으로 교정
+sed -i 's/--quote-all-identifier /--quote-all-identifiers /g' /tmp/dump_schema.sh /tmp/dump_data.sh
+
+# 3) 호스트 pg_dump로 실행 (PATH에 PostgreSQL 17 bin 일시 추가)
+PATH="/c/Program Files/PostgreSQL/17/bin:$PATH" bash /tmp/dump_schema.sh > backup/schema_$(date +%Y%m%d).sql
+PATH="/c/Program Files/PostgreSQL/17/bin:$PATH" bash /tmp/dump_data.sh > backup/data_$(date +%Y%m%d).sql
+
+# 4) 결과 검증
+ls -la backup/
+grep -c "INSERT INTO" backup/data_$(date +%Y%m%d).sql
+```
+
+CLI dump 스크립트는 `cli_login_postgres` 권한 제한 사용자로 connect 후 `SET ROLE postgres`로 escalate + 내부 sed 파이프로 ACL/이벤트 트리거/extension 코멘트 등 platform 관리 항목을 자동 마스킹한다. 즉 출력 SQL은 책귀 앱 데이터·정책·인덱스만 남고 Supabase platform 잡음은 제거된 깨끗한 형태.
+
+CloudFront가 안정적으로 동작하면 표준 명령(3-2절)을 그대로 쓰면 되고, 막힐 때만 이 우회.
+
 ### 3-3. 백업해야 하는 것
 | 항목 | 방법 | 비고 |
 |---|---|---|
