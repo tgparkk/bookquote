@@ -14,6 +14,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/tokens.dart';
 import '../quote/data/quote_outbox.dart';
 import '../quote/data/quote_repository.dart';
+import '../quote/presentation/widgets/outbox_banner.dart';
 import '../quote/presentation/widgets/quote_list_card.dart';
 import '../quote/state/quote_feed_provider.dart';
 
@@ -65,6 +66,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       final result = await outbox.flush(ref.read(quoteRepositoryProvider));
       if (!mounted) return;
       if (result.sent > 0) ref.invalidate(quoteFeedProvider);
+      if (result.sent > 0 || result.discarded > 0) {
+        ref.invalidate(quoteOutboxProvider); // 배너 카운트 갱신
+      }
+      if (result.discarded > 0) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text(
+              '동기화하지 못한 인용구 ${result.discarded}개를 정리했어요.',
+            ),
+          ));
+      }
     } catch (_) {/* best-effort */}
   }
 
@@ -110,16 +123,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final feed = ref.watch(quoteFeedProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('책귀')),
-      body: RefreshIndicator(
-        onRefresh: () => ref.read(quoteFeedProvider.notifier).refresh(),
-        child: feed.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: AppColors.accent500),
+      body: Column(
+        children: [
+          const OutboxBanner(),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () => ref.read(quoteFeedProvider.notifier).refresh(),
+              child: feed.when(
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: AppColors.accent500),
+                ),
+                error: (e, _) => _errorView(context),
+                data: (entries) =>
+                    entries.isEmpty ? _emptyView(context) : _feedList(entries),
+              ),
+            ),
           ),
-          error: (e, _) => _errorView(context),
-          data: (entries) =>
-              entries.isEmpty ? _emptyView(context) : _feedList(entries),
-        ),
+        ],
       ),
     );
   }

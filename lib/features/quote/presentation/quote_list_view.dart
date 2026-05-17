@@ -16,6 +16,7 @@ import '../data/quote_repository.dart';
 import '../domain/quote_mood.dart';
 import '../state/quote_feed_provider.dart';
 import 'widgets/mood_chips.dart';
+import 'widgets/outbox_banner.dart';
 import 'widgets/quote_list_card.dart';
 
 class QuoteListView extends ConsumerStatefulWidget {
@@ -176,6 +177,7 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const OutboxBanner(),
         _FilterChips(
           selected: _mood,
           counts: _counts,

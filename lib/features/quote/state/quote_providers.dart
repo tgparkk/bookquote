@@ -54,6 +54,7 @@ class CreateQuoteController extends AsyncNotifier<void> {
       try {
         final outbox = await ref.read(quoteOutboxProvider.future);
         await outbox.enqueue(input);
+        ref.invalidate(quoteOutboxProvider); // "동기화 대기 N개" 배너 갱신
         state = const AsyncData(null);
         return null;
       } catch (_) {

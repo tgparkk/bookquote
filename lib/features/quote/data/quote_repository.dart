@@ -66,6 +66,9 @@ class QuoteRepository {
 
   /// 새 인용구 생성. 반환은 영속화된 [Quote]. 비로그인이면 'NOT_AUTHENTICATED'.
   /// 책 미연결(`bookId == null`)도 허용 — `manualBookText`로 대체하거나 둘 다 null도 OK.
+  ///
+  /// FK 위반(book_id가 더 이상 존재하지 않음 등)은 재시도해도 영구 실패하므로
+  /// 호출자(아웃박스 flush)가 폐기 분기할 수 있게 'FK_VIOLATION' 별도 코드로 전파.
   Future<Quote> createQuote(QuoteInput input) async {
     final uid = _requireUid();
     final payload = <String, dynamic>{...input.toJson(), 'user_id': uid};
@@ -73,6 +76,9 @@ class QuoteRepository {
       final row = await _client.from(_table).insert(payload).select().single();
       return Quote.fromJson(row);
     } on PostgrestException catch (e) {
+      if (e.code == '23503') {
+        throw QuoteRepositoryException('FK_VIOLATION', e.message);
+      }
       throw QuoteRepositoryException('CREATE_FAILED', e.message);
     }
   }
