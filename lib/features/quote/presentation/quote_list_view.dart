@@ -15,6 +15,7 @@ import '../../../core/theme/tokens.dart';
 import '../data/quote_repository.dart';
 import '../domain/quote_mood.dart';
 import '../state/quote_feed_provider.dart';
+import '../state/quote_providers.dart';
 import 'widgets/mood_chips.dart';
 import 'widgets/outbox_banner.dart';
 import 'widgets/quote_list_card.dart';
@@ -157,7 +158,9 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
     });
     try {
       await ref.read(quoteRepositoryProvider).deleteQuote(entry.quote.id);
-      ref.invalidate(quoteFeedProvider); // 홈 피드도 갱신
+      ref
+        ..invalidate(quoteFeedProvider) // 홈 피드도 갱신
+        ..invalidate(moodCountsProvider); // RecallCard 카운트 갱신 (PR15-B)
       if (mounted) _loadCounts();
       messenger
         ..clearSnackBars()

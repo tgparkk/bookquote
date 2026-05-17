@@ -29,6 +29,12 @@ final quoteByIdProvider =
   return repo.getById(id);
 });
 
+/// 내 인용구 무드별 통계 — 홈 회고 카드 + 서재 필터 칩 공용 (PR15-B).
+/// `my_quote_mood_counts` RPC 1회 호출. 인용구 추가/삭제 시 invalidate.
+final moodCountsProvider = FutureProvider<MoodCounts>((ref) async {
+  return ref.read(quoteRepositoryProvider).getMoodCounts();
+});
+
 /// 인용구 생성 컨트롤러.
 ///
 /// [submit]은 온라인 저장에 성공하면 생성된 [Quote]를, 네트워크 오류로

@@ -16,7 +16,9 @@ import '../quote/data/quote_outbox.dart';
 import '../quote/data/quote_repository.dart';
 import '../quote/presentation/widgets/outbox_banner.dart';
 import '../quote/presentation/widgets/quote_list_card.dart';
+import '../quote/presentation/widgets/recall_card.dart';
 import '../quote/state/quote_feed_provider.dart';
+import '../quote/state/quote_providers.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -105,6 +107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     if (_expandedId == entry.quote.id) setState(() => _expandedId = null);
     try {
       await ref.read(quoteRepositoryProvider).deleteQuote(entry.quote.id);
+      ref.invalidate(moodCountsProvider); // RecallCard 카운트 갱신 (PR15-B)
       messenger
         ..clearSnackBars()
         ..showSnackBar(const SnackBar(content: Text('인용구를 삭제했어요.')));
@@ -126,6 +129,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       body: Column(
         children: [
           const OutboxBanner(),
+          const RecallCard(),
           Expanded(
             child: RefreshIndicator(
               onRefresh: () => ref.read(quoteFeedProvider.notifier).refresh(),

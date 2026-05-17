@@ -384,7 +384,8 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
       if (!mounted) return;
       ref
         ..invalidate(quoteFeedProvider)
-        ..invalidate(quoteByIdProvider(widget.quoteId!));
+        ..invalidate(quoteByIdProvider(widget.quoteId!))
+        ..invalidate(moodCountsProvider); // PR15-B 무드 변경 가능 → 카운트 갱신
       messenger
         ..clearSnackBars()
         ..showSnackBar(const SnackBar(content: Text('수정 내용을 저장했어요.')));
@@ -420,7 +421,9 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
 
     if (!mounted) return;
     await _clearDraft();
-    ref.invalidate(quoteFeedProvider); // 홈 피드에 새 인용구 반영
+    ref
+      ..invalidate(quoteFeedProvider) // 홈 피드에 새 인용구 반영
+      ..invalidate(moodCountsProvider); // 홈 RecallCard 카운트 갱신 (PR15-B)
     if (!mounted) return;
 
     if (created == null) {
