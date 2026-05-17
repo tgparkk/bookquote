@@ -192,6 +192,51 @@ void main() {
     });
   });
 
+  group('setTemplate fontStep 리셋 (PR14-D F8)', () {
+    late ProviderContainer container;
+    setUp(() => container = ProviderContainer());
+    tearDown(() => container.dispose());
+
+    test('setTemplate은 fontStep을 0으로 리셋한다 — 시각 점프 방지', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl
+        ..increaseFont()
+        ..increaseFont(); // step=2
+      expect(container.read(cardEditorControllerProvider).fontStep, 2);
+
+      ctrl.setTemplate('mono');
+      expect(container.read(cardEditorControllerProvider).fontStep, 0,
+          reason: '전환 시 시각 일관성 위해 fontStep 리셋');
+      expect(
+          container.read(cardEditorControllerProvider).templateId, 'mono');
+    });
+
+    test('undo는 setTemplate 직전 fontStep도 함께 복원한다', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl
+        ..increaseFont()
+        ..increaseFont(); // step=2
+      ctrl.setTemplate('mono'); // step=0 + undo 푸시
+      expect(container.read(cardEditorControllerProvider).fontStep, 0);
+
+      ctrl.undo();
+      expect(container.read(cardEditorControllerProvider).fontStep, 2,
+          reason: 'undo로 직전 step 복원');
+      expect(container.read(cardEditorControllerProvider).templateId,
+          'minimal');
+    });
+
+    test('동일 templateId 재설정은 fontStep을 흔들지 않는다', () {
+      final ctrl = container.read(cardEditorControllerProvider.notifier);
+      ctrl.attach('q1');
+      ctrl.increaseFont(); // step=1
+      ctrl.setTemplate('minimal'); // 동일 — no-op
+      expect(container.read(cardEditorControllerProvider).fontStep, 1);
+    });
+  });
+
   group('cycleTemplate — supports 게이트', () {
     late ProviderContainer container;
     setUp(() => container = ProviderContainer());

@@ -178,8 +178,12 @@ class CardEditorController extends Notifier<CardEditorState> {
   void setTemplate(String templateId) {
     if (state.templateId == templateId) return;
     _pushUndo(state);
+    // F8: 템플릿마다 기본 폰트 스케일이 달라 같은 fontStep이라도 시각 점프 발생.
+    // 전환 시 fontStep 0으로 리셋해 일관된 출발점을 보장. 사용자 조정 손실은
+    // screen이 SnackBar로 안내(전환 직전 step != 0이었을 때만).
     state = state.copyWith(
       templateId: templateId,
+      fontStep: 0,
       undoDepth: _undoStack.length,
     );
     _persistDebounced();

@@ -70,8 +70,13 @@ class _MoodChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = moodColorOf(mood);
+    // F9: 시스템 글씨 1.3x에서 칩이 과하게 커져 Wrap 줄바꿈/레이아웃 마찰. 칩은
+    // UI 컨트롤이므로 max 1.15x로 clamp(어르신/저시력 케이스 어느 정도 보장하되
+    // 레이아웃 안정성 유지).
+    final clamped =
+        MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.15);
     return ChoiceChip(
-      label: Text(mood.label),
+      label: Text(mood.label, textScaler: clamped),
       selected: selected,
       showCheckmark: false,
       onSelected: (_) => onTap(),

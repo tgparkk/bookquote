@@ -339,8 +339,11 @@ class _Chip extends StatelessWidget {
     final fg = selected
         ? AppColors.secondary50
         : colors?.dark ?? AppColors.primary600;
+    // F9 일관 가드 — 시스템 1.3x 시 필터 칩도 줄바꿈 마찰. mood_chips와 동일 정책.
+    final clamped =
+        MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.15);
     return ChoiceChip(
-      label: Text(label),
+      label: Text(label, textScaler: clamped),
       selected: selected,
       showCheckmark: false,
       onSelected: (_) => onTap(),

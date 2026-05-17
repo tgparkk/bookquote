@@ -78,9 +78,10 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final dataAsync = ref.watch(quoteCardDataProvider(widget.quoteId));
+    final data = dataAsync.value;
     return Scaffold(
       backgroundColor: AppColors.secondary300,
-      appBar: _buildAppBar(dataAsync.value),
+      appBar: _buildAppBar(data),
       body: SafeArea(
         child: dataAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -98,6 +99,47 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
             }
             return _Editor(data: data, captureKey: _captureKey);
           },
+        ),
+      ),
+      // F4: [공유] 버튼을 AppBar 우상단 → 하단 Full-width로 이동. 한 손 엄지 도달
+      // 보장(S1·S14 페르소나). data 있을 때만 노출.
+      bottomNavigationBar: data == null ? null : _buildShareBar(data),
+    );
+  }
+
+  Widget _buildShareBar(QuoteCardData data) {
+    final ratio = ref.watch(cardEditorControllerProvider).ratio;
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.s4,
+          AppSpacing.s2,
+          AppSpacing.s4,
+          AppSpacing.s2,
+        ),
+        child: FilledButton.icon(
+          onPressed: _isSharing ? null : () => _onShareTap(data, ratio),
+          icon: _isSharing
+              ? const SizedBox.square(
+                  dimension: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.ios_share_rounded, size: 18),
+          label: const Text('공유'),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.accent500,
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(52),
+            textStyle: const TextStyle(
+              fontFamily: AppFonts.ui,
+              fontWeight: FontWeight.w600,
+              fontSize: AppFontSize.base,
+            ),
+          ),
         ),
       ),
     );
@@ -122,37 +164,8 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
                 : AppColors.primary300,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.only(right: AppSpacing.s1),
-          child: Center(
-            child: FilledButton.icon(
-              onPressed: _isSharing ? null : () => _onShareTap(data, state.ratio),
-              icon: _isSharing
-                  ? const SizedBox.square(
-                      dimension: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.ios_share_rounded, size: 16),
-              label: const Text('공유'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.accent500,
-                foregroundColor: Colors.white,
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.s3,
-                ),
-                textStyle: const TextStyle(
-                  fontFamily: AppFonts.ui,
-                  fontWeight: FontWeight.w600,
-                  fontSize: AppFontSize.sm,
-                ),
-              ),
-            ),
-          ),
-        ),
+        // F4: [공유] 버튼은 하단 bottomNavigationBar(`_buildShareBar`)로 이동.
+        // AppBar에는 undo + overflow 메뉴만 잔류.
         // 부차 액션은 overflow 메뉴로 묶어 폭 확보.
         PopupMenuButton<_AppBarAction>(
           tooltip: '더보기',
@@ -163,6 +176,18 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
                 _onEditQuoteTap();
               case _AppBarAction.toggleWatermark:
                 controller.toggleWatermark();
+                // F10: 토글 후 상태를 명시적으로 안내. 팝업 메뉴가 닫혀 사용자가
+                // 현재 ON/OFF 상태를 시각적으로 즉시 파악하기 어려웠음.
+                if (!mounted) return;
+                final next = ref.read(cardEditorControllerProvider);
+                ScaffoldMessenger.of(context)
+                  ..clearSnackBars()
+                  ..showSnackBar(SnackBar(
+                    content: Text(
+                      next.watermarkEnabled ? '워터마크를 켰어요' : '워터마크를 껐어요',
+                    ),
+                    duration: const Duration(milliseconds: 1500),
+                  ));
             }
           },
           itemBuilder: (_) => <PopupMenuEntry<_AppBarAction>>[
@@ -324,6 +349,35 @@ class _Editor extends ConsumerWidget {
     final controller = ref.read(cardEditorControllerProvider.notifier);
     final template = CardTemplate.byId(state.templateId);
 
+    // F8: 템플릿 전환 직전 사용자가 폰트 ±로 조정해뒀다면, setTemplate이 fontStep을
+    // 0으로 리셋한 사실을 SnackBar로 안내. 이미 0이면 toast 생략.
+    void notifyFontReset() {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(const SnackBar(
+          content: Text('템플릿이 바뀌면서 글자 크기는 기본으로 되돌렸어요.'),
+          duration: Duration(milliseconds: 1800),
+        ));
+    }
+
+    void selectTemplate(CardTemplate t) {
+      final hadTweak = state.fontStep != 0;
+      final willChange = state.templateId != t.id;
+      controller.setTemplate(t.id);
+      if (hadTweak && willChange) notifyFontReset();
+    }
+
+    void cycleTemplate() {
+      final hadTweak = state.fontStep != 0;
+      final beforeId = state.templateId;
+      controller.cycleTemplate(
+        charCount: data.charCount,
+        hasCover: data.hasCover,
+      );
+      final afterId = ref.read(cardEditorControllerProvider).templateId;
+      if (hadTweak && afterId != beforeId) notifyFontReset();
+    }
+
     return Column(
       children: <Widget>[
         Padding(
@@ -376,17 +430,14 @@ class _Editor extends ConsumerWidget {
           data: data,
           selectedIndex: state.paletteSlotIndex,
           onSelect: controller.setPaletteSlot,
-          onCycle: () => controller.cycleTemplate(
-            charCount: data.charCount,
-            hasCover: data.hasCover,
-          ),
+          onCycle: cycleTemplate,
         ),
         const SizedBox(height: AppSpacing.s2),
         _TemplateStrip(
           selected: template,
           data: data,
           ratio: state.ratio,
-          onSelect: (t) => controller.setTemplate(t.id),
+          onSelect: selectTemplate,
         ),
         const SizedBox(height: AppSpacing.s4),
       ],
@@ -403,12 +454,11 @@ class _RatioSegment extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SegmentedButton<CardRatio>(
-      style: ButtonStyle(
+      // B16: textStyle override 제거 — 고정 fontSize.xs면 시스템 1.3x에서
+      // 레이블이 잘려 보임. Theme(textTheme.labelLarge)에 위임해 textScaler 적용.
+      style: const ButtonStyle(
         visualDensity: VisualDensity.compact,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        textStyle: WidgetStateProperty.all(
-          const TextStyle(fontSize: AppFontSize.xs),
-        ),
       ),
       segments: const <ButtonSegment<CardRatio>>[
         ButtonSegment(value: CardRatio.feed, label: Text('1:1')),
