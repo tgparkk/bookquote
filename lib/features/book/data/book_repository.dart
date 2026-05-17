@@ -14,6 +14,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_init.dart';
 import '../domain/book.dart';
+import '../domain/reading_dates.dart';
 import 'aladin_dto.dart';
 
 class BookRepositoryException implements Exception {
@@ -248,6 +249,57 @@ class BookRepository {
       }
     } on PostgrestException catch (e) {
       throw BookRepositoryException('SET_RATING_FAILED', e.message);
+    }
+  }
+
+  // ── 독서 시작/완독일 (PR17-A) ─────────────────────────────
+
+  /// 이 책의 내 시작·완독일. 비로그인이거나 서재에 없으면 빈 ReadingDates.
+  Future<ReadingDates> getReadingDates(String bookId) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return const ReadingDates();
+    try {
+      final row = await _client
+          .from(_userBooksTable)
+          .select('started_at, finished_at')
+          .eq('user_id', uid)
+          .eq('book_id', bookId)
+          .maybeSingle();
+      if (row == null) return const ReadingDates();
+      return ReadingDates.fromRow(row);
+    } on PostgrestException catch (e) {
+      throw BookRepositoryException('FETCH_FAILED', e.message);
+    }
+  }
+
+  /// 시작일/완독일을 set 또는 unset(date=null). 그 책이 서재에 없으면 자동으로
+  /// 추가된다 (`setMyRating`과 같은 upsert + auto-add 패턴). 비로그인이면
+  /// 'NOT_AUTHENTICATED'. DB CHECK 위반(`finished_at < started_at`)은
+  /// 'VAL_DATE_RANGE'로 매핑.
+  Future<void> setReadingDate({
+    required String bookId,
+    required ReadingDateKind kind,
+    DateTime? date,
+  }) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) {
+      throw BookRepositoryException('NOT_AUTHENTICATED', '로그인이 필요해요.');
+    }
+    final column = kind == ReadingDateKind.started ? 'started_at' : 'finished_at';
+    final value = date == null ? null : formatReadingDate(date);
+    try {
+      await _client.from(_userBooksTable).upsert(
+        {'user_id': uid, 'book_id': bookId, column: value},
+        onConflict: 'user_id,book_id',
+      );
+    } on PostgrestException catch (e) {
+      if (e.code == '23514') {
+        throw BookRepositoryException(
+          'VAL_DATE_RANGE',
+          '완독일은 시작일 이후여야 해요.',
+        );
+      }
+      throw BookRepositoryException('SET_READING_DATE_FAILED', e.message);
     }
   }
 

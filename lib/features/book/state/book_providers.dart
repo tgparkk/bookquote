@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/book_repository.dart';
 import '../domain/book.dart';
+import '../domain/reading_dates.dart';
 
 /// `/book/:id` 라우트의 :id로 단건 조회. 캐시는 Riverpod 기본(autoDispose).
 final bookByIdProvider =
@@ -39,4 +40,11 @@ final myRatingProvider =
 final isInLibraryProvider =
     FutureProvider.autoDispose.family<bool, String>((ref, bookId) async {
   return ref.read(bookRepositoryProvider).isInLibrary(bookId);
+});
+
+/// 이 책의 내 독서 시작/완독일 (PR17-A). 비로그인 또는 서재에 없으면 빈 ReadingDates.
+/// 시작/완독 set/unset 후 `ref.invalidate(readingDatesProvider(bookId))`로 갱신.
+final readingDatesProvider =
+    FutureProvider.autoDispose.family<ReadingDates, String>((ref, bookId) async {
+  return ref.read(bookRepositoryProvider).getReadingDates(bookId);
 });
