@@ -19,6 +19,7 @@ import '../quote/state/quote_providers.dart';
 import 'data/book_repository.dart';
 import 'domain/book.dart';
 import 'presentation/widgets/book_cover.dart';
+import 'presentation/widgets/reading_dates_row.dart';
 import 'presentation/widgets/star_rating.dart';
 import 'state/book_providers.dart';
 
@@ -131,6 +132,7 @@ class _BookBody extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.s3),
                     Text('내 별점', style: textTheme.labelMedium),
                     _BookRatingRow(bookId: book.id),
+                    ReadingDatesRow(bookId: book.id),
                   ],
                 ],
               ),
