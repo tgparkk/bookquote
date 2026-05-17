@@ -2,10 +2,16 @@
     <!-- Supabase 호출, 알라딘 책 검색, 표지 이미지 fetch 등 모든 네트워크에 필요.
          debug/profile manifest에는 Flutter 툴이 자동으로 넣지만 release는 명시해야 한다. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- PR16-A: allowBackup="false" — flutter_secure_storage에 든 E2EE 마스터키가
+         Google Drive autoBackup으로 새는 걸 막는다. 안 막으면 "키를 서버가 모름"
+         보장이 무력화. user data는 Supabase가 source of truth이므로 백업 차단해도
+         새 폰 = 다시 로그인이면 복구됨. DECISIONS 2026-05-17 E2EE 항목. -->
     <application
         android:label="bookquote"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"
