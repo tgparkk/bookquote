@@ -211,28 +211,38 @@ class QuoteRepository {
       'moods': ?moods?.map((m) => m.name).toList(),
       if (clearBook) 'book_id': null else 'book_id': ?bookId,
     };
+    // 잠금↔평문 전환을 update 한 번에 처리. caller가 text를 항상 보내면(편집
+    // 화면 _buildInput처럼) 데이터 손실 없음. text=null이면서 잠금→평문 전환
+    // 시도면 기존 평문 컬럼이 NULL인 잠금 row가 평문 상태가 되어 본문 손실 →
+    // 사전 차단(예외).
     if (isPrivate) {
-      if (text != null || manualBookText != null) {
-        final key = await _requireMasterKey();
-        if (text != null) {
-          patch['text'] = null;
-          patch['text_encrypted'] = encodePgBytea(
-            await key.cipher.encrypt(plaintext: text, masterKey: key.key),
-          );
-        }
-        if (manualBookText != null) {
-          patch['manual_book_text'] = null;
-          patch['manual_book_text_encrypted'] = encodePgBytea(
-            await key.cipher
-                .encrypt(plaintext: manualBookText, masterKey: key.key),
-          );
-        }
-        patch['is_private'] = true;
-        patch['crypto_version'] = kKdfVersion;
+      final key = await _requireMasterKey();
+      if (text != null) {
+        patch['text'] = null;
+        patch['text_encrypted'] = encodePgBytea(
+          await key.cipher.encrypt(plaintext: text, masterKey: key.key),
+        );
       }
+      if (manualBookText != null) {
+        patch['manual_book_text'] = null;
+        patch['manual_book_text_encrypted'] = encodePgBytea(
+          await key.cipher
+              .encrypt(plaintext: manualBookText, masterKey: key.key),
+        );
+      }
+      patch['is_private'] = true;
+      patch['crypto_version'] = kKdfVersion;
     } else {
-      if (text != null) patch['text'] = text;
-      if (manualBookText != null) patch['manual_book_text'] = manualBookText;
+      if (text != null) {
+        patch['text'] = text;
+        patch['text_encrypted'] = null;
+      }
+      if (manualBookText != null) {
+        patch['manual_book_text'] = manualBookText;
+        patch['manual_book_text_encrypted'] = null;
+      }
+      patch['is_private'] = false;
+      patch['crypto_version'] = null;
     }
     if (patch.isEmpty) {
       final current = await getById(id);

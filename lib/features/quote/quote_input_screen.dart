@@ -18,6 +18,8 @@ import '../book/data/book_repository.dart';
 import '../book/domain/book.dart';
 import '../book/presentation/book_search_sheet.dart';
 import '../book/presentation/widgets/book_cover.dart';
+import '../crypto/presentation/lock_dialogs.dart';
+import '../crypto/presentation/lock_toggle_row.dart';
 import 'data/quote_draft.dart';
 import 'data/quote_repository.dart';
 import 'domain/quote.dart';
@@ -51,6 +53,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
   Book? _book;
   final _moods = <QuoteMood>{};
   QuoteSource _source = QuoteSource.manual;
+  bool _isPrivate = false;
 
   bool _showPasteBanner = false;
   bool _restoredDraft = false;
@@ -125,6 +128,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
         ..clear()
         ..addAll(quote.moods);
       _source = quote.source;
+      _isPrivate = quote.isPrivate;
       if (quote.bookId != null) {
         try {
           _book =
@@ -308,7 +312,50 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
         page: int.tryParse(_pageController.text.trim()),
         source: _source,
         moods: _moods.toList(),
+        isPrivate: _isPrivate,
       );
+
+  Future<void> _onLockToggle(bool value) async {
+    if (!value) {
+      // 잠금→평문 전환 — 편집 모드에서 기존 잠금 인용구를 해제하는 위험 동작.
+      // 본문이 평문으로 저장되어 운영자도 볼 수 있게 됨 → 사용자 확인 강제.
+      // 신규 작성 중(아직 저장 전)이면 아무 데이터 변화 없으니 확인 불필요.
+      if (_isEditMode && _isPrivate) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('잠금을 해제할까요?'),
+            content: const Text(
+              '본문이 평문으로 저장돼요. 책귀 서버와 운영자가 이 인용구를 볼 수 있어요. '
+              '다시 잠그면 새 비밀번호 없이 같은 마스터키로 보호돼요.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('취소'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: Text(
+                  '잠금 해제',
+                  style: TextStyle(color: AppColors.semanticError),
+                ),
+              ),
+            ],
+          ),
+        );
+        if (!mounted || confirmed != true) return;
+      }
+      setState(() => _isPrivate = false);
+      _scheduleDraftSave();
+      return;
+    }
+    final ok = await ensureMasterKeyReady(context, ref);
+    if (!mounted || !ok) return;
+    setState(() => _isPrivate = true);
+    // 평문 draft 잔재 제거 (이 사용자가 직전까지 평문으로 입력하던 내용).
+    await _clearDraft();
+  }
 
   void _scheduleDraftSave() {
     if (_isEditMode) return;  // 편집 모드는 draft 안 만든다.
@@ -318,6 +365,10 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
 
   Future<void> _saveDraft() async {
     if (!mounted || !_hasEdits || _isEditMode) return;
+    // 잠금 ON 상태에선 draft 비활성 — shared_preferences에 평문 본문이 남으면
+    // 폰 분실·플래시 덤프 시 누수. PR16 핵심 약속(서버도 운영자도 못 봄)을
+    // 클라이언트 임시 저장이 깨면 안 됨.
+    if (_isPrivate) return;
     try {
       (await ref.read(quoteDraftStoreProvider.future)).save(_buildInput());
     } catch (_) {/* ignore — draft는 best-effort */}
@@ -616,7 +667,17 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
               const SizedBox(height: AppSpacing.s2),
               MoodChips(selected: _moods, onToggle: _toggleMood),
 
-              const SizedBox(height: AppSpacing.s8),
+              const SizedBox(height: AppSpacing.s4),
+
+              // 잠금 토글 — 신규 작성과 편집 모드 모두 활성. 편집 모드에서
+              // 잠금→평문 전환은 _onLockToggle이 확인 다이얼로그를 띄움.
+              LockToggleRow(
+                value: _isPrivate,
+                enabled: !saving,
+                onChanged: saving ? null : _onLockToggle,
+              ),
+
+              const SizedBox(height: AppSpacing.s6),
 
               // CTA — 편집 모드면 [수정 저장] 단일, 신규는 [카드 만들기 →] + [저장만]
               ElevatedButton(
