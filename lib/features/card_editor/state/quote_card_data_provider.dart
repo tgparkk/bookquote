@@ -23,7 +23,9 @@ final quoteCardDataProvider = FutureProvider.autoDispose
       : await ref.watch(bookByIdProvider(quote.bookId!).future);
 
   return QuoteCardData(
-    quoteText: quote.text,
+    // 잠금 인용구는 복호화된 text가 채워져 있거나, 키 없으면 null →
+    // 카드 에디터 fallback view(PR16-C)가 isPrivate로 분기 처리.
+    quoteText: quote.text ?? '',
     bookId: book?.id,
     bookTitle: book?.title ?? quote.manualBookText,
     bookAuthor: book?.author,

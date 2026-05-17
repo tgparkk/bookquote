@@ -15,7 +15,14 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Quote {
 
- String get id;@JsonKey(name: 'user_id') String get userId;@JsonKey(name: 'book_id') String? get bookId;@JsonKey(name: 'manual_book_text') String? get manualBookText; String get text; int? get page;@JsonKey(unknownEnumValue: QuoteSource.manual) QuoteSource get source;@QuoteMoodListConverter() List<QuoteMood> get moods;@JsonKey(name: 'created_at') DateTime get createdAt;@JsonKey(name: 'updated_at') DateTime get updatedAt;
+ String get id;@JsonKey(name: 'user_id') String get userId;@JsonKey(name: 'book_id') String? get bookId;@JsonKey(name: 'manual_book_text') String? get manualBookText;/// 평문 본문. `isPrivate=false`면 항상 non-null. `isPrivate=true`면
+/// 클라이언트가 [Quote.fromRow] 시점에 캐시된 마스터키로 복호화해 채우거나,
+/// 키가 없으면 null로 남는다(UI는 [isPrivate]로 잠금 fallback 분기).
+/// PR16-B에서 nullable로 전환됨.
+ String? get text; int? get page;@JsonKey(unknownEnumValue: QuoteSource.manual) QuoteSource get source;@QuoteMoodListConverter() List<QuoteMood> get moods;/// E2EE 잠금 여부. true면 평문 컬럼(text/manual_book_text)은 NULL이고
+/// `*_encrypted`만 채워진 상태로 DB에 있다. (PR16-A 스키마, PR16-B wiring)
+@JsonKey(name: 'is_private') bool get isPrivate;/// 암호화 알고리즘 버전. V1=1(AES-256-GCM). 잠금 아니면 null.
+@JsonKey(name: 'crypto_version') int? get cryptoVersion;@JsonKey(name: 'created_at') DateTime get createdAt;@JsonKey(name: 'updated_at') DateTime get updatedAt;
 /// Create a copy of Quote
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +35,16 @@ $QuoteCopyWith<Quote> get copyWith => _$QuoteCopyWithImpl<Quote>(this as Quote, 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Quote&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.bookId, bookId) || other.bookId == bookId)&&(identical(other.manualBookText, manualBookText) || other.manualBookText == manualBookText)&&(identical(other.text, text) || other.text == text)&&(identical(other.page, page) || other.page == page)&&(identical(other.source, source) || other.source == source)&&const DeepCollectionEquality().equals(other.moods, moods)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Quote&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.bookId, bookId) || other.bookId == bookId)&&(identical(other.manualBookText, manualBookText) || other.manualBookText == manualBookText)&&(identical(other.text, text) || other.text == text)&&(identical(other.page, page) || other.page == page)&&(identical(other.source, source) || other.source == source)&&const DeepCollectionEquality().equals(other.moods, moods)&&(identical(other.isPrivate, isPrivate) || other.isPrivate == isPrivate)&&(identical(other.cryptoVersion, cryptoVersion) || other.cryptoVersion == cryptoVersion)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,bookId,manualBookText,text,page,source,const DeepCollectionEquality().hash(moods),createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,userId,bookId,manualBookText,text,page,source,const DeepCollectionEquality().hash(moods),isPrivate,cryptoVersion,createdAt,updatedAt);
 
 @override
 String toString() {
-  return 'Quote(id: $id, userId: $userId, bookId: $bookId, manualBookText: $manualBookText, text: $text, page: $page, source: $source, moods: $moods, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'Quote(id: $id, userId: $userId, bookId: $bookId, manualBookText: $manualBookText, text: $text, page: $page, source: $source, moods: $moods, isPrivate: $isPrivate, cryptoVersion: $cryptoVersion, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -48,7 +55,7 @@ abstract mixin class $QuoteCopyWith<$Res>  {
   factory $QuoteCopyWith(Quote value, $Res Function(Quote) _then) = _$QuoteCopyWithImpl;
 @useResult
 $Res call({
- String id,@JsonKey(name: 'user_id') String userId,@JsonKey(name: 'book_id') String? bookId,@JsonKey(name: 'manual_book_text') String? manualBookText, String text, int? page,@JsonKey(unknownEnumValue: QuoteSource.manual) QuoteSource source,@QuoteMoodListConverter() List<QuoteMood> moods,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt
+ String id,@JsonKey(name: 'user_id') String userId,@JsonKey(name: 'book_id') String? bookId,@JsonKey(name: 'manual_book_text') String? manualBookText, String? text, int? page,@JsonKey(unknownEnumValue: QuoteSource.manual) QuoteSource source,@QuoteMoodListConverter() List<QuoteMood> moods,@JsonKey(name: 'is_private') bool isPrivate,@JsonKey(name: 'crypto_version') int? cryptoVersion,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt
 });
 
 
@@ -65,17 +72,19 @@ class _$QuoteCopyWithImpl<$Res>
 
 /// Create a copy of Quote
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? bookId = freezed,Object? manualBookText = freezed,Object? text = null,Object? page = freezed,Object? source = null,Object? moods = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? bookId = freezed,Object? manualBookText = freezed,Object? text = freezed,Object? page = freezed,Object? source = null,Object? moods = null,Object? isPrivate = null,Object? cryptoVersion = freezed,Object? createdAt = null,Object? updatedAt = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,bookId: freezed == bookId ? _self.bookId : bookId // ignore: cast_nullable_to_non_nullable
 as String?,manualBookText: freezed == manualBookText ? _self.manualBookText : manualBookText // ignore: cast_nullable_to_non_nullable
-as String?,text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
-as String,page: freezed == page ? _self.page : page // ignore: cast_nullable_to_non_nullable
+as String?,text: freezed == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
+as String?,page: freezed == page ? _self.page : page // ignore: cast_nullable_to_non_nullable
 as int?,source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as QuoteSource,moods: null == moods ? _self.moods : moods // ignore: cast_nullable_to_non_nullable
-as List<QuoteMood>,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as List<QuoteMood>,isPrivate: null == isPrivate ? _self.isPrivate : isPrivate // ignore: cast_nullable_to_non_nullable
+as bool,cryptoVersion: freezed == cryptoVersion ? _self.cryptoVersion : cryptoVersion // ignore: cast_nullable_to_non_nullable
+as int?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,
   ));
@@ -162,10 +171,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'user_id')  String userId, @JsonKey(name: 'book_id')  String? bookId, @JsonKey(name: 'manual_book_text')  String? manualBookText,  String text,  int? page, @JsonKey(unknownEnumValue: QuoteSource.manual)  QuoteSource source, @QuoteMoodListConverter()  List<QuoteMood> moods, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'user_id')  String userId, @JsonKey(name: 'book_id')  String? bookId, @JsonKey(name: 'manual_book_text')  String? manualBookText,  String? text,  int? page, @JsonKey(unknownEnumValue: QuoteSource.manual)  QuoteSource source, @QuoteMoodListConverter()  List<QuoteMood> moods, @JsonKey(name: 'is_private')  bool isPrivate, @JsonKey(name: 'crypto_version')  int? cryptoVersion, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Quote() when $default != null:
-return $default(_that.id,_that.userId,_that.bookId,_that.manualBookText,_that.text,_that.page,_that.source,_that.moods,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.userId,_that.bookId,_that.manualBookText,_that.text,_that.page,_that.source,_that.moods,_that.isPrivate,_that.cryptoVersion,_that.createdAt,_that.updatedAt);case _:
   return orElse();
 
 }
@@ -183,10 +192,10 @@ return $default(_that.id,_that.userId,_that.bookId,_that.manualBookText,_that.te
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'user_id')  String userId, @JsonKey(name: 'book_id')  String? bookId, @JsonKey(name: 'manual_book_text')  String? manualBookText,  String text,  int? page, @JsonKey(unknownEnumValue: QuoteSource.manual)  QuoteSource source, @QuoteMoodListConverter()  List<QuoteMood> moods, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'user_id')  String userId, @JsonKey(name: 'book_id')  String? bookId, @JsonKey(name: 'manual_book_text')  String? manualBookText,  String? text,  int? page, @JsonKey(unknownEnumValue: QuoteSource.manual)  QuoteSource source, @QuoteMoodListConverter()  List<QuoteMood> moods, @JsonKey(name: 'is_private')  bool isPrivate, @JsonKey(name: 'crypto_version')  int? cryptoVersion, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _Quote():
-return $default(_that.id,_that.userId,_that.bookId,_that.manualBookText,_that.text,_that.page,_that.source,_that.moods,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.userId,_that.bookId,_that.manualBookText,_that.text,_that.page,_that.source,_that.moods,_that.isPrivate,_that.cryptoVersion,_that.createdAt,_that.updatedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +212,10 @@ return $default(_that.id,_that.userId,_that.bookId,_that.manualBookText,_that.te
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'user_id')  String userId, @JsonKey(name: 'book_id')  String? bookId, @JsonKey(name: 'manual_book_text')  String? manualBookText,  String text,  int? page, @JsonKey(unknownEnumValue: QuoteSource.manual)  QuoteSource source, @QuoteMoodListConverter()  List<QuoteMood> moods, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'user_id')  String userId, @JsonKey(name: 'book_id')  String? bookId, @JsonKey(name: 'manual_book_text')  String? manualBookText,  String? text,  int? page, @JsonKey(unknownEnumValue: QuoteSource.manual)  QuoteSource source, @QuoteMoodListConverter()  List<QuoteMood> moods, @JsonKey(name: 'is_private')  bool isPrivate, @JsonKey(name: 'crypto_version')  int? cryptoVersion, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Quote() when $default != null:
-return $default(_that.id,_that.userId,_that.bookId,_that.manualBookText,_that.text,_that.page,_that.source,_that.moods,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.userId,_that.bookId,_that.manualBookText,_that.text,_that.page,_that.source,_that.moods,_that.isPrivate,_that.cryptoVersion,_that.createdAt,_that.updatedAt);case _:
   return null;
 
 }
@@ -218,14 +227,18 @@ return $default(_that.id,_that.userId,_that.bookId,_that.manualBookText,_that.te
 @JsonSerializable()
 
 class _Quote implements Quote {
-  const _Quote({required this.id, @JsonKey(name: 'user_id') required this.userId, @JsonKey(name: 'book_id') this.bookId, @JsonKey(name: 'manual_book_text') this.manualBookText, required this.text, this.page, @JsonKey(unknownEnumValue: QuoteSource.manual) this.source = QuoteSource.manual, @QuoteMoodListConverter() final  List<QuoteMood> moods = const <QuoteMood>[], @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'updated_at') required this.updatedAt}): _moods = moods;
+  const _Quote({required this.id, @JsonKey(name: 'user_id') required this.userId, @JsonKey(name: 'book_id') this.bookId, @JsonKey(name: 'manual_book_text') this.manualBookText, this.text, this.page, @JsonKey(unknownEnumValue: QuoteSource.manual) this.source = QuoteSource.manual, @QuoteMoodListConverter() final  List<QuoteMood> moods = const <QuoteMood>[], @JsonKey(name: 'is_private') this.isPrivate = false, @JsonKey(name: 'crypto_version') this.cryptoVersion, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'updated_at') required this.updatedAt}): _moods = moods;
   factory _Quote.fromJson(Map<String, dynamic> json) => _$QuoteFromJson(json);
 
 @override final  String id;
 @override@JsonKey(name: 'user_id') final  String userId;
 @override@JsonKey(name: 'book_id') final  String? bookId;
 @override@JsonKey(name: 'manual_book_text') final  String? manualBookText;
-@override final  String text;
+/// 평문 본문. `isPrivate=false`면 항상 non-null. `isPrivate=true`면
+/// 클라이언트가 [Quote.fromRow] 시점에 캐시된 마스터키로 복호화해 채우거나,
+/// 키가 없으면 null로 남는다(UI는 [isPrivate]로 잠금 fallback 분기).
+/// PR16-B에서 nullable로 전환됨.
+@override final  String? text;
 @override final  int? page;
 @override@JsonKey(unknownEnumValue: QuoteSource.manual) final  QuoteSource source;
  final  List<QuoteMood> _moods;
@@ -235,6 +248,11 @@ class _Quote implements Quote {
   return EqualUnmodifiableListView(_moods);
 }
 
+/// E2EE 잠금 여부. true면 평문 컬럼(text/manual_book_text)은 NULL이고
+/// `*_encrypted`만 채워진 상태로 DB에 있다. (PR16-A 스키마, PR16-B wiring)
+@override@JsonKey(name: 'is_private') final  bool isPrivate;
+/// 암호화 알고리즘 버전. V1=1(AES-256-GCM). 잠금 아니면 null.
+@override@JsonKey(name: 'crypto_version') final  int? cryptoVersion;
 @override@JsonKey(name: 'created_at') final  DateTime createdAt;
 @override@JsonKey(name: 'updated_at') final  DateTime updatedAt;
 
@@ -251,16 +269,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Quote&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.bookId, bookId) || other.bookId == bookId)&&(identical(other.manualBookText, manualBookText) || other.manualBookText == manualBookText)&&(identical(other.text, text) || other.text == text)&&(identical(other.page, page) || other.page == page)&&(identical(other.source, source) || other.source == source)&&const DeepCollectionEquality().equals(other._moods, _moods)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Quote&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.bookId, bookId) || other.bookId == bookId)&&(identical(other.manualBookText, manualBookText) || other.manualBookText == manualBookText)&&(identical(other.text, text) || other.text == text)&&(identical(other.page, page) || other.page == page)&&(identical(other.source, source) || other.source == source)&&const DeepCollectionEquality().equals(other._moods, _moods)&&(identical(other.isPrivate, isPrivate) || other.isPrivate == isPrivate)&&(identical(other.cryptoVersion, cryptoVersion) || other.cryptoVersion == cryptoVersion)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,bookId,manualBookText,text,page,source,const DeepCollectionEquality().hash(_moods),createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,userId,bookId,manualBookText,text,page,source,const DeepCollectionEquality().hash(_moods),isPrivate,cryptoVersion,createdAt,updatedAt);
 
 @override
 String toString() {
-  return 'Quote(id: $id, userId: $userId, bookId: $bookId, manualBookText: $manualBookText, text: $text, page: $page, source: $source, moods: $moods, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'Quote(id: $id, userId: $userId, bookId: $bookId, manualBookText: $manualBookText, text: $text, page: $page, source: $source, moods: $moods, isPrivate: $isPrivate, cryptoVersion: $cryptoVersion, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -271,7 +289,7 @@ abstract mixin class _$QuoteCopyWith<$Res> implements $QuoteCopyWith<$Res> {
   factory _$QuoteCopyWith(_Quote value, $Res Function(_Quote) _then) = __$QuoteCopyWithImpl;
 @override @useResult
 $Res call({
- String id,@JsonKey(name: 'user_id') String userId,@JsonKey(name: 'book_id') String? bookId,@JsonKey(name: 'manual_book_text') String? manualBookText, String text, int? page,@JsonKey(unknownEnumValue: QuoteSource.manual) QuoteSource source,@QuoteMoodListConverter() List<QuoteMood> moods,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt
+ String id,@JsonKey(name: 'user_id') String userId,@JsonKey(name: 'book_id') String? bookId,@JsonKey(name: 'manual_book_text') String? manualBookText, String? text, int? page,@JsonKey(unknownEnumValue: QuoteSource.manual) QuoteSource source,@QuoteMoodListConverter() List<QuoteMood> moods,@JsonKey(name: 'is_private') bool isPrivate,@JsonKey(name: 'crypto_version') int? cryptoVersion,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt
 });
 
 
@@ -288,17 +306,19 @@ class __$QuoteCopyWithImpl<$Res>
 
 /// Create a copy of Quote
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? bookId = freezed,Object? manualBookText = freezed,Object? text = null,Object? page = freezed,Object? source = null,Object? moods = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? bookId = freezed,Object? manualBookText = freezed,Object? text = freezed,Object? page = freezed,Object? source = null,Object? moods = null,Object? isPrivate = null,Object? cryptoVersion = freezed,Object? createdAt = null,Object? updatedAt = null,}) {
   return _then(_Quote(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,bookId: freezed == bookId ? _self.bookId : bookId // ignore: cast_nullable_to_non_nullable
 as String?,manualBookText: freezed == manualBookText ? _self.manualBookText : manualBookText // ignore: cast_nullable_to_non_nullable
-as String?,text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
-as String,page: freezed == page ? _self.page : page // ignore: cast_nullable_to_non_nullable
+as String?,text: freezed == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
+as String?,page: freezed == page ? _self.page : page // ignore: cast_nullable_to_non_nullable
 as int?,source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as QuoteSource,moods: null == moods ? _self._moods : moods // ignore: cast_nullable_to_non_nullable
-as List<QuoteMood>,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as List<QuoteMood>,isPrivate: null == isPrivate ? _self.isPrivate : isPrivate // ignore: cast_nullable_to_non_nullable
+as bool,cryptoVersion: freezed == cryptoVersion ? _self.cryptoVersion : cryptoVersion // ignore: cast_nullable_to_non_nullable
+as int?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,
   ));
@@ -311,7 +331,7 @@ as DateTime,
 /// @nodoc
 mixin _$QuoteInput {
 
- String get text;@JsonKey(name: 'book_id') String? get bookId;@JsonKey(name: 'manual_book_text') String? get manualBookText; int? get page;@JsonKey(unknownEnumValue: QuoteSource.manual) QuoteSource get source;@QuoteMoodListConverter() List<QuoteMood> get moods;
+ String get text;@JsonKey(name: 'book_id') String? get bookId;@JsonKey(name: 'manual_book_text') String? get manualBookText; int? get page;@JsonKey(unknownEnumValue: QuoteSource.manual) QuoteSource get source;@QuoteMoodListConverter() List<QuoteMood> get moods;@JsonKey(name: 'is_private') bool get isPrivate;
 /// Create a copy of QuoteInput
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -324,16 +344,16 @@ $QuoteInputCopyWith<QuoteInput> get copyWith => _$QuoteInputCopyWithImpl<QuoteIn
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuoteInput&&(identical(other.text, text) || other.text == text)&&(identical(other.bookId, bookId) || other.bookId == bookId)&&(identical(other.manualBookText, manualBookText) || other.manualBookText == manualBookText)&&(identical(other.page, page) || other.page == page)&&(identical(other.source, source) || other.source == source)&&const DeepCollectionEquality().equals(other.moods, moods));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuoteInput&&(identical(other.text, text) || other.text == text)&&(identical(other.bookId, bookId) || other.bookId == bookId)&&(identical(other.manualBookText, manualBookText) || other.manualBookText == manualBookText)&&(identical(other.page, page) || other.page == page)&&(identical(other.source, source) || other.source == source)&&const DeepCollectionEquality().equals(other.moods, moods)&&(identical(other.isPrivate, isPrivate) || other.isPrivate == isPrivate));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,text,bookId,manualBookText,page,source,const DeepCollectionEquality().hash(moods));
+int get hashCode => Object.hash(runtimeType,text,bookId,manualBookText,page,source,const DeepCollectionEquality().hash(moods),isPrivate);
 
 @override
 String toString() {
-  return 'QuoteInput(text: $text, bookId: $bookId, manualBookText: $manualBookText, page: $page, source: $source, moods: $moods)';
+  return 'QuoteInput(text: $text, bookId: $bookId, manualBookText: $manualBookText, page: $page, source: $source, moods: $moods, isPrivate: $isPrivate)';
 }
 
 
@@ -344,7 +364,7 @@ abstract mixin class $QuoteInputCopyWith<$Res>  {
   factory $QuoteInputCopyWith(QuoteInput value, $Res Function(QuoteInput) _then) = _$QuoteInputCopyWithImpl;
 @useResult
 $Res call({
- String text,@JsonKey(name: 'book_id') String? bookId,@JsonKey(name: 'manual_book_text') String? manualBookText, int? page,@JsonKey(unknownEnumValue: QuoteSource.manual) QuoteSource source,@QuoteMoodListConverter() List<QuoteMood> moods
+ String text,@JsonKey(name: 'book_id') String? bookId,@JsonKey(name: 'manual_book_text') String? manualBookText, int? page,@JsonKey(unknownEnumValue: QuoteSource.manual) QuoteSource source,@QuoteMoodListConverter() List<QuoteMood> moods,@JsonKey(name: 'is_private') bool isPrivate
 });
 
 
@@ -361,7 +381,7 @@ class _$QuoteInputCopyWithImpl<$Res>
 
 /// Create a copy of QuoteInput
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? text = null,Object? bookId = freezed,Object? manualBookText = freezed,Object? page = freezed,Object? source = null,Object? moods = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? text = null,Object? bookId = freezed,Object? manualBookText = freezed,Object? page = freezed,Object? source = null,Object? moods = null,Object? isPrivate = null,}) {
   return _then(_self.copyWith(
 text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
 as String,bookId: freezed == bookId ? _self.bookId : bookId // ignore: cast_nullable_to_non_nullable
@@ -369,7 +389,8 @@ as String?,manualBookText: freezed == manualBookText ? _self.manualBookText : ma
 as String?,page: freezed == page ? _self.page : page // ignore: cast_nullable_to_non_nullable
 as int?,source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as QuoteSource,moods: null == moods ? _self.moods : moods // ignore: cast_nullable_to_non_nullable
-as List<QuoteMood>,
+as List<QuoteMood>,isPrivate: null == isPrivate ? _self.isPrivate : isPrivate // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -454,10 +475,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String text, @JsonKey(name: 'book_id')  String? bookId, @JsonKey(name: 'manual_book_text')  String? manualBookText,  int? page, @JsonKey(unknownEnumValue: QuoteSource.manual)  QuoteSource source, @QuoteMoodListConverter()  List<QuoteMood> moods)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String text, @JsonKey(name: 'book_id')  String? bookId, @JsonKey(name: 'manual_book_text')  String? manualBookText,  int? page, @JsonKey(unknownEnumValue: QuoteSource.manual)  QuoteSource source, @QuoteMoodListConverter()  List<QuoteMood> moods, @JsonKey(name: 'is_private')  bool isPrivate)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _QuoteInput() when $default != null:
-return $default(_that.text,_that.bookId,_that.manualBookText,_that.page,_that.source,_that.moods);case _:
+return $default(_that.text,_that.bookId,_that.manualBookText,_that.page,_that.source,_that.moods,_that.isPrivate);case _:
   return orElse();
 
 }
@@ -475,10 +496,10 @@ return $default(_that.text,_that.bookId,_that.manualBookText,_that.page,_that.so
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String text, @JsonKey(name: 'book_id')  String? bookId, @JsonKey(name: 'manual_book_text')  String? manualBookText,  int? page, @JsonKey(unknownEnumValue: QuoteSource.manual)  QuoteSource source, @QuoteMoodListConverter()  List<QuoteMood> moods)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String text, @JsonKey(name: 'book_id')  String? bookId, @JsonKey(name: 'manual_book_text')  String? manualBookText,  int? page, @JsonKey(unknownEnumValue: QuoteSource.manual)  QuoteSource source, @QuoteMoodListConverter()  List<QuoteMood> moods, @JsonKey(name: 'is_private')  bool isPrivate)  $default,) {final _that = this;
 switch (_that) {
 case _QuoteInput():
-return $default(_that.text,_that.bookId,_that.manualBookText,_that.page,_that.source,_that.moods);case _:
+return $default(_that.text,_that.bookId,_that.manualBookText,_that.page,_that.source,_that.moods,_that.isPrivate);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -495,10 +516,10 @@ return $default(_that.text,_that.bookId,_that.manualBookText,_that.page,_that.so
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String text, @JsonKey(name: 'book_id')  String? bookId, @JsonKey(name: 'manual_book_text')  String? manualBookText,  int? page, @JsonKey(unknownEnumValue: QuoteSource.manual)  QuoteSource source, @QuoteMoodListConverter()  List<QuoteMood> moods)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String text, @JsonKey(name: 'book_id')  String? bookId, @JsonKey(name: 'manual_book_text')  String? manualBookText,  int? page, @JsonKey(unknownEnumValue: QuoteSource.manual)  QuoteSource source, @QuoteMoodListConverter()  List<QuoteMood> moods, @JsonKey(name: 'is_private')  bool isPrivate)?  $default,) {final _that = this;
 switch (_that) {
 case _QuoteInput() when $default != null:
-return $default(_that.text,_that.bookId,_that.manualBookText,_that.page,_that.source,_that.moods);case _:
+return $default(_that.text,_that.bookId,_that.manualBookText,_that.page,_that.source,_that.moods,_that.isPrivate);case _:
   return null;
 
 }
@@ -510,7 +531,7 @@ return $default(_that.text,_that.bookId,_that.manualBookText,_that.page,_that.so
 @JsonSerializable()
 
 class _QuoteInput implements QuoteInput {
-  const _QuoteInput({required this.text, @JsonKey(name: 'book_id') this.bookId, @JsonKey(name: 'manual_book_text') this.manualBookText, this.page, @JsonKey(unknownEnumValue: QuoteSource.manual) this.source = QuoteSource.manual, @QuoteMoodListConverter() final  List<QuoteMood> moods = const <QuoteMood>[]}): _moods = moods;
+  const _QuoteInput({required this.text, @JsonKey(name: 'book_id') this.bookId, @JsonKey(name: 'manual_book_text') this.manualBookText, this.page, @JsonKey(unknownEnumValue: QuoteSource.manual) this.source = QuoteSource.manual, @QuoteMoodListConverter() final  List<QuoteMood> moods = const <QuoteMood>[], @JsonKey(name: 'is_private') this.isPrivate = false}): _moods = moods;
   factory _QuoteInput.fromJson(Map<String, dynamic> json) => _$QuoteInputFromJson(json);
 
 @override final  String text;
@@ -525,6 +546,7 @@ class _QuoteInput implements QuoteInput {
   return EqualUnmodifiableListView(_moods);
 }
 
+@override@JsonKey(name: 'is_private') final  bool isPrivate;
 
 /// Create a copy of QuoteInput
 /// with the given fields replaced by the non-null parameter values.
@@ -539,16 +561,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuoteInput&&(identical(other.text, text) || other.text == text)&&(identical(other.bookId, bookId) || other.bookId == bookId)&&(identical(other.manualBookText, manualBookText) || other.manualBookText == manualBookText)&&(identical(other.page, page) || other.page == page)&&(identical(other.source, source) || other.source == source)&&const DeepCollectionEquality().equals(other._moods, _moods));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuoteInput&&(identical(other.text, text) || other.text == text)&&(identical(other.bookId, bookId) || other.bookId == bookId)&&(identical(other.manualBookText, manualBookText) || other.manualBookText == manualBookText)&&(identical(other.page, page) || other.page == page)&&(identical(other.source, source) || other.source == source)&&const DeepCollectionEquality().equals(other._moods, _moods)&&(identical(other.isPrivate, isPrivate) || other.isPrivate == isPrivate));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,text,bookId,manualBookText,page,source,const DeepCollectionEquality().hash(_moods));
+int get hashCode => Object.hash(runtimeType,text,bookId,manualBookText,page,source,const DeepCollectionEquality().hash(_moods),isPrivate);
 
 @override
 String toString() {
-  return 'QuoteInput(text: $text, bookId: $bookId, manualBookText: $manualBookText, page: $page, source: $source, moods: $moods)';
+  return 'QuoteInput(text: $text, bookId: $bookId, manualBookText: $manualBookText, page: $page, source: $source, moods: $moods, isPrivate: $isPrivate)';
 }
 
 
@@ -559,7 +581,7 @@ abstract mixin class _$QuoteInputCopyWith<$Res> implements $QuoteInputCopyWith<$
   factory _$QuoteInputCopyWith(_QuoteInput value, $Res Function(_QuoteInput) _then) = __$QuoteInputCopyWithImpl;
 @override @useResult
 $Res call({
- String text,@JsonKey(name: 'book_id') String? bookId,@JsonKey(name: 'manual_book_text') String? manualBookText, int? page,@JsonKey(unknownEnumValue: QuoteSource.manual) QuoteSource source,@QuoteMoodListConverter() List<QuoteMood> moods
+ String text,@JsonKey(name: 'book_id') String? bookId,@JsonKey(name: 'manual_book_text') String? manualBookText, int? page,@JsonKey(unknownEnumValue: QuoteSource.manual) QuoteSource source,@QuoteMoodListConverter() List<QuoteMood> moods,@JsonKey(name: 'is_private') bool isPrivate
 });
 
 
@@ -576,7 +598,7 @@ class __$QuoteInputCopyWithImpl<$Res>
 
 /// Create a copy of QuoteInput
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? text = null,Object? bookId = freezed,Object? manualBookText = freezed,Object? page = freezed,Object? source = null,Object? moods = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? text = null,Object? bookId = freezed,Object? manualBookText = freezed,Object? page = freezed,Object? source = null,Object? moods = null,Object? isPrivate = null,}) {
   return _then(_QuoteInput(
 text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
 as String,bookId: freezed == bookId ? _self.bookId : bookId // ignore: cast_nullable_to_non_nullable
@@ -584,7 +606,8 @@ as String?,manualBookText: freezed == manualBookText ? _self.manualBookText : ma
 as String?,page: freezed == page ? _self.page : page // ignore: cast_nullable_to_non_nullable
 as int?,source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as QuoteSource,moods: null == moods ? _self._moods : moods // ignore: cast_nullable_to_non_nullable
-as List<QuoteMood>,
+as List<QuoteMood>,isPrivate: null == isPrivate ? _self.isPrivate : isPrivate // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

@@ -92,7 +92,9 @@ class CreateQuoteController extends AsyncNotifier<void> {
         page: input.page,
         moods: input.moods.toSet(),
         bookId: input.bookId,
+        manualBookText: input.manualBookText,
         clearBook: clearBook,
+        isPrivate: input.isPrivate,
       );
       state = const AsyncData(null);
       return updated;

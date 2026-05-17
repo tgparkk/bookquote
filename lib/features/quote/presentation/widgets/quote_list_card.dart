@@ -66,7 +66,7 @@ class QuoteListCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      quote.text,
+                      quote.text ?? '',
                       maxLines: expanded ? null : 3,
                       overflow: expanded ? null : TextOverflow.ellipsis,
                       style: TextStyle(

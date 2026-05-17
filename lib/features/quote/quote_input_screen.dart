@@ -116,7 +116,8 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
         Navigator.of(context).maybePop();
         return;
       }
-      _textController.text = quote.text;
+      // 잠금 인용구는 PR16-C에서 별도 편집 차단 UI. 여기선 prefill만 nullable 호환.
+      _textController.text = quote.text ?? '';
       _textController.selection =
           TextSelection.collapsed(offset: _textController.text.length);
       _pageController.text = quote.page?.toString() ?? '';

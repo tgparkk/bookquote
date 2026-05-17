@@ -38,7 +38,8 @@ String buildQuotesMarkdown(
       ..writeln('## ${g.title}')
       ..writeln();
     for (final q in g.quotes) {
-      for (final line in q.text.trim().split('\n')) {
+      final body = q.text ?? '[잠금된 인용구]';
+      for (final line in body.trim().split('\n')) {
         buf.writeln('> ${line.trimRight()}');
       }
       final meta = _metaLine(q);

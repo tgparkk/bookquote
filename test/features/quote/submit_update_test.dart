@@ -26,6 +26,7 @@ class _RecordingRepo implements QuoteRepository {
     String? bookId,
     String? manualBookText,
     bool clearBook = false,
+    bool isPrivate = false,
   }) async {
     lastClearBook = clearBook;
     lastBookId = bookId;
@@ -36,6 +37,7 @@ class _RecordingRepo implements QuoteRepository {
       text: text ?? '',
       moods: moods?.toList() ?? const <QuoteMood>[],
       bookId: bookId,
+      isPrivate: isPrivate,
       createdAt: DateTime(2026, 1, 1),
       updatedAt: DateTime(2026, 1, 1),
     );

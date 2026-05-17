@@ -11,7 +11,7 @@ _Quote _$QuoteFromJson(Map<String, dynamic> json) => _Quote(
   userId: json['user_id'] as String,
   bookId: json['book_id'] as String?,
   manualBookText: json['manual_book_text'] as String?,
-  text: json['text'] as String,
+  text: json['text'] as String?,
   page: (json['page'] as num?)?.toInt(),
   source:
       $enumDecodeNullable(
@@ -23,6 +23,8 @@ _Quote _$QuoteFromJson(Map<String, dynamic> json) => _Quote(
   moods: json['moods'] == null
       ? const <QuoteMood>[]
       : const QuoteMoodListConverter().fromJson(json['moods'] as List),
+  isPrivate: json['is_private'] as bool? ?? false,
+  cryptoVersion: (json['crypto_version'] as num?)?.toInt(),
   createdAt: DateTime.parse(json['created_at'] as String),
   updatedAt: DateTime.parse(json['updated_at'] as String),
 );
@@ -36,6 +38,8 @@ Map<String, dynamic> _$QuoteToJson(_Quote instance) => <String, dynamic>{
   'page': instance.page,
   'source': _$QuoteSourceEnumMap[instance.source]!,
   'moods': const QuoteMoodListConverter().toJson(instance.moods),
+  'is_private': instance.isPrivate,
+  'crypto_version': instance.cryptoVersion,
   'created_at': instance.createdAt.toIso8601String(),
   'updated_at': instance.updatedAt.toIso8601String(),
 };
@@ -60,6 +64,7 @@ _QuoteInput _$QuoteInputFromJson(Map<String, dynamic> json) => _QuoteInput(
   moods: json['moods'] == null
       ? const <QuoteMood>[]
       : const QuoteMoodListConverter().fromJson(json['moods'] as List),
+  isPrivate: json['is_private'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$QuoteInputToJson(_QuoteInput instance) =>
@@ -70,4 +75,5 @@ Map<String, dynamic> _$QuoteInputToJson(_QuoteInput instance) =>
       'page': instance.page,
       'source': _$QuoteSourceEnumMap[instance.source]!,
       'moods': const QuoteMoodListConverter().toJson(instance.moods),
+      'is_private': instance.isPrivate,
     };
