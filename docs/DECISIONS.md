@@ -5,6 +5,65 @@
 
 ---
 
+## 2026-05-17 — 독서 시작·완독일 캘린더 + 마찰 감소 UX 3건 (V1.0 포함)
+
+- **결정**: V1.0에 ① `user_books`에 `started_at date`/`finished_at date` 컬럼 추가(CHECK `finished_at >= started_at`, 둘 다 null 허용 — 시작만 입력하고 아직 안 다 읽은 케이스가 핵심) ② 책 상세에 별점 행 아래 "읽기 시작 / 다 읽음" 1탭 입력 영역(오늘/어제/직접선택 칩, 입력 후 칩 형태 표시 + 재탭=지우기) ③ 서재 탭을 [책]·[인용구]·[캘린더] 3 세그먼트로 확장 — 캘린더 셀 마커는 시작(`accent200` outline)·완독(`accent500` 채움) 두 색 분리, 셀 탭=그 날 책 리스트. 동시에 글로벌 검증된 마찰 감소 UX 3건 채택 — (a) 날짜 기본값=오늘, DatePicker 숨김(Letterboxd·StoryGraph — 왓챠피디아 *평가일=감상일* 실패 지점 직격) (b) 별점 재탭=해제 패턴을 캘린더 칩에도 일관 적용(이미 `StarRating`에 구현됨) (c) 표지 long-press → 액션시트(V1.0.1 후속 PR로 분리).
+- **이유**: 왓챠피디아 도서 기능 조사 결과 — "이 책 좋았다" 정량 트래커는 강함(컬렉션·캘린더·월말결산)이지만 "*이 한 줄이 좋았다*"(인용구 1급)는 빈자리. brunch 사용자 회고가 "ISBN을 검색해 넣거나 상세한 인용을 달기엔" 부적합 명시. 캘린더 자체는 retention 후크로 검증됐고 우리 차별화(인용구·표지색 카드·1탭 공유)와 충돌 0. 단 왓챠피디아가 *평가일=감상일* 강제로 묶어 실패한 지점은 우리 설계에서 별점 ≠ 날짜 두 행 분리로 직격(Letterboxd·StoryGraph가 같은 답).
+- **알고리즘 선택**:
+  - 시작/완독 자동 전이 — "다 읽음" 탭 시 `started_at` 없으면 둘 다 today로 set + Toast "함께 시작일도 오늘로 저장했어요"(StoryGraph 자동 기입 패턴, *과거에 읽었던 책* 등록 마찰 0).
+  - 캘린더 위젯 — `table_calendar ^3.x`(Flutter ecosystem 표준, 자체 구현 대비 -2~3일).
+  - 셀 마커 — 단일 점이 아닌 두 색 분리. 한 날 ≥4권은 점 3개+"···". 색만으로 의미 전달 X — 셀 탭하면 그 날 책 리스트 펼침(접근성).
+  - 기존 `reading_status` 컬럼(`reading`/`finished`/`wishlist`, 기본값 `reading`) — 시작만 입력=`reading` 유지, 완독 입력=`finished` 자동 갱신. UI에 한 번도 안 쓰이고 있던 컬럼을 캘린더와 묶어 활성화.
+- **대안 검토**:
+  - (a) 인용구 저장일 캘린더(`quotes.created_at` 활용, 즉시 가능) → 거부. *우리 본진을 또 다른 단면으로 보여줄 뿐* 차별화 없음.
+  - (b) 새 탭(5탭화) → 거부. DECISIONS 2026-05-10 "4탭 위계"·"빈 탭 cold-start" 원칙 충돌.
+  - (c) 홈 상단 캘린더 카드 → 거부. PR15-B "이번 주 회고" 카드와 영역 경쟁.
+  - (d) 진행률 페이지/% 입력(북적북적) → 거부. 정체성 흐림(독서 진도 추적 ≠ 본진).
+  - (e) 캘린더 셀에 표지 썸네일(Letterboxd 다이어리) → 거부. 1080픽셀 카드가 본진, 캘린더 셀은 dot 마커로 충분.
+- **영향**:
+  - 마이그레이션 1장: `20260518xxxxxx_user_books_reading_dates.sql` — `started_at`/`finished_at` date 컬럼 + CHECK + partial index 2개 (`(user_id, finished_at desc) where finished_at is not null`·동 started_at).
+  - `pubspec.yaml`: `table_calendar ^3.x` 추가. release APK 검증 필수(`feedback_release_only_traps` 강제).
+  - `book_repository`에 `setReadingDate({bookId, kind: started|finished, date?})` — `setMyRating`의 upsert + auto-add-to-library 패턴 재사용. date=null이면 그 컬럼만 unset.
+  - `library_screen` 세그먼트 2→3개. `library.md`의 V1.5 보강 권고였던 [인용구] 세그먼트도 PR17과 묶어 V1.0으로 끌어올림(서재 화면 두 번 건드림 회피).
+  - `book_detail_screen` — 별점 행 아래 신규 위젯 `_ReadingDatesRow`.
+  - PR16(E2EE)·PR17(캘린더)이 같은 한 달 패키지. `user_books` 컬럼 추가만이라 스키마 충돌 0. 책 상세 헤더가 별점+읽기 날짜+E2EE 잠금 토글로 합류 — 디자인 검토 1회 필요.
+- **재검토 트리거**:
+  - 베타 사용자 ≥2명이 "독서 기간 입력 귀찮다" 호소 → "읽기 시작" 칩 제거, 완독일 단일 축으로 단순화.
+  - 캘린더 진입 빈도가 30일 후 DAU의 <10%면 → V1.5 "월말결산 카드"로 진입 후크 강화.
+- **PR 분할**: 17-A 스키마 + `book_repository.setReadingDate` · 17-B 책 상세 `_ReadingDatesRow` · 17-C 서재 3 세그먼트화 + `calendar_segment.dart`(`table_calendar`) + 이전 V1.5 보강 [인용구] 세그먼트 합본 · 17-D 골든 + release APK 검증. 각 PR 끝 release 빌드 검증.
+
+---
+
+## 2026-05-17 — 인용구 선택적 E2EE 도입 (V1.0 출시 전)
+
+- **결정**: 사용자가 잠금 토글한 인용구만 클라이언트 측 E2E 암호화(AES-256-GCM)해서 저장. `text` + `manual_book_text`만 암호화, 메타데이터(`moods`/`page`/`book_id`/`created_at`)는 평문 유지(무드 GIN 인덱스·`my_quote_mood_counts` RPC·홈 피드 그대로). 마스터키 K(32B 랜덤)는 `flutter_secure_storage`에 캐시. 다기기는 envelope 암호화 — 사용자가 설정한 "잠금 비밀번호"로 PBKDF2-HMAC-SHA512(600k iters) wrap_key 파생 → `K_wrapped`만 새 테이블 `user_crypto_envelopes`에 서버 저장. 비상 백업으로 K 자체를 QR/base64 종이 인쇄. 기존 평문 인용구는 그대로(`is_private=false`).
+- **이유**: 현재 RLS는 다른 *사용자*만 막을 뿐 `service_role`·Supabase Studio·`pg_dump`로 운영자(나)가 평문 접근 가능. PR15-A의 "데이터 주권" 차별화 메시지를 *기술적으로* 진실하게 만들어야 거짓말이 안 됨. 출시 후 E2EE 추가하면 "그 사이 운영자가 봤다"는 사실이 안 지워짐. → 출시는 한 달 미루더라도 V1.0에 포함하기로 합의.
+- **알고리즘 선택**:
+  - 본문 = AES-256-GCM + 12B 랜덤 nonce, `cryptography` 패키지(순수 Dart, native 의존 0).
+  - KDF = PBKDF2-HMAC-SHA512 600k iters(OWASP 2024 권고 충족). Argon2id는 native plugin 필요해서 release-only 함정(`INTERNET`·`debugNeedsPaint` 사건 패턴) 회피 위해 거부.
+  - `crypto_version smallint` 컬럼으로 V2 알고리즘 회수 슬롯 확보.
+- **다기기 = Envelope**: K 자체는 안 변하고 wrap만 바뀜 → 비밀번호 변경 시 인용구 재암호화 0. `user_crypto_envelopes` 테이블 RLS 본인만, lazy 생성(첫 잠금 시도 시점). "잠금 비밀번호"는 Supabase 매직링크 로그인과 명확히 분리된 *독립* 항목 — UI에 "이 비밀번호는 서버가 모릅니다" 명시.
+- **대안 검토**:
+  - (a) 전체 E2EE → 거부. `ilike` 검색·서버 통계 전부 죽음, V1.5 텍스트 검색 백로그와 충돌.
+  - (b) 로컬 전용(서버 미동기화) → 거부. Isar/Drift 도입 + 다기기·백업 사용자 책임 → 아키텍처 크게 변경, 출시 일정 파괴.
+  - (c) Argon2id native plugin → 거부. release-only 함정 위험 가중.
+  - (d) Supabase 패스워드 로그인 재사용 → 거부. 서버가 해시·접근권 가지면 oracle 가능.
+  - (e) 6자리 PIN → 거부. brute-force 일구.
+  - (f) QR 페어링만(envelope 없이) → 거부. 신규 기기마다 옛 기기 필요, 폰 분실 = 손실.
+- **영향**:
+  - 마이그레이션 2장: `20260517_quotes_e2ee.sql`(`text_encrypted bytea`·`manual_book_text_encrypted bytea`·`crypto_version smallint`·`is_private boolean default false` 추가, `text`·`manual_book_text` NOT NULL 해제, CHECK 재정의, `quotes_user_private_idx (user_id) where is_private = true` partial index) + `20260518_user_crypto_envelopes.sql`(envelope 테이블 + RLS 본인만 select/insert/update).
+  - pubspec: `cryptography ^2.7.0`, `qr_flutter`(백업 QR), `mobile_scanner`(가져오기 스캔). 카메라 권한 + ProGuard rules 점검.
+  - AndroidManifest `android:allowBackup="false"` 또는 `dataExtractionRules`로 `flutter_secure_storage` 경로 백업 제외 — 안 하면 Google Drive로 키 새서 E2EE 무력화.
+  - `delete-account` Edge Function 흐름에 클라이언트 `KeyService.deleteAll()` 추가(envelope row는 `auth.users` cascade로 자동).
+  - 잠금 인용구 공유 시 이미지에 평문 박힘 → 공유 직전 확인 모달.
+  - `cards.design jsonb`에 quote text 사본이 들어가는지 PR16-B에서 검증(들어가면 그 경로도 암호화 대상).
+  - 디버그 로그 본문 마스킹 점검 (현재 `print` 호출 grep 필요).
+- **재검토 트리거**:
+  - 베타 사용자가 패스프레이즈 빈도 분실로 인용구 손실 호소 시 → "종이 QR 강제 인쇄" 정책 강화 또는 잠금 인용구 자동 만료.
+  - iOS 출시 시 → Keychain 동작 + 다기기 동기화 흐름 재시험(`flutter_secure_storage`·`mobile_scanner` iOS 동작 점검).
+  - `cryptography` 패키지가 Argon2 지원 추가 시 → KDF 마이그레이션 검토(`crypto_version` 슬롯 활용).
+- **PR 분할**: 16-A 스키마+크립토 코어 / 16-B repository·outbox wiring / 16-C 입력 UI+모달 / 16-D 잠금 비밀번호 화면(설정·변경·QR 백업/가져오기·fingerprint 표시) / 16-E 골든+release 검증. 각 PR 끝 release APK 실기기 검증 — `feedback_release_only_traps` 패턴 강제. Stage 4에 편성, 출시 한 달 후로 일정 합의(2026-05-17).
+
 ## 2026-05-13 — 책 별점 = `user_books.rating` (정수 1~5, nullable)
 
 - **결정**: 책 별점은 "내 서재에서의 이 책 평가"라 `user_books`에 컬럼 추가(`rating smallint check between 1 and 5`, nullable=미평가). 별도 `book_ratings` 테이블 X. 별점을 매기면 그 책이 자동으로 내 서재에 들어옴(`setMyRating` = upsert `{user_id, book_id, rating}` onConflict — `addToLibrary`는 rating 미포함 upsert라 기존 별점을 안 건드림). 별점 지우기 = `rating=null` update(서재에는 그대로). 마이그레이션 `20260512130000_user_books_rating.sql` **remote 적용 완료**.
