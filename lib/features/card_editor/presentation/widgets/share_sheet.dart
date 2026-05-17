@@ -5,10 +5,14 @@
 // 막다른 골목 금지: 어떤 버튼도 비활성 없음(V1).
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../data/share_service.dart';
+
+/// 첫 공유 안내 SnackBar 1회 노출 플래그 (PR15-A — 차별화 강화 onboarding).
+const String _kFirstShareHintShown = 'card_share_first_hint_shown_v1';
 
 /// 카드 PNG가 준비된 뒤 호출. 사용자가 시트를 dismiss 해도 정상.
 Future<void> showCardShareSheet({
@@ -43,6 +47,21 @@ class _CardShareSheet extends StatelessWidget {
         subject: prefix == null ? null : '$prefix — 책귀',
       );
       if (navigator.canPop()) navigator.pop();
+      // PR15-A (2): 첫 공유 직후 단 1회 — "다른 곳에도 보낼 수 있어요" closure
+      // 카피. 4단톡 순차 공유(S6) 같은 반복 시나리오에서 사용자에게 다음 동선이
+      // 막다른 길이 아님을 알린다. SharedPreferences global flag로 1회 제한.
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        if (!(prefs.getBool(_kFirstShareHintShown) ?? false)) {
+          await prefs.setBool(_kFirstShareHintShown, true);
+          messenger
+            ..clearSnackBars()
+            ..showSnackBar(const SnackBar(
+              content: Text('공유했어요. 같은 카드를 다른 곳에도 보낼 수 있어요.'),
+              duration: Duration(milliseconds: 2400),
+            ));
+        }
+      } catch (_) {/* prefs 실패는 무시 — 공유는 이미 성공 */}
     } on CardShareException catch (e) {
       messenger
         ..clearSnackBars()

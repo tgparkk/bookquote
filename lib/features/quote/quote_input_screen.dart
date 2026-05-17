@@ -438,9 +438,20 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
       // 입력 화면을 카드 에디터로 치환 — 저장 끝난 입력 폼으로 되돌아오지 않게.
       router.pushReplacement('/quote/${created.id}/card');
     } else {
+      // PR15-A (1): 책 연결된 인용구 저장 직후엔 "이 책에 한 줄 더" 단축 action
+      // 노출 — S3(같은 책 5번 입력) 반복 사이클 진입 마찰 5배 감소. 차별화 ④ 보호.
+      final savedBookId = _book?.id;
       messenger
         ..clearSnackBars()
-        ..showSnackBar(const SnackBar(content: Text('인용구를 저장했어요.')));
+        ..showSnackBar(SnackBar(
+          content: const Text('인용구를 저장했어요.'),
+          action: savedBookId == null
+              ? null
+              : SnackBarAction(
+                  label: '이 책에 한 줄 더',
+                  onPressed: () => router.push('/quote/new?bookId=$savedBookId'),
+                ),
+        ));
       navigator.pop();
     }
   }

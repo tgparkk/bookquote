@@ -13,11 +13,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/theme/tokens.dart';
 import '../../quote/data/quote_repository.dart';
 import 'markdown_exporter.dart';
 
 enum QuoteExportResult { shared, empty, failed }
+
+/// "데이터 주권" 안내 BottomSheet 1회 노출 플래그 (PR15-A — 차별화 ③ 강화).
+const String _kSovereigntyHintShown = 'md_export_sovereignty_hint_v1';
 
 /// 내 인용구 전체를 모아 Markdown으로 공유한다. 진행 중 토스트 없이, 결과만 토스트.
 /// 반환값으로 호출자(예: 탈퇴 플로우)가 후속 처리 가능.
@@ -67,6 +72,12 @@ Future<QuoteExportResult> exportMyQuotesAsMarkdown({
         subject: subject,
       ),
     );
+    // PR15-A (4): 첫 내보내기 직후 1회만 "데이터 주권" 메시지 BottomSheet —
+    // 차별화 ③의 감정 모멘트를 짧은 정보성 시트로 한 번 닿게. SharedPreferences
+    // flag로 재발 차단. share 성공 후라 dismissed 되어도 손해 없음.
+    if (context.mounted) {
+      await _maybeShowSovereigntyHint(context, entries.length);
+    }
     return QuoteExportResult.shared;
   } catch (_) {
     messenger
@@ -89,4 +100,87 @@ Future<List<QuoteWithBook>> _fetchAllQuotes(QuoteRepository repo) async {
     after = (createdAt: last.createdAt, id: last.id);
   }
   return all;
+}
+
+/// 첫 Markdown 내보내기 직후 1회만 노출하는 "데이터 주권" 안내 시트.
+/// 차별화 ③ 의 감정 모멘트 — me 화면 ListTile + 토스트만으로는 짧기에 한 번은
+/// 명시적으로 사용자에게 닿게 한다 (PR15-A 차별화 강화).
+Future<void> _maybeShowSovereigntyHint(
+  BuildContext context,
+  int count,
+) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_kSovereigntyHintShown) ?? false) return;
+    await prefs.setBool(_kSovereigntyHintShown, true);
+    if (!context.mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.secondary100,
+      showDragHandle: true,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+      ),
+      builder: (ctx) => _SovereigntyHintSheet(count: count),
+    );
+  } catch (_) {/* prefs/시트 실패는 무시 — 공유는 이미 성공 */}
+}
+
+class _SovereigntyHintSheet extends StatelessWidget {
+  const _SovereigntyHintSheet({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.s6,
+          AppSpacing.s2,
+          AppSpacing.s6,
+          AppSpacing.s6,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            const Icon(
+              Icons.lock_open_rounded,
+              size: 36,
+              color: AppColors.accent500,
+            ),
+            const SizedBox(height: AppSpacing.s3),
+            Text(
+              '내보낸 $count구절',
+              textAlign: TextAlign.center,
+              style: textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.s2),
+            Text(
+              '책귀는 언제든 비워두고 떠날 수 있어요.\n'
+              '내 데이터는 항상 내가 가져갈 수 있도록 Markdown으로 받았어요.',
+              textAlign: TextAlign.center,
+              style: textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.primary600),
+            ),
+            const SizedBox(height: AppSpacing.s6),
+            FilledButton(
+              onPressed: () => Navigator.of(context).maybePop(),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.accent500,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(48),
+              ),
+              child: const Text('확인'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
