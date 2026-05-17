@@ -1,11 +1,17 @@
 // 내 인용구 Markdown 내보내기 — 전체 인용구를 페이지네이션으로 모아 Markdown 문자열로
-// 만든 뒤 OS 공유 시트로 보낸다 (차별화 ③ 데이터 주권). 문자열 조립은 `markdown_exporter.dart`.
+// 만든 뒤 임시 `.md` 파일로 저장해 OS 공유 시트에 첨부한다 (차별화 ③ 데이터 주권).
+// 문자열 조립은 `markdown_exporter.dart`.
 //
-// 공유는 `share_plus`의 텍스트 공유. (`.md` 파일 첨부 형태는 V1.x 개선 — 본문이 매우 클 때
-// 안드로이드 인텐트 한도에 걸릴 수 있어 그때 파일 방식으로 전환.)
+// PR14-E B4: 이전에는 `SharePlus.share(ShareParams(text: ...))`로 텍스트를 그대로
+// 인텐트에 넣었으나, 컬렉션이 커지면(인용구 250건+) Android Binder transaction
+// 한도(~500KB)에 걸려 `TransactionTooLargeException` 위험. `.md` XFile 첨부로
+// 일관 전환 — share_plus가 FileProvider 처리.
+
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../quote/data/quote_repository.dart';
@@ -42,9 +48,24 @@ Future<QuoteExportResult> exportMyQuotesAsMarkdown({
   }
 
   final markdown = buildQuotesMarkdown(entries);
+  final subject = '책귀 인용구 ${entries.length}개';
   try {
+    final dir = await getTemporaryDirectory();
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final file = File('${dir.path}/bookquote-quotes-$ts.md');
+    await file.writeAsString(markdown);
     await SharePlus.instance.share(
-      ShareParams(text: markdown, subject: '책귀 인용구 ${entries.length}개'),
+      ShareParams(
+        files: <XFile>[
+          XFile(
+            file.path,
+            mimeType: 'text/markdown',
+            name: 'bookquote-quotes.md',
+          ),
+        ],
+        text: subject,
+        subject: subject,
+      ),
     );
     return QuoteExportResult.shared;
   } catch (_) {

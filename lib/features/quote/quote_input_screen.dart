@@ -147,29 +147,34 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
     _restoredDraft = true;
     try {
       final store = await ref.read(quoteDraftStoreProvider.future);
-      final draft = store.load();
-      if (draft == null || draft.text.trim().isEmpty || !mounted) return;
-      _textController.text = draft.text;
+      final loaded = store.load();
+      if (loaded == null || loaded.input.text.trim().isEmpty || !mounted) {
+        return;
+      }
+      final input = loaded.input;
+      _textController.text = input.text;
       _textController.selection =
           TextSelection.collapsed(offset: _textController.text.length);
-      _pageController.text = draft.page?.toString() ?? '';
+      _pageController.text = input.page?.toString() ?? '';
       _moods
         ..clear()
-        ..addAll(draft.moods);
-      _source = draft.source;
-      if (draft.bookId != null) {
+        ..addAll(input.moods);
+      _source = input.source;
+      if (input.bookId != null) {
         try {
           _book =
-              await ref.read(bookRepositoryProvider).getById(draft.bookId!);
+              await ref.read(bookRepositoryProvider).getById(input.bookId!);
         } catch (_) {/* ignore */}
       }
       if (!mounted) return;
       setState(() {});
+      // F5: 시점 단서를 함께 표시 — 한 달 만에 재진입한 사용자도 맥락을 잡을 수 있게.
+      final timeLabel = _relativeTime(loaded.savedAt);
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
         ..showSnackBar(
           SnackBar(
-            content: const Text('작성 중이던 인용구를 불러왔어요.'),
+            content: Text('$timeLabel에 작성하던 인용구를 불러왔어요'),
             action: SnackBarAction(
               label: '지우기',
               onPressed: () async {
@@ -187,6 +192,17 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
           ),
         );
     } catch (_) {/* ignore */}
+  }
+
+  /// 한국어 상대시간 — "방금 / N분 전 / N시간 전 / N일 전 / N주 전" (F5).
+  /// 절대 날짜는 차가운 톤이라 회피(차분한 브랜드 보이스).
+  static String _relativeTime(DateTime t) {
+    final diff = DateTime.now().difference(t);
+    if (diff.isNegative || diff.inMinutes < 1) return '방금';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}분 전';
+    if (diff.inHours < 24) return '${diff.inHours}시간 전';
+    if (diff.inDays < 7) return '${diff.inDays}일 전';
+    return '${(diff.inDays / 7).floor()}주 전';
   }
 
   // ── 클립보드 붙여넣기 감지 ───────────────────────────────
