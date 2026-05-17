@@ -99,6 +99,15 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
     setState(() => _sharing = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
+      // B12: 자동 트리거 케이스 — endOfFrame 2회 후에도 RepaintBoundary가 zero
+      // size일 수 있다(폰트/이미지 async, release 마이크로태스크 타이밍). 한 frame
+      // 더 기다려 재확인 → 그래도 zero면 renderCardPng가 명확한 CardRenderException.
+      var size = _captureKey.currentContext?.size;
+      if (size == null || size.isEmpty) {
+        await WidgetsBinding.instance.endOfFrame;
+        if (!mounted) return;
+        size = _captureKey.currentContext?.size;
+      }
       final state = ref.read(cardEditorControllerProvider);
       final file = await renderCardPng(
         boundaryKey: _captureKey,

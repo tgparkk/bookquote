@@ -61,6 +61,9 @@ class CardEditorScreen extends ConsumerStatefulWidget {
 class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
   bool _initialized = false;
   bool _isSharing = false;
+  // 본문 수정 후 복귀 시 다이얼로그 없이 silent로 초기화 (B3). 사용자가 같은
+  // 세션 흐름이라 "이어서 만들기" 재질문은 마찰 — draft 있으면 그대로 적용.
+  bool _skipDraftDialog = false;
   final GlobalKey _captureKey = GlobalKey();
 
   @override
@@ -200,10 +203,18 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
 
   /// 본문 수정 진입점. quote 입력 화면을 편집 모드로 열고, 복귀 시 카드 데이터를
   /// invalidate해 미리보기에 변경 본문이 즉시 반영되도록 한다.
+  ///
+  /// B3: `_initialized=false`로 리셋해 새 data가 도착하면 `_initializeFromData`가
+  /// 재실행되도록 한다. 단 `_skipDraftDialog=true`로 표시해 "이어서 만들기"
+  /// 다이얼로그 재발 없이 silent 적용(같은 작업 흐름이므로).
   Future<void> _onEditQuoteTap() async {
     await context.push('/quote/new?quoteId=${widget.quoteId}');
     if (!mounted) return;
     ref.invalidate(quoteCardDataProvider(widget.quoteId));
+    setState(() {
+      _initialized = false;
+      _skipDraftDialog = true;
+    });
   }
 
   Future<void> _onShareTap(QuoteCardData data, CardRatio ratio) async {
@@ -246,6 +257,22 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
     final controller = ref.read(cardEditorControllerProvider.notifier);
     final draft = await controller.readDraft();
     if (!mounted) return;
+
+    // B3: 본문 수정 후 복귀 — 사용자가 작업 흐름 중이므로 다이얼로그 없이
+    // draft가 있으면 그대로 유지(템플릿/비율 등 디자인 보존), 없으면 새 추천.
+    if (_skipDraftDialog) {
+      _skipDraftDialog = false;
+      if (draft != null) {
+        controller.applyState(draft);
+      } else {
+        controller.applyRecommended(
+          charCount: data.charCount,
+          hasCover: data.hasCover,
+        );
+      }
+      return;
+    }
+
     if (draft != null) {
       final restore = await showDialog<bool>(
         context: context,
