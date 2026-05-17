@@ -23,20 +23,26 @@
 ```
 auth.users (Supabase Auth 관리)
    │ id
-   ├──1:1──▶ profiles            (display_name, avatar_url)            [on delete cascade]
-   ├──1:N──▶ user_books          (book_id, added_at, reading_status, rating, notes)  [cascade]
-   └──1:N──▶ quotes              (book_id?, manual_book_text?, text, page?, source, moods[])  [cascade]
+   ├──1:1──▶ profiles            (display_name, avatar_url, is_library_public⏳)   [on delete cascade]
+   ├──1:N──▶ user_books          (book_id, added_at, reading_status, rating,
+   │                              started_at⏳, finished_at⏳)                       [cascade]
+   ├──1:N──▶ quotes              (book_id?, manual_book_text?, text?, page?, source,
+   │                              moods[], text_encrypted?⏳, is_private⏳, crypto_version?⏳)  [cascade]
+   ├──N:M──▶ follows⏳            (follower_id → followee_id)                       [cascade × 2]
+   └──1:1──▶ user_crypto_envelopes⏳ (wrap_alg, kdf_params, k_wrapped)               [cascade]
 
 books (글로벌 카탈로그 — 모든 사용자 공유, 알라딘 캐시)
    │ id
    ├──1:N──▶ user_books          (book_id FK)                          [on delete cascade]
    └──1:N──▶ quotes              (book_id FK, nullable)                [on delete set null]
 
-user_books  PK = (user_id, book_id)        — "내 서재"
-quotes      PK = id                          — "내 인용구"
-profiles    PK = id (= auth.users.id)
+user_books             PK = (user_id, book_id)       — "내 서재"
+quotes                 PK = id                          — "내 인용구"
+profiles               PK = id (= auth.users.id)
+follows⏳              PK = (follower_id, followee_id)  — 단방향(트위터식)
+user_crypto_envelopes⏳ PK = user_id                    — E2EE 마스터키 wrap
 
-(V1.5+ 예정: cards, received_cards, follows — §6)
+⏳ = V1.0 진행 중 (PR16 E2EE · PR17 캘린더 · PR18 친구 탐험). V1.5+ 예정: cards, received_cards, quote_likes — §7.
 ```
 
 ---
@@ -52,12 +58,13 @@ profiles    PK = id (= auth.users.id)
 | `id` | uuid | **PK**, `references auth.users(id) on delete cascade` | = auth 유저 id |
 | `display_name` | text | | 가입 시 `raw_user_meta_data`의 `display_name`/`nickname`/`name`/`full_name`, 없으면 이메일 local-part |
 | `avatar_url` | text | | OAuth provider의 `avatar_url`/`picture` (이메일 매직링크 가입이면 null) |
+| `is_library_public` | boolean | not null, default `false` | **⏳ PR18-A 예정**. 친구 서재 탐험 게이트. `true`일 때만 친구(follows에 등록된 사용자)가 `user_books`/`quotes` read 가능. 기본값 `false` 사수(opt-in). |
 | `created_at` | timestamptz | not null, default `now()` | |
 | `updated_at` | timestamptz | not null, default `now()` | 트리거 `profiles_updated_at` → `set_updated_at()` |
 
-**인덱스**: `profiles_display_name_idx (display_name)`
-**RLS**: SELECT = 누구나(`using (true)`) / UPDATE = 본인(`auth.uid() = id`). INSERT는 트리거만(정책 없음 → 일반 클라이언트 insert 불가, `security definer` 트리거가 우회).
-**현재 사용**: 코드에서 아직 직접 읽지 않음 (Me 화면은 이메일을 세션에서 읽음). V1.5 follow/프로필 화면에서 사용 예정.
+**인덱스**: `profiles_display_name_idx (display_name)` — PR18 친구 검색(`ilike`)에 그대로 사용.
+**RLS**: SELECT = 누구나(`using (true)` — display_name 검색이 로그인만으로 가능해야 하므로 식별 정보 자체는 public. 단 `is_library_public=false`면 친구가 `/u/:userId` 들어가도 `user_books`/`quotes`가 0 row라 "잠긴 서재" 빈상태가 됨) / UPDATE = 본인(`auth.uid() = id`). INSERT는 트리거만(정책 없음 → 일반 클라이언트 insert 불가, `security definer` 트리거가 우회).
+**현재 사용**: 코드에서 아직 직접 읽지 않음(Me 화면은 이메일을 세션에서 읽음). **PR18-B부터 본격 사용** — Me "내 프로필 공개" 토글·"공개 닉네임" 편집, friend_profile_screen 헤더, book_detail "이 책을 담은 친구 N명".
 
 ### 2.2 `books` — 글로벌 책 카탈로그 (`20260510120200`)
 
@@ -97,7 +104,9 @@ profiles    PK = id (= auth.users.id)
 | `notes` | text | | 미사용(V1.5) |
 
 **인덱스**: `user_books_user_added_idx (user_id, added_at desc)` — 서재 화면 정렬.
-**RLS**: SELECT/INSERT/UPDATE/DELETE 모두 `auth.uid() = user_id` (본인 것만).
+**RLS** (V1 현재): SELECT/INSERT/UPDATE/DELETE 모두 `auth.uid() = user_id` (본인 것만).
+**⏳ PR18-A 추가 예정**: 정책 `user_books_friends_read` (SELECT OR) — 친구가 공개 프로필의 서재를 read. 조건 `auth.uid() in (select follower_id from follows where followee_id = user_books.user_id) and exists (select 1 from profiles p where p.id = user_books.user_id and p.is_library_public = true)`. 잠금 인용구처럼 별도 게이트 컬럼은 책에는 없음 — 공개 프로필이면 책은 전부 노출. INSERT·UPDATE·DELETE는 본인만 유지.
+**⏳ PR18-D 추가 예정**: 헬퍼 RPC `followers_count_for_book(book_id uuid) returns int` (`security invoker`, `stable`) — "이 책을 담은 친구 N명" 카운트. 인덱스 `user_books_book_idx (book_id) where user_id in (...)` 검토(친구 수 작아서 seq scan도 OK일 수 있음 — 측정 후 결정).
 **현재 사용**: `book_repository` — `addToLibrary`/`removeFromLibrary`/`listMyLibrary`/`countMyLibrary`/`getMyRating`/`setMyRating`.
 
 ### 2.4 `quotes` — 내 인용구 (`20260512120000`)
@@ -121,9 +130,43 @@ profiles    PK = id (= auth.users.id)
 - `quotes_user_book_idx (user_id, book_id)` — 책 상세 "이 책에서 모은 N구절"
 - `quotes_moods_gin_idx using gin (moods)` — 무드별 필터 (`moods && {...}`)
 
-**RLS**: SELECT = `auth.uid() = user_id` / INSERT·UPDATE·DELETE = `authenticated` + `auth.uid() = user_id`.
-**페이지네이션**: cursor-after `(created_at desc, id desc)` — `or('created_at.lt.<ts>,and(created_at.eq.<ts>,id.lt.<id>)')`로 튜플 비교 에뮬레이션. offset 안 씀.
-**현재 사용**: `quote_repository` — `createQuote`/`updateQuote`/`deleteQuote`/`getById`/`listMyQuotes`/`listMyQuotesWithBook`(`*, book:books(*)` 임베드, N+1 회피)/`getMoodCounts`/`countMyQuotes`.
+**RLS** (V1 현재): SELECT = `auth.uid() = user_id` / INSERT·UPDATE·DELETE = `authenticated` + `auth.uid() = user_id`.
+**⏳ PR18-A 추가 예정**: 정책 `quotes_friends_read` (SELECT OR) — 친구가 공개 프로필의 인용구를 read. 조건 `auth.uid() in (select follower_id from follows where followee_id = quotes.user_id) and exists (select 1 from profiles p where p.id = quotes.user_id and p.is_library_public = true) and quotes.is_private = false`. **`is_private=false` 게이트가 RLS 정책 안에 박힘** — 클라이언트가 잘못된 쿼리를 보내도 DB가 0 row로 응답. PR18-E에 침투 테스트로 회귀 가드(잠금 quote · 비공개 프로필 · 팔로우 안 한 사용자 모두 0 row). INSERT·UPDATE·DELETE는 본인만 유지.
+**페이지네이션**: cursor-after `(created_at desc, id desc)` — `or('created_at.lt.<ts>,and(created_at.eq.<ts>,id.lt.<id>)')`로 튜플 비교 에뮬레이션. offset 안 씀. 친구 인용구 페이지네이션도 같은 cursor 패턴 재사용.
+**현재 사용**: `quote_repository` — `createQuote`/`updateQuote`/`deleteQuote`/`getById`/`listMyQuotes`/`listMyQuotesWithBook`(`*, book:books(*)` 임베드, N+1 회피)/`getMoodCounts`/`countMyQuotes`. **PR18-C 추가 예정**: `listFriendQuotesWithBook(userId, cursor)` — RLS가 게이트 → 클라이언트 쿼리는 단순(`from quotes where user_id = :userId`), 권한은 DB가 강제.
+
+### 2.5 `follows` — 단방향 친구 그래프 (⏳ PR18-A 예정)
+
+트위터식 단방향 follow. request-accept 양방향은 V2. `(follower_id, followee_id)`가 PK라 같은 사람 두 번 follow = 자동 idempotent.
+
+| 컬럼 | 타입 | 제약 | 비고 |
+|---|---|---|---|
+| `follower_id` | uuid | not null, `references auth.users(id) on delete cascade`, **PK 일부** | 팔로우 *하는* 사람 |
+| `followee_id` | uuid | not null, `references auth.users(id) on delete cascade`, **PK 일부** | 팔로우 *받는* 사람 |
+| `created_at` | timestamptz | not null, default `now()` | |
+
+**인덱스**: PK가 `(follower_id, followee_id)` → 정방향(`내가 누구를 팔로우`) 자동 인덱스. `follows_followee_idx (followee_id)` 별도 — 역방향(`누가 나를 팔로우`) + RLS 정책의 `follows where followee_id = quotes.user_id` 서브쿼리 가속.
+**RLS** (⏳ PR18-A 예정):
+- SELECT = 본인이 관련된 경우만 (`auth.uid() = follower_id or auth.uid() = followee_id`). 제3자의 follow 그래프는 사생활.
+- INSERT = `auth.uid() = follower_id` (남 명의로 follow 못 함). `followee_id != follower_id` CHECK(자기 자신 follow 차단).
+- DELETE = `auth.uid() = follower_id` (언팔로우는 본인만). 강제 언팔(피팔로워가 끊기) 기능은 V1.5 `blocks`로.
+- UPDATE 정책 없음 — `created_at` 외 변경할 게 없음.
+
+**CHECK 제약**: `follower_id <> followee_id` (자기 자신 follow 차단 — DB 단에서).
+**cascade**: follower·followee 어느 한쪽이 `auth.users` 삭제되면 row 사라짐. `delete-account` 흐름에서 자동 정리(별도 코드 0).
+**사용 예정 함수**:
+- `follow_repository.follow(uid)` → INSERT `(auth.uid(), uid)` upsert
+- `follow_repository.unfollow(uid)` → DELETE
+- `follow_repository.isFollowing(uid)` → exists query
+- `follow_repository.searchByDisplayName(query, limit)` → `profiles` `ilike '%query%'` (RLS는 `using(true)`라 누구나 검색됨, 단 카운트는 합리적 limit으로)
+- `follow_repository.listFollowing(uid)` / `listFollowers(uid)` → profile join
+- `follow_repository.followersCountForBook(bookId)` — "이 책을 담은 친구 N명" — `user_books_friends_read` 정책 통과한 row 카운트 (`user_books inner join follows ...`).
+
+**격리 검증** (PR18-E):
+- 잠금 인용구(`is_private=true`) → 친구 read 0 row
+- 비공개 프로필(`is_library_public=false`) → 친구 read 0 row (책·인용구 둘 다)
+- 팔로우 안 한 사용자 → 친구 read 0 row
+- 차단 받은 사용자 → V1.5 `blocks` 도입 시 추가
 
 ---
 
@@ -178,19 +221,28 @@ profiles    PK = id (= auth.users.id)
 | `20260512120000_quotes.sql` | `quotes` 테이블 + `quotes_updated_at` 트리거 + 인덱스 3종 + RLS | ✅ |
 | `20260512130000_user_books_rating.sql` | `user_books.rating smallint CHECK 1~5` 컬럼 추가 | ✅ |
 | `20260512140000_quote_mood_counts.sql` | `my_quote_mood_counts()` RPC | ✅ |
+| `20260516120000_cards.sql` | `cards` 테이블 — 카드 디자인 공유 기록(PR11). user_id cascade, quote_id cascade, book_id set null, `design jsonb`, RLS 본인 select/insert | ✅ |
+| `20260518xxxxxx_user_books_reading_dates.sql` | `user_books`에 `started_at`/`finished_at date` + CHECK + partial index 2개 (PR17-A) | ✅ |
+| `20260517130000_quotes_e2ee.sql` | `quotes`에 `text_encrypted bytea`/`manual_book_text_encrypted bytea`/`crypto_version smallint`/`is_private boolean` + `text` NOT NULL 해제 + CHECK 재정의 + 잠금 partial index (PR16-A) | ✅ |
+| `20260517140000_user_crypto_envelopes.sql` | `user_crypto_envelopes` 테이블 — E2EE 마스터키 wrap (PR16-A) | ✅ |
+| ⏳ `20260518xxxxxx_follows_and_public_profile.sql` | `follows` 테이블 + `profiles.is_library_public` 컬럼 + RLS 정책 3종(`user_books_friends_read`·`quotes_friends_read`·`follows` self-only) + `follows_followee_idx` (PR18-A) | ⏳ |
 
 작업 방식: 새 마이그레이션 작성 후 `npx --yes supabase db push` (`supabase` 명령은 PATH에 없음 — `npx --yes` 사용, 프롬프트는 `printf 'y\n' |`로 통과).
+
+> **(2026-05-17 갱신 메모)** 위 표에 PR11(cards)·PR16-A(E2EE 2장)·PR17-A(reading_dates)가 본 문서 갱신 직전에 추가됨 — `2.x` 절들은 일부만 반영(별도 정리 PR로 cards·user_crypto_envelopes 정식 절 추가 백로그). ER 다이어그램(§1)과 §7는 V1.0 패키지 현황을 반영해 갱신 완료.
 
 ---
 
 ## 7. V1.5+ 예정 (아직 테이블 없음 — 화면 설계서 참조)
 
-- **`cards`** — 인용구별 카드 디자인 히스토리(템플릿·색·폰트·정렬). `quotes`에 `on delete cascade`. `screens/card-editor.md`·`card-share.md`.
-- **`received_cards`** — deep link로 받은 카드를 내 계정에 복제한 것("받은 카드 함" — V1 홈은 "내 인용 피드"만). `screens/home.md`·`deep-link-receive.md`.
-- **`follows`** — 친구 follow 그래프 + 타임라인. `screens/me.md`("친구 찾기" V1 숨김), `discovery/flows.md` Flow C·E (전부 V1.5).
-- **`quote_likes`** 등 소셜 — V2.
+- **`received_cards`** — deep link로 받은 카드를 내 계정에 복제한 것("받은 카드 함"). **V1.0 PR18 후 재검토** — 현재 받는 사람 화면이 "보낸 사람 서재 보기"(PR18-D 새 동선) + "이 책 담기" 2개로 K-factor 충분한지 데이터로 판정. 충분하면 영구 폐기.
+- **`quote_likes`** / 댓글 — V2 소셜 확장.
+- **`blocks` / `mutes`** — follow 차단·뮤트. PR18은 단방향 + 본인 관련 row만 read이라 V1.5+ 별도 PR. 트리거 = 베타에서 차단 요구 ≥1건.
+- **`request-accept` 양방향 follow** — `follow_requests` 테이블 + UI. V2 슬롯.
+- **`profiles.bio` / 핸들(`@nickname`)** — friend_profile 풀스펙. V1.0은 display_name만, V1.5에 검토.
 
 ---
 
 ## 변경 이력
 - 2026-05-14 초안 — 마이그레이션 7개(`profiles`/`books`/`user_books`/`quotes`/`user_books.rating`/`my_quote_mood_counts`) + Edge Function 2개 정리. Stage 2 PR1~5 기준.
+- 2026-05-17 V1.0 패키지 합류 반영 — ER §1 갱신(`is_library_public`·`started_at`/`finished_at`·E2EE 컬럼·`follows`·`user_crypto_envelopes` 표시), §2.1 `profiles.is_library_public` 행 + RLS 게이트 설명, §2.3 `user_books` RLS에 친구 read 정책 메모, §2.4 `quotes` RLS에 `quotes_friends_read` + `is_private=false` 게이트 메모, §2.5 `follows` 정식 절 신설, §6 마이그레이션 표에 PR11·16-A·17-A·18-A 행 추가, §7 재편(follows를 V1.0으로 이관·received_cards/quote_likes/blocks/request-accept/bio 남김). DECISIONS 2026-05-17 "친구 서재 탐험 V1.0 합류" 참조.

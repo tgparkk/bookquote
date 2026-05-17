@@ -5,6 +5,47 @@
 
 ---
 
+## 2026-05-17 — 친구 서재 탐험 V1.0 합류 (단방향 follow + 프로필 토글 + 잠금 자동 제외)
+
+- **결정**: 친구 follow/타임라인을 V1.5+로 미뤘던 2026-05-12 결정을 부분 뒤집어 V1.0 패키지에 합류. 단 **풀-소셜 X**: ① 모델 = 단방향 follow(트위터식, request-accept 없음) ② 공개 정책 = 프로필 단위 토글 `profiles.is_library_public bool default false`(per-quote `is_public` X) ③ 잠금 인용구(`quotes.is_private = true`, PR16)는 RLS에서 **hard exclude** — 친구 화면에 절대 노출 0% 보장 ④ 친구 발견 = `display_name` 검색 + 카드 공유 deep link → 보낸 사람 서재 두 경로만, 카톡 매칭 X ⑤ 화면 신설 1개(`/u/:userId` 친구 프로필 read-only) + 기존 화면 갱신 2건(Me "친구 찾기" 활성화 + 책 상세 "이 책을 담은 친구 N명" 1줄). BottomNav 슬롯 추가 X, 홈 피드에 친구 인용구 섞기 X — "내 인용 피드" 정체성 사수.
+- **이유**: V1.0 차별화 5가지가 모두 "나" 중심이라 카드 공유는 외부 SNS 의존 → retention 약점. Letterboxd·StoryGraph가 입증한 "이 책을 담은 친구 N명" 한 줄이 retention 후크로 가장 가벼움. 카드 공유 deep link(`?from=share`)는 이미 인프라(PR10·deep_link_handler)가 있어 sender_user_id만 payload에 추가하면 "보낸 사람 서재 보기" 동선 자연. 풀-소셜은 정체성 흔들 위험(2026-05-12 보류 이유) → 단방향 + 부속 진입점 3개로 무게 최소화. PR16(E2EE)의 `is_private` 정책이 친구 탐험의 "공개 vs 비공개" 정책과 자연 호응 — 둘이 같은 한 달 패키지에 들어가는 게 결합 비용 낮음(친구 노출 게이트를 RLS에 한 번만 박음).
+- **알고리즘·모델 선택**:
+  - **공개 정책 = 프로필 단위 토글** (vs per-quote `is_public`) — UI 부담 1번(Me에서 토글), PR16 잠금 토글과 혼동 0(잠금 = "나만 보기"·공개 = "공개 프로필이 ON일 때 친구가 보기"). per-quote는 V1.5 검토 슬롯.
+  - **follow = 단방향** (vs request-accept) — V1 가벼움. `follows(follower_id, followee_id, created_at, PK(follower_id, followee_id))` 1테이블. `follows_followee_idx` 역방향. 차단(`blocks`)·뮤트는 V1.5.
+  - **잠금 hard exclude** — 친구가 read하는 모든 quotes 쿼리에 RLS `using` 조건 `is_private = false`. 정책 단위로 강제 = 클라이언트 버그가 있어도 DB가 막음. PR18-E에 RLS 침투 테스트로 회귀 가드.
+  - **friend_quotes RLS 정책 신규** = `(auth.uid() in (select follower_id from follows where followee_id = quotes.user_id) and exists profile where id = quotes.user_id and is_library_public = true and quotes.is_private = false)`. SELECT 정책 OR로 추가(기존 본인 정책 유지).
+  - **카드 deep link sender** = `cards` 테이블에 `shared_at` 외 별도 컬럼 추가 X. 공유 시 deep link URL에 `&sender=<user_id>` 직접 인코딩(`share_service.dart`). 받는 쪽 `deep_link_handler`가 query 파싱 → `/book/:id?from=share&sender=<uid>` → book_detail의 sender 컨텍스트 배너에 [이 사람 서재 보기] 버튼.
+  - **닉네임 노출 사고 방지** — `display_name`이 가입 시 이메일 local-part 자동 채워짐(현 `handle_new_user_oauth`). 본명 노출 위험. **PR18 prerequisite = Me에 "공개 닉네임 편집" UI** 필수(기본값=현재 display_name 표시 + "공개될 이름이에요" 안내). `is_library_public=true` 토글하기 전 닉네임 확인 다이얼로그 강제.
+- **대안 검토**:
+  - (a) per-quote `is_public bool` 토글 → 거부. 입력 화면에 토글 1개 더, PR16 잠금 토글과 혼동, "공개 1개 / 비공개 99개"의 흔한 패턴이 사실 프로필 단위 토글로 충분.
+  - (b) follow request-accept 양방향 → 거부. V1 무거움. `follow_requests` 테이블 + 거절/대기 UI까지 따라옴. V2 슬롯.
+  - (c) 카톡 친구 매칭 → 거부. 카카오 SDK가 카카오 로그인 의존 → 카카오 로그인 V1.5로 미뤄둔 상태(2026-05-10). 매직링크 only V1.0과 부정합. V1.5에 카카오 로그인과 묶음.
+  - (d) 친구 인용구를 홈 피드에 시간순 섞기 → 거부. "내 인용 피드"가 인스타화. 정체성 사수. 친구 인용구는 친구 프로필에 들어가서만 봄(별도 진입점).
+  - (e) BottomNav 5탭화([친구] 슬롯) → 거부. DECISIONS 2026-05-10 "4탭 위계"·"빈 탭 cold-start 함정" 직접 위반. 신규 가입자 친구 0명에서 [친구] 탭 = 빈 탭.
+  - (f) follows 테이블 없이 누구나 공개 프로필 read → 거부. 친구 컨텍스트가 없으면 "이 책을 담은 친구 N명" 자체가 무의미(전 사용자 카운트는 retention 후크 X). 카드 deep link sender도 "내가 팔로우한 사람"이어야 [팔로우 중] 칩 표시 가능.
+  - (g) Edge Function `friend-explore`로 RLS 우회 + 서버 단위 권한 체크 → 거부. RLS가 정통이고 단위 테스트 가능. Edge는 service_role 필요한 경우만.
+- **영향**:
+  - 마이그레이션 1장: `20260518xxxxxx_follows_and_public_profile.sql` — `follows` 테이블(PK `(follower_id, followee_id)`, 둘 다 cascade) + `profiles.is_library_public bool not null default false` 컬럼 + `follows_followee_idx (followee_id)` + 새 RLS 정책 `quotes_friends_read`/`user_books_friends_read`(둘 다 `is_library_public=true` + `quotes.is_private=false` 게이트) + `profiles` RLS 변경(공개 프로필만 누구나 read, 비공개는 본인만 — 현행 `using(true)` 좁힘).
+  - `pubspec.yaml` 변경 없음(순수 Flutter + supabase_flutter).
+  - `lib/features/follow/` 신규 모듈 — `domain/follow.dart` + `data/follow_repository.dart`(`searchByDisplayName` `ilike` + `follow/unfollow/isFollowing/listFollowing/listFollowers/followersCountForBook`) + `state/follow_providers.dart`.
+  - `lib/features/profile/friend_profile_screen.dart` 신규 (`/u/:userId`) — 공개 책 리스트 + 공개 인용구 무한스크롤(잠금 자동 제외) + [팔로우/언팔로우] 버튼. 비공개 프로필 시 "잠긴 서재" 빈상태.
+  - `me_screen` "친구 찾기" 활성화(현행 숨김 → ListTile 1줄) + 신규 섹션 "내 프로필 공개"(토글 + 닉네임 편집 다이얼로그).
+  - `book_detail_screen` 헤더 메타 다음 "이 책을 담은 친구 N명" 1줄(N≥1일 때만 렌더, 0이면 숨김 — 빈 상태 회피) + 탭 시 시트로 친구 미니리스트.
+  - `share_service.dart` deep link URL에 `&sender=<user_id>` 추가 + `deep_link_handler` 파싱.
+  - `book_detail_screen`의 deep link 진입 배너에 sender가 팔로우 중이면 [이 사람 서재 ▸], 아니면 [팔로우 + 서재 보기] 1탭.
+  - `router.dart`에 `GoRoute(path: '/u/:userId')` 추가. 로그인 가드(deep link도 로그인 필수 — 친구 컨텍스트라).
+  - `delete-account` Edge Function 흐름 변경 없음(`auth.users` cascade가 `follows`도 자동 정리 — 양방향 FK 둘 다 cascade).
+  - PR16(E2EE)·PR17(캘린더)·PR18(친구 탐험) **3 PR이 같은 한 달 패키지**. 결합점 = `quotes`의 `is_private` 컬럼(PR16 추가 → PR18 RLS에서 게이트로 사용). PR16-A 마이그레이션이 PR18-A에 선행. PR18은 PR16-B(quotes 읽기 측 wiring) 닫힌 다음.
+- **재검토 트리거**:
+  - 베타 사용자 ≥2명이 "친구 1명도 못 찾았다" 호소 → PR19로 카톡 친구 매칭(카카오 로그인 V1.5와 묶음) 우선순위 ↑.
+  - "친구 인용구를 홈에서 보고 싶다" 강한 호소 → 별도 [친구] 탭 X, 대신 홈 상단 "이번 주 친구들이 모은 인용구 N개" 1줄 카드 추가 검토(정체성 영향 최소화).
+  - 잠금 인용구 노출 사고 0건이지만 친구 화면에서 책 상세로 갔을 때 "내 잠금 인용구"가 "이 책에서 모은 N구절"에 포함돼 카운트 누수 → `is_private=true` 카운트도 제외하는지 PR18-E 침투 테스트 필수.
+  - 닉네임이 이메일 local-part로 노출되는 사고 ≥1건 → 가입 흐름에 "공개 닉네임 입력" 강제 단계 추가(V1.0.1 hotfix).
+  - "공개 프로필 토글 OFF인데 책 상세 '담은 친구 N명'에 내 닉네임 노출" 사고 → 카운트·미니리스트 둘 다 `is_library_public=true` 게이트 통과한 사용자만 집계.
+- **PR 분할**: **18-A** 마이그레이션 1장(`follows` + `profiles.is_library_public` + RLS 정책 3종) + `follow.dart` 도메인 + `follow_repository` 코어(`follow/unfollow/isFollowing`만) · **18-B** `follow_repository` 검색·카운트(`searchByDisplayName` `ilike` + `followersCountForBook` + `listFollowing/listFollowers`) + Me 신규 섹션 "내 프로필 공개" 토글 + "공개 닉네임" 편집 다이얼로그(prerequisite — `is_library_public=true` 가기 전 강제 확인) · **18-C** `/u/:userId` 친구 프로필 화면(공개 책 + 공개 인용구, 잠금 hard exclude, [팔로우/언팔로우] 버튼) + 라우터 추가 · **18-D** 책 상세 "이 책을 담은 친구 N명" 1줄 + 친구 미니리스트 시트 + `share_service.dart` deep link sender 추가 + `deep_link_handler` sender 파싱 + book_detail sender 배너에 [이 사람 서재 ▸] 1탭 · **18-E** 골든(친구 프로필 비공개·공개 두 상태) + RLS 침투 테스트(잠금 quote 0 row · 비공개 프로필 0 row · 팔로우 안 한 사용자 0 row) + release APK 검증. 각 PR 끝 `flutter analyze` + `flutter test` + release APK 빌드 sanity(`feedback_release_only_traps` 강제).
+
+---
+
 ## 2026-05-17 — 독서 시작·완독일 캘린더 + 마찰 감소 UX 3건 (V1.0 포함)
 
 - **결정**: V1.0에 ① `user_books`에 `started_at date`/`finished_at date` 컬럼 추가(CHECK `finished_at >= started_at`, 둘 다 null 허용 — 시작만 입력하고 아직 안 다 읽은 케이스가 핵심) ② 책 상세에 별점 행 아래 "읽기 시작 / 다 읽음" 1탭 입력 영역(오늘/어제/직접선택 칩, 입력 후 칩 형태 표시 + 재탭=지우기) ③ 서재 탭을 [책]·[인용구]·[캘린더] 3 세그먼트로 확장 — 캘린더 셀 마커는 시작(`accent200` outline)·완독(`accent500` 채움) 두 색 분리, 셀 탭=그 날 책 리스트. 동시에 글로벌 검증된 마찰 감소 UX 3건 채택 — (a) 날짜 기본값=오늘, DatePicker 숨김(Letterboxd·StoryGraph — 왓챠피디아 *평가일=감상일* 실패 지점 직격) (b) 별점 재탭=해제 패턴을 캘린더 칩에도 일관 적용(이미 `StarRating`에 구현됨) (c) 표지 long-press → 액션시트(V1.0.1 후속 PR로 분리).

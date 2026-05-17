@@ -6,7 +6,7 @@
 
 ## 1. 목적 / 진입·이탈 / 라우트
 
-- **목적**: 내 데이터 요약·내보내기, 설정, 정보(스토어 심사 필수 링크), 계정 관리(탈퇴·로그아웃). "친구 찾기"는 V1엔 숨김(follow는 V1.5).
+- **목적**: 내 데이터 요약·내보내기, 설정, 정보(스토어 심사 필수 링크), 계정 관리(탈퇴·로그아웃). **"친구 찾기"는 ⏳ PR18-B에서 V1.0 활성화 예정**(DECISIONS 2026-05-17 친구 서재 탐험 V1.0 합류 — 이전 V1.5 미룸 결정 부분 뒤집음). 함께 신규 섹션 **"내 프로필 공개"**(`profiles.is_library_public` 토글 + "공개 닉네임" 편집 — `is_library_public=true` 가기 전 닉네임 확인 강제).
 - **라우트**: `StatefulShellBranch[3]` `GoRoute(path: '/me')`(BottomNav 4번째 슬롯 — sentinel `[2]` 다음). 인증 가드. 현행 `MeScreen`(ConsumerWidget — 이메일 + 친구찾기 stub + 로그아웃) → 섹션형 `ListView`로 확장.
 - **진입**: BottomNav [나] 탭. **이탈**: 내 데이터 → `/library` / `/library?tab=quotes` / 외부 링크(약관·개인정보·문의 — `url_launcher`) / 탈퇴 다이얼로그 → `/auth/login` / 로그아웃 → `redirect`가 `/auth/login`으로.
 
@@ -47,7 +47,7 @@
 └─────────────────────────────────────────┘
 ```
 
-"친구 찾기" ListTile은 V1엔 **숨김**(렌더 안 함) — 현행의 빈 `onTap: () {}`(탭해도 무반응 = 버그처럼 보임) 제거. 카카오 로그인 placeholder가 핵심 동선에 이미 하나 있는데 또 늘리면 "미완성 앱" 인상이 강해짐.
+**⏳ PR18-B 갱신**: "친구 찾기" ListTile은 V1.0에 **활성화**(DECISIONS 2026-05-17). 현행의 빈 `onTap: () {}` → 친구 검색 시트(`showFriendSearchSheet` — `profiles.display_name` `ilike` 검색 → 결과 ListTile 탭 → `/u/:userId`). 같은 섹션에 신규 ListTile 2개: ① **"내 프로필 공개"** trailing `Switch` (`profiles.is_library_public`. ON 가기 전 "공개 닉네임" 확인 다이얼로그 강제 — 본명 노출 사고 차단) ② **"공개 닉네임"** trailing 현재 `display_name` + `›` (탭=편집 다이얼로그). "팔로잉 N · 팔로워 N" 카운트 행은 "내 데이터" 섹션에 합류(인용구·서재 카운트 옆). 이전 "숨김 사유"(미완성 인상)는 PR18-C·D로 진입 후 풀스크린·책상세 한 줄까지 함께 출시되므로 해소.
 
 ---
 
@@ -81,7 +81,7 @@
 - **프로필 아바타**: 이메일 첫 글자 이니셜을 `AppColors.accent100` 원 안에 `accent700` 텍스트(이미지 아바타 없음 — 매직링크라 프로필 사진 개념 없음). 탭 무동작(V1).
 - **내 데이터**: "인용구 N개" → `context.go('/library?tab=quotes')` / "서재 N권" → `context.go('/library')` / "Markdown으로 내보내기" → 전체 인용구를 책별 그룹 + 메타로 `.md` 생성 → `share_plus`.
 - **다크모드**: V1 = trailing "시스템 설정" 텍스트(읽기 전용). V1.5에 `[시스템/라이트/다크]` 세그먼트 + `themeProvider` + `darkTheme`.
-- **알림 / 친구 찾기**: 알림 = trailing "곧 추가될 기능" + `enabled: false`. 친구 찾기 = **숨김**(렌더 안 함 — 현행 빈 `onTap: () {}` 제거).
+- **알림 / 친구 찾기**: 알림 = trailing "곧 추가될 기능" + `enabled: false`. **친구 찾기 = ⏳ PR18-B 활성화** — 빈 콜백 제거하고 `showFriendSearchSheet` 연결(`display_name` `ilike` 검색 + 결과 ListTile → `/u/:userId`). 같은 PR에서 "내 프로필 공개" Switch + "공개 닉네임" 편집 ListTile 추가.
 - **정보 링크**: `url_launcher`로 외부. 약관·개인정보처리방침 = 호스팅된 정적 페이지(GitHub Pages/Notion 등) — 스토어 심사 필수, V1 출시 전 URL 확보. 문의 = `mailto:` 또는 간단 폼.
 - **앱 버전**: `package_info_plus`로 `"$version ($buildNumber)"`. (7연속 탭 → 디버그 — 선택, V1 불필요.)
 - **로그아웃**: 현행 `ref.read(authControllerProvider.notifier).signOut()` 유지 — 단 **앞에 아웃박스 체크 다이얼로그 추가**(§3). 성공 시 `redirect`가 `/auth/login`으로.
@@ -92,7 +92,7 @@
 | 현행 `me_screen.dart` | 그룹 2 설계 |
 |---|---|
 | `Text(session?.user.email ?? '로그인 정보 없음')` | 프로필 영역(이니셜 아바타 + 이메일 + "로그인됨"/"확인 중…"/"로그인 정보 없음"), 오버플로 처리 |
-| `ListTile('친구 찾기', onTap: () {})` ← 빈 콜백 | **숨김**(렌더 안 함) — 무반응 흠 제거 |
+| `ListTile('친구 찾기', onTap: () {})` ← 빈 콜백 | **⏳ PR18-B 활성화** — `showFriendSearchSheet` 연결 + "내 프로필 공개" Switch + "공개 닉네임" 편집 |
 | `OutlinedButton.icon(... signOut())` 즉시 실행 | 같은 버튼 + 앞에 아웃박스 대기 시 경고 Modal |
 | 로딩 상태 = `isLoading` → "로그아웃 중…" | 그대로 유지 |
 | (없음) | "내 데이터"·"설정"·"정보" 3섹션 + Markdown export + 약관·개인정보·버전·문의 + 회원 탈퇴 2단계 |
@@ -148,3 +148,4 @@
 
 ## 변경 이력
 - 2026-05-12 초안 (매니저 종합 — competitor-screen-analysis §5.6 + Phase B 가상 팀). 출시 블로커: in-app 계정 삭제·약관/개인정보 링크. 친구 찾기 = 숨김, 다크모드 토글 = V1.5.
+- 2026-05-17 친구 찾기 V1.0 활성화 결정 반영 (DECISIONS 2026-05-17 "친구 서재 탐험 V1.0 합류"). 5군데 갱신: §1 목적, §2 와이어프레임 메모, §4 알림/친구찾기 행, §4 현행 코드 비교 표, 신규 섹션 "내 프로필 공개" Switch + "공개 닉네임" 편집 ListTile + "팔로잉/팔로워" 카운트 합류. 본명 노출 사고 차단을 위해 `is_library_public=true` 토글 ON 가기 전 닉네임 확인 강제(prerequisite). 세부 = `friend-profile.md`, RLS = `db-schema.md §2.5`.

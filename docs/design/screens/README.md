@@ -24,8 +24,9 @@
 | 3 | 로그인 | `/auth/login` | ✅ **구현** (Stage 1) | `lib/features/auth/login_screen.dart` · `auth_controller.dart` | [`login.md`](login.md) |
 | 3 | 인증 콜백 | `/auth/callback` · `/callback` | ✅ **구현** (Stage 1) | `lib/features/auth/auth_callback_screen.dart` | [`auth-callback.md`](auth-callback.md) |
 | 3 | 책 검색 시트 | (모달, 서재·인용입력에서) | ✅ **구현** (Stage 1) | `lib/features/book/presentation/book_search_sheet.dart` | [`book-search-sheet.md`](book-search-sheet.md) |
+| 4 | 친구 프로필 (공개 책+공개 인용구 read-only) | `/u/:userId` | ⏳ **명세** — PR18-C 예정 | (예정) `lib/features/profile/friend_profile_screen.dart` | [`friend-profile.md`](friend-profile.md) |
 
-✅ 구현·동작 / 🟡 일부 구현(다음 PR에서 보강) / ⏳ 스텁·미구현(Stage 3). 라우트·구조 진실 = `lib/app/router.dart`. 동선 = `docs/app-scenarios.md`.
+✅ 구현·동작 / 🟡 일부 구현(다음 PR에서 보강) / ⏳ 스텁·미구현(Stage 3 또는 명세만). 라우트·구조 진실 = `lib/app/router.dart`. 동선 = `docs/app-scenarios.md`. 그룹 4(소셜) = DECISIONS 2026-05-17 친구 서재 탐험 V1.0 합류로 신설.
 
 > 화면 설계 문서 13개 1차 작성 완료(2026-05-12). 그룹 3 역정리 문서들은 §7에 "현행 동작"(코드 기준) + "수정·보강 권고"를 분리해 담았는데, 그 권고 상당수는 Stage 2 PR1~5에서 함께 처리됨(raw `$e` 노출 제거, 잘못된 "서재 추가" 토스트 제거, `me_screen` 빈 `onTap`·긴 이메일 오버플로 등). 남은 권고·버그는 각 문서 §7 + `docs/STAGES.md` 백로그 + 세션 로그(`docs/sessions/2026-05-12-screen-design-b.md` ~ `2026-05-14-stage2-pr5.md`).
 
@@ -44,13 +45,18 @@
    /callback  ✅ │         /quote/new[?bookId=]   인용구 입력 (직접 입력 / 클립보드 붙여넣기)  ✅
                  │           └─ "카드 만들기 →" ──push──▶ /quote/:id/card  카드 에디터  ⏳ 스텁(Stage 3)
    게스트 허용 ◀─┘                                          └─ "공유" ──▶ 공유·저장 시트(모달)  ⏳
-   /book/:id[?from=]   ✅ read-only(보강 PR6)                            └─ 카카오톡 → 받는 사람  ⏳
+   /book/:id[?from=&sender=]  ✅ read-only(+친구 N명·sender 배너 ⏳ PR18-D)         └─ 카카오톡 → 받는 사람  ⏳
         ▲
-        └── 받는 사람 deep link: io.github.tgparkk.bookquote://book/:id?from=share   ⏳ deep_link_handler 일반화(PR6)
-              ├─ 로그인됨   → 책 상세 + "내 서재 담기" 1탭
+        └── 받는 사람 deep link: io.github.tgparkk.bookquote://book/:id?from=share&sender=<uid>   ⏳ deep_link_handler 일반화 + sender 파싱(PR6+PR18-D)
+              ├─ 로그인됨   → 책 상세 + "내 서재 담기" 1탭 + [이 사람 서재 ▸](sender 공개 프로필이면)
               └─ 미로그인   → 책 상세 read-only → "담기" → /auth/login → 복귀해서 담기
 
+  /u/:userId           ⏳ 친구 프로필 (PR18-C) — 공개 책 + 공개 인용구 read-only, [팔로우/언팔로우]
+                          진입 = Me 친구찾기·책상세 친구 미니리스트·카드 deep link sender 배너·팔로잉/팔로워 시트
+                          본인 자신 진입 → context.go('/me') redirect
+
   모달 시트(어느 셸 탭에서도): showBookSearchSheet  (알라딘 검색 + 캐시 사전조회)  ✅
+                            showFriendSearchSheet (profiles.display_name ilike) ⏳ PR18-B
 ```
 
 ✅ 구현 / ⏳ 스텁·미구현(다음 PR 또는 Stage 3). 탭 구조·풀스크린 규칙·게스트 라우트는 `DECISIONS.md 2026-05-10 (go_router 구조)` + `lib/app/router.dart`가 진실. 홈 = "내 인용 피드"(`DECISIONS 2026-05-12` — "받은 카드 함"·follow 타임라인 합류는 V1.5). 서재 책 카드 "N구절 배지"·"표지색 띠"는 STAGES 백로그.

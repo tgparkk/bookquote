@@ -64,6 +64,21 @@
 └─────────────────────────────────────────┘
 ```
 
+### ⏳ PR18 추가 보강 (친구 서재 탐험 V1.0 합류)
+
+**일반 진입 와이어프레임에 1줄 추가** — "이 책에서 모은 구절" 헤더 *위*에:
+
+```
+│ 👥  이 책을 담은 친구 3명  ▸               │  탭=시트 미니리스트(아바타·display_name·
+│                                          │  팔로우 상태). N≥1일 때만 렌더(0이면 숨김).
+```
+
+`book_repository.followersForBook(bookId, limit:5)` — `user_books inner join follows ... join profiles where is_library_public=true`. RLS가 게이트(`user_books_friends_read` 정책). 미니리스트 항목 탭 → `/u/:userId`(friend-profile.md).
+
+**deep link 진입 와이어프레임에 1탭 옵션 추가** — `?sender=<uid>`가 deep link URL에 박혀 있으면 "보낸 사람 컨텍스트 박스" 우하단에 `[이 사람 서재 ▸]` TextButton 추가. 탭 → `/u/:sender`. sender가 비공개 프로필이거나 미존재면 버튼 숨김(친구 화면 도달 후 "잠긴 서재" 빈상태로 빠지는 사용자 경험 회피 — 사전 차단).
+
+세부 = `friend-profile.md`. RLS 정책 = `db-schema.md §2.5`.
+
 ---
 
 ## 3. 상태
