@@ -140,7 +140,11 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
   }
 
   void _openEditor() {
-    context.go('/quote/${widget.quoteId}/card');
+    // PR14-G W8: push로 변경 — 기존 go는 quick_share 스택을 교체해 카드 에디터에서
+    // 뒤로가기 시 홈으로 직행, "디자인 편집 → 다시 공유" 시나리오(S6)가 단절됨.
+    // push로 두면 에디터에서 뒤로 = quick_share 복귀 + [다시 공유] 1탭. 본 화면의
+    // `_autoSheetTriggered=true`라 복귀 시 자동 시트는 재발하지 않음.
+    context.push('/quote/${widget.quoteId}/card');
   }
 
   @override
