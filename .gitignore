@@ -54,3 +54,6 @@ app.*.map.json
 
 # 작업용 스크린샷 (루트에 저장된 PNG만)
 /*.png
+
+# DB 수동 백업 (`supabase db dump` 결과) — 사용자 개인정보 포함이라 절대 push 금지
+backup/
