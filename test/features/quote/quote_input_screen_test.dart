@@ -1,11 +1,30 @@
 import 'package:bookquote/features/quote/quote_input_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
+  });
+
+  void mockClipboard({required String text, required bool hasStrings}) {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.hasStrings') {
+        return <String, dynamic>{'value': hasStrings};
+      }
+      if (call.method == 'Clipboard.getData') {
+        return <String, dynamic>{'text': text};
+      }
+      return null;
+    });
+  }
 
   Future<void> pumpScreen(WidgetTester tester) async {
     await tester.pumpWidget(
@@ -52,5 +71,48 @@ void main() {
     await tester.pump();
 
     expect(find.textContaining('고를 수 있어요'), findsOneWidget); // 한도 SnackBar
+  });
+
+  testWidgets('페이지 0 입력 시 안내 SnackBar가 뜨고 저장이 차단된다 (B5)',
+      (tester) async {
+    await pumpScreen(tester);
+
+    // 본문 채우기 — CTA 활성화 조건
+    await tester.enterText(find.byType(TextField).first, '한 줄 인용구');
+    await tester.pump();
+    // 페이지 0 입력
+    await tester.enterText(find.byType(TextField).at(1), '0');
+    await tester.pump();
+
+    await tester.tap(find.widgetWithText(ElevatedButton, '카드 만들기 →'));
+    await tester.pump();
+
+    expect(find.textContaining('쪽수는 1 이상이어야'), findsOneWidget);
+  });
+
+  testWidgets('클립보드 텍스트가 2000자를 넘으면 truncate되고 안내 SnackBar가 뜬다 (B6)',
+      (tester) async {
+    final longText = 'ㄱ' * 2001;
+    mockClipboard(text: longText, hasStrings: true);
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: QuoteInputScreen()),
+      ),
+    );
+    // postFrame _bootstrap → _checkClipboard async → 배너 표시까지 두어 번 pump.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('붙여넣기'), findsOneWidget,
+        reason: '클립보드에 텍스트 있으므로 배너 표시');
+    await tester.tap(find.text('붙여넣기'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // 본문 TextField에 truncate된 텍스트 (2000자)
+    final body = tester.widget<TextField>(find.byType(TextField).first);
+    expect(body.controller!.text.runes.length, 2000);
+    expect(find.textContaining('앞부분만 붙여넣었어요'), findsOneWidget);
   });
 }

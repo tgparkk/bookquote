@@ -216,10 +216,27 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
     if (!mounted) return;
     setState(() => _showPasteBanner = false);
     if (text == null || text.isEmpty) return;
+
+    // 2000자 초과는 runes 기준으로 잘라넣고 안내 — DB CHECK(text 1~2000) 위반
+    // 차단 + 사용자가 직접 잘라야 하는 마찰 해소(B6).
+    final runeCount = text.runes.length;
+    final wasTruncated = runeCount > _maxLen;
+    if (wasTruncated) {
+      text = String.fromCharCodes(text.runes.take(_maxLen));
+    }
+
     _source = QuoteSource.clipboard;
     _textController.text = text;
     _textController.selection =
         TextSelection.collapsed(offset: _textController.text.length);
+
+    if (wasTruncated) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          content: Text('$_maxLen자가 넘어 앞부분만 붙여넣었어요.'),
+        ));
+    }
   }
 
   // ── 입력 변경 ──────────────────────────────────────────
@@ -301,6 +318,21 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
   Future<void> _submit({required bool thenCard}) async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
+
+    // page는 1 이상이어야 함 — DB CHECK(page > 0). 0 입력 시 generic 에러 대신
+    // 명확히 안내하고 차단(B5).
+    final pageText = _pageController.text.trim();
+    if (pageText.isNotEmpty) {
+      final page = int.tryParse(pageText);
+      if (page != null && page <= 0) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(const SnackBar(
+            content: Text('쪽수는 1 이상이어야 해요. 비워두면 "모름"으로 저장돼요.'),
+          ));
+        return;
+      }
+    }
     _draftDebounce?.cancel();
 
     final messenger = ScaffoldMessenger.of(context);
