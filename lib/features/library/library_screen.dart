@@ -17,6 +17,7 @@ import '../book/presentation/widgets/book_cover.dart';
 import '../book/state/book_providers.dart';
 import '../quote/domain/quote_mood.dart';
 import '../quote/presentation/quote_list_view.dart';
+import 'presentation/calendar_segment.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
@@ -26,7 +27,7 @@ class LibraryScreen extends ConsumerStatefulWidget {
 }
 
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
-  int _tab = 0; // 0 = 책, 1 = 인용구
+  int _tab = 0; // 0 = 책, 1 = 인용구, 2 = 캘린더 (PR17-C)
   QuoteMood? _initialMood;
   bool _readQuery = false;
 
@@ -37,6 +38,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     _readQuery = true;
     final q = GoRouterState.of(context).uri.queryParameters;
     if (q['tab'] == 'quotes') _tab = 1;
+    if (q['tab'] == 'calendar') _tab = 2;
     final moodName = q['mood'];
     if (moodName != null) _initialMood = QuoteMood.fromName(moodName);
   }
@@ -81,9 +83,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             onChanged: (i) => setState(() => _tab = i),
           ),
           Expanded(
-            child: _tab == 0
-                ? const _BookTab()
-                : QuoteListView(initialMood: _initialMood),
+            child: switch (_tab) {
+              0 => const _BookTab(),
+              1 => QuoteListView(initialMood: _initialMood),
+              _ => const CalendarSegment(),
+            },
           ),
         ],
       ),
@@ -116,6 +120,7 @@ class _SegmentHeader extends StatelessWidget {
         segments: const [
           ButtonSegment(value: 0, label: Text('책')),
           ButtonSegment(value: 1, label: Text('인용구')),
+          ButtonSegment(value: 2, label: Text('캘린더')),
         ],
         selected: {tab},
         showSelectedIcon: false,

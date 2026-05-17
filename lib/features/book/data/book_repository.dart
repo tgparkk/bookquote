@@ -15,6 +15,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/supabase/supabase_init.dart';
 import '../domain/book.dart';
 import '../domain/reading_dates.dart';
+import '../domain/user_book_on_day.dart';
 import 'aladin_dto.dart';
 
 class BookRepositoryException implements Exception {
@@ -300,6 +301,44 @@ class BookRepository {
         );
       }
       throw BookRepositoryException('SET_READING_DATE_FAILED', e.message);
+    }
+  }
+
+  /// 캘린더 마커용 — `(user_id, started_at∪finished_at in [first, next))`인 user_books
+  /// row를 books join + 별점과 함께 가져온다. provider가 `buildCalendarMarkers`로
+  /// 날짜별 grouping. partial index 2개로 풀 스캔 회피(20260517 마이그레이션 참조).
+  Future<List<UserBookReadingRow>> listCalendarMarkers({
+    required int year,
+    required int month,
+  }) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return const [];
+
+    final firstDay = formatReadingDate(DateTime(year, month, 1));
+    final nextMonth = formatReadingDate(DateTime(year, month + 1, 1));
+
+    try {
+      final rows = await _client
+          .from(_userBooksTable)
+          .select('rating, started_at, finished_at, book:books(*)')
+          .eq('user_id', uid)
+          .or(
+            'and(started_at.gte.$firstDay,started_at.lt.$nextMonth),'
+            'and(finished_at.gte.$firstDay,finished_at.lt.$nextMonth)',
+          );
+
+      return rows
+          .map(
+            (r) => UserBookReadingRow(
+              book: Book.fromJson(r['book'] as Map<String, dynamic>),
+              startedAt: parseReadingDate(r['started_at'] as String?),
+              finishedAt: parseReadingDate(r['finished_at'] as String?),
+              rating: (r['rating'] as num?)?.toInt(),
+            ),
+          )
+          .toList();
+    } on PostgrestException catch (e) {
+      throw BookRepositoryException('LIST_CALENDAR_FAILED', e.message);
     }
   }
 
