@@ -10,6 +10,10 @@
 //
 // [ensureMasterKeyReady] — caller 진입점. envelope/캐시 상태 보고 위 둘 중 하나
 // 또는 즉시 true. 반환 = true(이제 잠금 인용구 만들 수 있음) / false(취소·실패).
+//
+// [showPrivateShareWarningDialog] — PR16-C-2. 잠금 인용구를 카드로 만들어 공유하기
+// 직전 "이미지에는 평문이 박힙니다" 경고. 사용자가 본문 보안과 카드 공유의 의미를
+// 혼동하지 않도록 1회 명시 확인. true = 그래도 공유 / false = 취소.
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/material.dart';
@@ -315,5 +319,57 @@ class _UnlockDialogState extends ConsumerState<UnlockDialog> {
       ],
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────
+// 잠금 인용구 공유 직전 평문 경고
+// ─────────────────────────────────────────────────────────
+
+/// 잠금 인용구를 카드 이미지로 공유하기 직전 1회 노출. 본문 보안과 이미지 공유의
+/// 의미를 혼동하지 않게 — 카드 PNG에는 인용구가 평문으로 박힌다는 사실을 명시.
+///
+/// 반환 = true(그래도 공유) / false(취소). 사용자가 외부 영역 탭으로 닫으면
+/// `barrierDismissible: false`라 동작하지 않고 명시 버튼만 받는다.
+Future<bool> showPrivateShareWarningDialog(BuildContext context) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogCtx) {
+      final textTheme = Theme.of(dialogCtx).textTheme;
+      return AlertDialog(
+        title: const Text('잠금 인용구 공유'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '본문은 잠겨 있지만, 카드 이미지에는 인용구가 평문으로 박혀요. '
+              '이 이미지를 공유하면 받는 사람이 본문을 볼 수 있어요.',
+              style: textTheme.bodyMedium?.copyWith(color: AppColors.primary700),
+            ),
+            const SizedBox(height: AppSpacing.s2),
+            Text(
+              '※ 카톡·인스타·갤러리 어디든 한 번 나가면 회수할 수 없어요.',
+              style: textTheme.bodySmall?.copyWith(
+                color: AppColors.semanticError,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            child: const Text('그래도 공유'),
+          ),
+        ],
+      );
+    },
+  );
+  return ok == true;
 }
 

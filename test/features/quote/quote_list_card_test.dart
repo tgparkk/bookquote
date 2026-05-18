@@ -98,4 +98,55 @@ void main() {
       expect(del, 1);
     });
   });
+
+  group('잠금 인용구 (PR16-C-2)', () {
+    Quote privateQuote({String? text}) => Quote(
+          id: 'q-private',
+          userId: 'u1',
+          text: text,
+          isPrivate: true,
+          moods: const <QuoteMood>[],
+          createdAt: DateTime(2026, 5, 18),
+          updatedAt: DateTime(2026, 5, 18),
+        );
+
+    testWidgets('isPrivate=true + text 있음 → 🔒 라벨 + 본문 그대로 노출', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: QuoteListCard(
+              quote: privateQuote(text: '복호화된 잠긴 본문'),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('잠금'), findsOneWidget);
+      expect(find.byIcon(Icons.lock_outline_rounded), findsOneWidget);
+      expect(find.text('복호화된 잠긴 본문'), findsOneWidget);
+    });
+
+    testWidgets('isPrivate=true + text 비어있음 → "이 기기에서 잠겼어요" placeholder', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: QuoteListCard(quote: privateQuote(text: null)),
+          ),
+        ),
+      );
+      expect(find.text('잠금'), findsOneWidget);
+      expect(find.text('이 기기에서 잠겼어요'), findsOneWidget);
+    });
+
+    testWidgets('isPrivate=false 평문은 🔒 라벨 미노출', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: QuoteListCard(quote: _quote()),
+          ),
+        ),
+      );
+      expect(find.text('잠금'), findsNothing);
+      expect(find.byIcon(Icons.lock_outline_rounded), findsNothing);
+    });
+  });
 }

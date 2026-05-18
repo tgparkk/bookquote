@@ -46,6 +46,12 @@ class QuoteListCard extends StatelessWidget {
       if (author != null && author.isNotEmpty) author,
       if (quote.page != null) 'p.${quote.page}',
     ].join(' · ');
+    // PR16-C-2: 잠금 인용구는 🔒 라인 + 키 없음(text 비어있음)이면 placeholder.
+    final isPrivate = quote.isPrivate;
+    final hasReadableText = quote.text != null && quote.text!.isNotEmpty;
+    final displayText = hasReadableText
+        ? quote.text!
+        : (isPrivate ? '이 기기에서 잠겼어요' : '');
 
     return Card(
       margin: EdgeInsets.zero,
@@ -65,17 +71,48 @@ class QuoteListCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (isPrivate)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.s1),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const <Widget>[
+                            Icon(
+                              Icons.lock_outline_rounded,
+                              size: 12,
+                              color: AppColors.accent600,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              '잠금',
+                              style: TextStyle(
+                                fontFamily: AppFonts.ui,
+                                fontSize: AppFontSize.xxs,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.accent600,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     Text(
-                      quote.text ?? '',
+                      displayText,
                       maxLines: expanded ? null : 3,
                       overflow: expanded ? null : TextOverflow.ellipsis,
                       // 산세리프(스캔용) — 세리프 NotoSerifKR은 공유 카드(감상용) 전용.
+                      // 키 없는 잠금 인용구는 placeholder 톤(italic + 회색).
                       style: TextStyle(
                         fontFamily: AppFonts.ui,
                         fontSize: AppFontSize.base,
                         fontWeight: FontWeight.w500,
                         height: AppLineHeight.relaxed,
-                        color: AppColors.primary800,
+                        color: hasReadableText
+                            ? AppColors.primary800
+                            : AppColors.primary400,
+                        fontStyle: hasReadableText
+                            ? FontStyle.normal
+                            : FontStyle.italic,
                       ),
                     ),
                     if (meta.isNotEmpty)

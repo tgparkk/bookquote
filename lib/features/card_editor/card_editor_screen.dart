@@ -16,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/tokens.dart';
+import '../crypto/presentation/lock_dialogs.dart';
 import 'data/card_renderer.dart';
 import 'data/card_repository.dart';
 import 'data/color_utils.dart';
@@ -91,6 +92,9 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
           ),
           data: (data) {
             if (data == null) return const _NotFoundView();
+            // PR16-C-2: 잠금 + 키 없음 — 편집·공유 자체를 막고 안내. controller
+            // 초기화도 건너뜀(잠금 인용구라 추천 디자인 의미 없음).
+            if (data.isLockedAndUnreadable) return const _LockedView();
             if (!_initialized) {
               _initialized = true;
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -102,8 +106,9 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
         ),
       ),
       // F4: [공유] 버튼을 AppBar 우상단 → 하단 Full-width로 이동. 한 손 엄지 도달
-      // 보장(S1·S14 페르소나). data 있을 때만 노출.
-      bottomNavigationBar: data == null ? null : _buildShareBar(data),
+      // 보장(S1·S14 페르소나). data 있을 때만 노출. 잠금 + 키 없음이면 숨김.
+      bottomNavigationBar:
+          data == null || data.isLockedAndUnreadable ? null : _buildShareBar(data),
     );
   }
 
@@ -244,6 +249,12 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
 
   Future<void> _onShareTap(QuoteCardData data, CardRatio ratio) async {
     if (_isSharing) return;
+    // PR16-C-2: 잠금 인용구는 공유 직전 평문 경고 — 본문 잠금과 이미지 공유의
+    // 의미를 혼동하지 않게. 사용자 [취소]면 공유 흐름 중단(_isSharing 토글 전).
+    if (data.isPrivate) {
+      final ok = await showPrivateShareWarningDialog(context);
+      if (!ok || !mounted) return;
+    }
     setState(() => _isSharing = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -982,6 +993,43 @@ class _ErrorView extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.s4),
             FilledButton(onPressed: onRetry, child: const Text('다시 시도')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 잠금 인용구이지만 이 기기에서 본문 복호화 키가 준비되지 않은 상태.
+/// PR16-C-2 — 편집·공유 진입을 봉쇄하고 사용자에게 잠금 해제 경로를 안내.
+class _LockedView extends StatelessWidget {
+  const _LockedView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.s8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Icon(
+              Icons.lock_outline_rounded,
+              size: 56,
+              color: AppColors.primary400,
+            ),
+            const SizedBox(height: AppSpacing.s4),
+            Text(
+              '이 기기에서 잠긴 인용구',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.s2),
+            const Text(
+              '본문이 잠겨 있어요. 인용구 입력 화면에서 잠금을 해제하거나\n'
+              '다른 기기의 잠금 비밀번호로 풀면 카드로 만들 수 있어요.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.primary500),
+            ),
           ],
         ),
       ),

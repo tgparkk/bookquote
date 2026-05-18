@@ -139,4 +139,50 @@ void main() {
       expect(find.byType(UnlockDialog), findsNothing);
     });
   });
+
+  group('showPrivateShareWarningDialog (PR16-C-2)', () {
+    Future<void> openWarning(WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () => showPrivateShareWarningDialog(context),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('경고 제목·평문 박힘 카피·두 버튼 노출', (tester) async {
+      await openWarning(tester);
+      expect(find.text('잠금 인용구 공유'), findsOneWidget);
+      expect(
+        find.textContaining('카드 이미지에는 인용구가 평문으로'),
+        findsOneWidget,
+      );
+      expect(find.text('취소'), findsOneWidget);
+      expect(find.text('그래도 공유'), findsOneWidget);
+    });
+
+    testWidgets('[취소] 탭 → 다이얼로그 닫힘', (tester) async {
+      await openWarning(tester);
+      await tester.tap(find.text('취소'));
+      await tester.pumpAndSettle();
+      expect(find.text('잠금 인용구 공유'), findsNothing);
+    });
+
+    testWidgets('[그래도 공유] 탭 → 다이얼로그 닫힘', (tester) async {
+      await openWarning(tester);
+      await tester.tap(find.text('그래도 공유'));
+      await tester.pumpAndSettle();
+      expect(find.text('잠금 인용구 공유'), findsNothing);
+    });
+  });
 }

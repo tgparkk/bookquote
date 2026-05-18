@@ -24,12 +24,13 @@ final quoteCardDataProvider = FutureProvider.autoDispose
 
   return QuoteCardData(
     // 잠금 인용구는 복호화된 text가 채워져 있거나, 키 없으면 null →
-    // 카드 에디터 fallback view(PR16-C)가 isPrivate로 분기 처리.
+    // 카드 에디터/quick_share가 isLockedAndUnreadable로 잠금 안내 화면 분기 (PR16-C-2).
     quoteText: quote.text ?? '',
     bookId: book?.id,
     bookTitle: book?.title ?? quote.manualBookText,
     bookAuthor: book?.author,
     bookPublisher: book?.publisher,
     coverUrl: book?.coverUrl,
+    isPrivate: quote.isPrivate,
   );
 });
