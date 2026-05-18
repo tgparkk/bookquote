@@ -227,7 +227,7 @@ user_crypto_envelopes⏳ PK = user_id                    — E2EE 마스터키 w
 | `20260518xxxxxx_user_books_reading_dates.sql` | `user_books`에 `started_at`/`finished_at date` + CHECK + partial index 2개 (PR17-A) | ✅ |
 | `20260517130000_quotes_e2ee.sql` | `quotes`에 `text_encrypted bytea`/`manual_book_text_encrypted bytea`/`crypto_version smallint`/`is_private boolean` + `text` NOT NULL 해제 + CHECK 재정의 + 잠금 partial index (PR16-A) | ✅ |
 | `20260517140000_user_crypto_envelopes.sql` | `user_crypto_envelopes` 테이블 — E2EE 마스터키 wrap (PR16-A) | ✅ |
-| ⏳ `20260518120000_follows_and_public_profile.sql` | `follows` 테이블 + `profiles.is_library_public` 컬럼 + `profiles.public_handle text unique` 컬럼(V1.0.1 hotfix 대비, DECISIONS 2026-05-18) + RLS 정책 3종(`user_books_friends_read`·`quotes_friends_read`·`follows` self-only) + `profiles` SELECT RLS 좁힘(`is_library_public = true OR id = auth.uid()`) + `follows_followee_idx` (PR18-A 작성, **git only / 원격 push 보류 — PR18-B 시작 시 첫 작업**, PR16-A 패턴 일관) | ⏳ |
+| `20260518120000_follows_and_public_profile.sql` | `follows` 테이블 + `profiles.is_library_public` 컬럼 + `profiles.public_handle text unique` 컬럼(V1.0.1 hotfix 대비, DECISIONS 2026-05-18) + RLS 정책 3종(`user_books_friends_read`·`quotes_friends_read`·`follows` self-only) + `profiles` SELECT RLS 좁힘(`is_library_public = true OR id = auth.uid()`) + `follows_followee_idx` (PR18-A 작성 / **PR18-B 시작 시 원격 push 완료** 2026-05-18, project `ndbvptxwznogcuuumzzh`) | ✅ |
 
 작업 방식: 새 마이그레이션 작성 후 `npx --yes supabase db push` (`supabase` 명령은 PATH에 없음 — `npx --yes` 사용, 프롬프트는 `printf 'y\n' |`로 통과).
 

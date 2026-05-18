@@ -15,6 +15,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/tokens.dart';
 import '../account/account_deletion.dart';
 import '../auth/auth_controller.dart';
+import '../profile/presentation/profile_settings_tiles.dart';
 import '../quote/data/quote_outbox.dart';
 import 'data/quote_export.dart';
 import 'state/me_providers.dart';
@@ -63,13 +64,25 @@ class MeScreen extends ConsumerWidget {
             ),
           ],
 
+          if (loggedIn) ...[
+            const _SectionHeader('친구'),
+            _ActionTile(
+              icon: Icons.people_outline,
+              title: '친구 찾기',
+              onTap: () => context.push('/me/friend-search'),
+            ),
+          ],
+
           const _SectionHeader('설정'),
-          if (loggedIn)
+          if (loggedIn) ...[
+            const ProfilePublicToggleTile(),
+            const DisplayNameTile(),
             _ActionTile(
               icon: Icons.key_outlined,
               title: '잠금 비밀번호',
               onTap: () => context.push('/me/lock-password'),
             ),
+          ],
           const _ValueTile(
             icon: Icons.brightness_6_outlined,
             title: '다크 모드',

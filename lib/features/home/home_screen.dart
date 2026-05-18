@@ -19,6 +19,7 @@ import '../quote/presentation/widgets/quote_list_card.dart';
 import '../quote/presentation/widgets/recall_card.dart';
 import '../quote/state/quote_feed_provider.dart';
 import '../quote/state/quote_providers.dart';
+import 'presentation/widgets/friend_search_cta.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -130,6 +131,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         children: [
           const OutboxBanner(),
           const RecallCard(),
+          // PR18-B: 인용구 ≥1이고 친구 0명일 때만 친구 찾기 CTA 노출
+          // (인용구 0개일 땐 빈상태 CTA가 우선 — 진입점 마찰 해소, qa-tester 권고).
+          if (feed.value?.isNotEmpty ?? false) const FriendSearchCta(),
           Expanded(
             child: RefreshIndicator(
               onRefresh: () => ref.read(quoteFeedProvider.notifier).refresh(),

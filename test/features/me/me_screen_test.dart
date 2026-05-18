@@ -57,8 +57,8 @@ void main() {
     // 계정
     expect(find.widgetWithText(OutlinedButton, '로그아웃'), findsOneWidget);
     expect(find.widgetWithText(TextButton, '회원 탈퇴'), findsOneWidget);
-    // 친구 찾기는 V1엔 숨김
-    expect(find.text('친구 찾기'), findsNothing);
+    // 친구 — PR18-B에서 V1.0 활성화 (DECISIONS 2026-05-18)
+    expect(find.text('친구 찾기'), findsOneWidget);
   });
 
   testWidgets('비로그인 상태(도달 시) — 내 데이터 숨김 + [로그인하기], 회원 탈퇴 없음', (tester) async {
