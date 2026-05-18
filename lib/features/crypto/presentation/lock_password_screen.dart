@@ -35,8 +35,8 @@ enum LockPasswordState {
 }
 
 /// (envelope, cachedKey 여부) 동시 조회. 둘 다 비동기지만 같이 봐야 4분기가 결정됨.
-class _LockSnapshot {
-  const _LockSnapshot({required this.envelope, required this.hasCachedKey});
+class LockSnapshot {
+  const LockSnapshot({required this.envelope, required this.hasCachedKey});
   final CryptoEnvelope? envelope;
   final bool hasCachedKey;
 
@@ -47,12 +47,12 @@ class _LockSnapshot {
   }
 }
 
-final _lockSnapshotProvider = FutureProvider.autoDispose<_LockSnapshot>((ref) async {
+final _lockSnapshotProvider = FutureProvider.autoDispose<LockSnapshot>((ref) async {
   final envelopeRepo = ref.watch(envelopeRepositoryProvider);
   final keyService = ref.watch(keyServiceProvider);
   final envelope = await envelopeRepo.getMine();
   final cached = await keyService.cachedMasterKey();
-  return _LockSnapshot(envelope: envelope, hasCachedKey: cached != null);
+  return LockSnapshot(envelope: envelope, hasCachedKey: cached != null);
 });
 
 class LockPasswordScreen extends ConsumerWidget {
@@ -69,17 +69,19 @@ class LockPasswordScreen extends ConsumerWidget {
           error: (_, _) => _ErrorView(
             onRetry: () => ref.invalidate(_lockSnapshotProvider),
           ),
-          data: (snap) => _Body(snapshot: snap),
+          data: (snap) => LockPasswordBody(snapshot: snap),
         ),
       ),
     );
   }
 }
 
-class _Body extends ConsumerWidget {
-  const _Body({required this.snapshot});
+/// 화면 분기 본체 — testable. 호출자는 LockSnapshot을 직접 주입해 4상태를
+/// 강제 렌더할 수 있다(PR16-E 위젯 회귀 가드).
+class LockPasswordBody extends ConsumerWidget {
+  const LockPasswordBody({super.key, required this.snapshot});
 
-  final _LockSnapshot snapshot;
+  final LockSnapshot snapshot;
 
   Future<void> _setupFirstTime(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(

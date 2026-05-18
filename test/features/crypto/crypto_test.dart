@@ -147,4 +147,73 @@ void main() {
       expect(await cipher.decrypt(blob: blob, masterKey: key), plain);
     });
   });
+
+  group('비밀번호 변경 (rewrap) round-trip (PR16-D 회귀 가드)', () {
+    // KeyService.rewrap의 흐름을 KeyDerivation 단위로 재구성:
+    // create → open(cur) → rewrap(K, new) → open(new, newEnvelope) → 같은 K.
+    // 핵심 회귀 가드: ① 변경 후에도 K 동일(인용구 재암호화 0), ② 이전 비밀번호로
+    // 새 envelope을 못 연다.
+
+    test('비밀번호 변경 후에도 K 동일 — 인용구 재암호화 0', () async {
+      final kd = _fastKd();
+      const cur = 'first-password';
+      const next = 'second-password';
+      final salt1 = Uint8List.fromList(List.generate(16, (i) => i));
+      final K = Uint8List.fromList(List.generate(32, (i) => (i * 13) % 256));
+
+      // 1. 첫 envelope.
+      final wrapKey1 = await kd.deriveWrapKey(password: cur, salt: salt1);
+      final wrap1 =
+          await kd.wrapMasterKey(masterKey: K, wrapKey: wrapKey1);
+      final kOpened = await kd.unwrapMasterKey(
+        wrappedKey: wrap1.wrappedKey,
+        nonce: wrap1.nonce,
+        wrapKey: wrapKey1,
+      );
+      expect(kOpened, K, reason: 'cur으로 envelope 열림');
+
+      // 2. rewrap — new password + new salt + new nonce + new wrapped_key.
+      final salt2 = Uint8List.fromList(List.generate(16, (i) => i + 100));
+      final wrapKey2 = await kd.deriveWrapKey(password: next, salt: salt2);
+      final wrap2 =
+          await kd.wrapMasterKey(masterKey: kOpened, wrapKey: wrapKey2);
+
+      // 3. new envelope을 new password로 열면 같은 K.
+      final kNew = await kd.unwrapMasterKey(
+        wrappedKey: wrap2.wrappedKey,
+        nonce: wrap2.nonce,
+        wrapKey: wrapKey2,
+      );
+      expect(kNew, K, reason: 'rewrap 후에도 K 동일');
+
+      // 4. wrapped_key·nonce·salt는 새로(인덴티티 비교가 아닌 값 비교).
+      expect(wrap1.wrappedKey, isNot(wrap2.wrappedKey));
+      expect(wrap1.nonce, isNot(wrap2.nonce));
+      expect(salt1, isNot(salt2));
+    });
+
+    test('이전 비밀번호로 새 envelope을 열려고 하면 실패', () async {
+      final kd = _fastKd();
+      const cur = 'old';
+      const next = 'new';
+      final salt = Uint8List.fromList(List.generate(16, (i) => i + 50));
+      final K = Uint8List.fromList(List.generate(32, (i) => i));
+
+      // new envelope만 만듦.
+      final wrapKeyNew = await kd.deriveWrapKey(password: next, salt: salt);
+      final wrapNew =
+          await kd.wrapMasterKey(masterKey: K, wrapKey: wrapKeyNew);
+
+      // 이전 비밀번호로 wrap_key 파생 후 unwrap 시도 → mac mismatch.
+      final wrapKeyCur = await kd.deriveWrapKey(password: cur, salt: salt);
+      expect(
+        () => kd.unwrapMasterKey(
+          wrappedKey: wrapNew.wrappedKey,
+          nonce: wrapNew.nonce,
+          wrapKey: wrapKeyCur,
+        ),
+        throwsA(isA<SecretBoxAuthenticationError>()),
+      );
+    });
+  });
 }
