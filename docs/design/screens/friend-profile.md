@@ -4,7 +4,7 @@
 
 ## 1. 목적 / 진입·이탈 / 라우트
 - **목적**: 친구의 공개 서재(공개 책 + 공개 인용구) read-only 탐험. 잠금 인용구(`is_private=true`)는 RLS가 hard exclude — 클라이언트 코드에 fallback 없음(DB가 막음 = 신뢰의 단일 출처). [팔로우/언팔로우] 1탭. 그 외 액션 X — 인용구 [카드 만들기]·[삭제]·[수정]·공유 모두 **숨김**(남의 데이터).
-- **라우트**: top-level `GoRoute(path: '/u/:userId')`. **인증 필수**(`_redirect`가 비로그인이면 `/auth/login?from=/u/:userId`로). 셸 밖 풀스크린. `:userId`는 `auth.users.id` UUID. 본인 `auth.uid()` == `:userId`면 진입 즉시 `context.go('/me')` redirect(자기 자신 follow 차단·자기 토글은 Me에서).
+- **라우트**: top-level `GoRoute(path: '/u/:userId')`. **인증 필수**(`_redirect`가 비로그인이면 `/auth/login?from=/u/:userId`로). 셸 밖 풀스크린. `:userId`는 `auth.users.id` UUID. 본인 진입 차단도 **라우터 `_redirect` 단계**에서 처리 — `auth.uid() == :userId`면 즉시 `/me`로 redirect(1프레임 흰 화면 깜박임 회피, 2026-05-18 결정). 닉네임 미설정/의심 패턴(`.`·`_`·email local-part) 사용자가 진입 시 `_NicknameGateView` 풀스크린 노출(PR18-B/C 게이트).
 - **진입**: ① Me "친구 찾기" → 검색 결과 ListTile 탭 ② 책 상세 "이 책을 담은 친구 N명" → 시트 미니리스트 → 탭 ③ 카드 deep link sender 배너 → [이 사람 서재 ▸] 탭 ④ 친구 프로필 자신의 팔로잉/팔로워 카운트 → 카운트 시트 → 탭(친구의 친구). **이탈**: 책 카드 탭 → `/book/:id`(친구 컨텍스트 사라짐 — V1은 단순 그 책 화면, V1.5에 "이 책의 친구 인용구도 보기" 보강 검토) / 인용구 카드 탭 → 인라인 펼침(공유 버튼 없음) / [팔로우/언팔로우] → 상태 토글, 화면 유지 / `←` → push 스택(deep link 콜드스타트로 스택 비면 `context.go('/')`).
 
 ## 2. 와이어프레임
@@ -64,8 +64,9 @@
 | 로딩: 프로필 | `friendProfileProvider(userId)` (`FutureProvider.autoDispose<Profile>`) | 낮음 |
 | 로딩: 책·인용구 | 각각 `friendBooksProvider(userId)`·`friendQuoteFeedProvider(userId)` (notifier · cursor-after). 세그먼트 미선택 탭은 lazy | 낮음 |
 | 미로그인 | 라우터 가드가 `/auth/login?from=/u/:userId`로 — 도달 가능성 0 | — |
-| 비공개 프로필 | profile.is_library_public=false → 헤더 그대로, body는 "잠긴 서재" 빈상태 | — |
-| 본인 진입 | `auth.uid() == userId` → `context.go('/me')` redirect (1프레임 내) | — |
+| 비공개 프로필 | profile.is_library_public=false → 헤더 그대로, body는 "잠긴 서재" 빈상태. `FollowState`에 따라 카피 분기(팔로우 전: "공개 설정을 켜면 보여요" / 팔로잉 중: "팔로우 요청을 보냈어요. 서재가 공개되면 여기서 볼 수 있어요"). | — |
+| 본인 진입 | 라우터 `_redirect`에서 `auth.uid() == userId` 검사 → `/me`로 redirect (1프레임 흰 화면 회피, 2026-05-18 결정) | — |
+| 닉네임 미설정/의심 | `display_name`이 email local-part 패턴(`.`/`_` 포함)이거나 비어있으면 본 화면 진입 봉쇄 → `_NicknameGateView` 풀스크린 노출 (PR18-B/C 게이트) | — |
 | 공개인데 빈 서재 | books·quotes 둘 다 0 → "아직 공개한 책이 없어요" 빈상태 | 낮음 |
 | 팔로우 토글 중 | 낙관적 업데이트 — 버튼 즉시 토글, 실패 시 rollback + SnackBar "팔로우에 실패했어요" | 낮음 |
 | 에러 (네트워크) | `_ErrorView` userMessage + [다시 시도](`ref.invalidate(friendProfileProvider(userId))`). raw `$error` 노출 X (library.md 기준) | 중간 |
@@ -105,8 +106,10 @@
   - `quote_repository.listFriendQuotesWithBook(userId, cursor)` — `from quotes where user_id = :userId` 단순 쿼리(RLS가 게이트)
   - `book_repository.listFriendBooks(userId)` — 동일 패턴
   - `profile_repository.getById(userId)` — `profiles` 단순 select
-  - `_FollowButton` 위젯 — 낙관 토글 + rollback
-  - `_LockedLibraryView` — 비공개 빈상태
+  - `_FollowButton` 위젯 — 낙관 토글 + rollback. `FollowState` enum 소비.
+  - `FollowState` enum(`notFollowing`/`following`/`pending`/`failed`) — 비공개 빈상태 카피·버튼 라벨 분기에 공통 사용
+  - `_LockedLibraryView` — 비공개 빈상태. `FollowState` 받아 카피 분기(2026-05-18 designer 결정).
+  - `_NicknameGateView` — 닉네임 미설정/email local-part 의심 패턴 시 풀스크린 봉쇄 (PR18-B/C 게이트). [내 닉네임 설정하기 →] 1버튼 → `/me`로 이동.
   - `_FollowersSheet` — 헤더 카운트 탭 시트
 
 ## 7. 엣지 / 접근성 + 보안 점검 (PR18-E 침투 테스트로 회귀 가드)
@@ -137,4 +140,5 @@
 - 헤더 팔로워/팔로잉 카운트는 *링크처럼 보이게* 색 강조(`primary700`) + Semantics `button`.
 
 ## 변경 이력
+- 2026-05-18 P0/P1 흡수 — DECISIONS 2026-05-18 "친구 서재 탐험 P0/P1 흡수"에 따른 갱신. ① 본인 진입 redirect를 라우터 `_redirect`로 끌어올림(initState → 라우터 가드, 1프레임 깜박임 회피) ② 닉네임 미설정/의심 패턴 사용자 풀스크린 게이트 `_NicknameGateView` 신규(PR18-B/C 강제 게이트) ③ 비공개 빈상태에 `FollowState` enum 분기 카피(팔로우 전 vs 팔로잉 다른 문구 — designer 인지 부조화 회피). ④ §3 상태 표에 게이트·FollowState 분기 row 추가.
 - 2026-05-17 초안 — DECISIONS 2026-05-17 "친구 서재 탐험 V1.0 합류" 결정 직후. PR18-C 본 구현 전 7섹션 명세 + 보안 침투 가드 8건 명시.

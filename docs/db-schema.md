@@ -59,12 +59,14 @@ user_crypto_envelopes⏳ PK = user_id                    — E2EE 마스터키 w
 | `display_name` | text | | 가입 시 `raw_user_meta_data`의 `display_name`/`nickname`/`name`/`full_name`, 없으면 이메일 local-part |
 | `avatar_url` | text | | OAuth provider의 `avatar_url`/`picture` (이메일 매직링크 가입이면 null) |
 | `is_library_public` | boolean | not null, default `false` | **⏳ PR18-A 예정**. 친구 서재 탐험 게이트. `true`일 때만 친구(follows에 등록된 사용자)가 `user_books`/`quotes` read 가능. 기본값 `false` 사수(opt-in). |
+| `public_handle` | text | unique, nullable | **⏳ PR18-A 예정**. V1.0 미사용, V1.0.1 hotfix에서 "@핸들" 검색 경로로 활성화 예정. 마이그레이션 비용 0 추가로 미리 박아둠(DECISIONS 2026-05-18). unique constraint 처음부터 적용 → 향후 핸들 점거 사고 0. V1.0 사용자는 NULL 유지. |
 | `created_at` | timestamptz | not null, default `now()` | |
 | `updated_at` | timestamptz | not null, default `now()` | 트리거 `profiles_updated_at` → `set_updated_at()` |
 
-**인덱스**: `profiles_display_name_idx (display_name)` — PR18 친구 검색(`ilike`)에 그대로 사용.
-**RLS**: SELECT = 누구나(`using (true)` — display_name 검색이 로그인만으로 가능해야 하므로 식별 정보 자체는 public. 단 `is_library_public=false`면 친구가 `/u/:userId` 들어가도 `user_books`/`quotes`가 0 row라 "잠긴 서재" 빈상태가 됨) / UPDATE = 본인(`auth.uid() = id`). INSERT는 트리거만(정책 없음 → 일반 클라이언트 insert 불가, `security definer` 트리거가 우회).
-**현재 사용**: 코드에서 아직 직접 읽지 않음(Me 화면은 이메일을 세션에서 읽음). **PR18-B부터 본격 사용** — Me "내 프로필 공개" 토글·"공개 닉네임" 편집, friend_profile_screen 헤더, book_detail "이 책을 담은 친구 N명".
+**인덱스**: `profiles_display_name_idx (display_name)` — PR18 친구 검색(`ilike`)에 그대로 사용. `public_handle` unique 제약이 자동 인덱스 생성(V1.0.1 핸들 검색 경로 대비).
+**RLS** (V1 현재): SELECT = 누구나(`using (true)`) / UPDATE = 본인(`auth.uid() = id`). INSERT는 트리거만(정책 없음 → 일반 클라이언트 insert 불가, `security definer` 트리거가 우회).
+**⏳ PR18-A 변경 예정 (DECISIONS 2026-05-18 P0)**: SELECT 정책을 `using (is_library_public = true OR id = auth.uid())`로 좁힘 — 비공개 프로필은 본인만 read, 검색·`/u/:userId` 둘 다 0 row 응답으로 본명 노출 원천 차단. `searchByDisplayName` 쿼리는 RLS가 1차 게이트 + 클라이언트 단 `.eq('is_library_public', true)` 명시 필터가 2차 (defense in depth).
+**현재 사용**: 코드에서 아직 직접 읽지 않음(Me 화면은 이메일을 세션에서 읽음). **PR18-B부터 본격 사용** — Me "내 프로필 공개" 토글·"공개 닉네임" 편집(닉네임 패턴 감지 다이얼로그 포함), friend_profile_screen 헤더, book_detail "이 책을 담은 친구 N명".
 
 ### 2.2 `books` — 글로벌 책 카탈로그 (`20260510120200`)
 
@@ -158,7 +160,7 @@ user_crypto_envelopes⏳ PK = user_id                    — E2EE 마스터키 w
 - `follow_repository.follow(uid)` → INSERT `(auth.uid(), uid)` upsert
 - `follow_repository.unfollow(uid)` → DELETE
 - `follow_repository.isFollowing(uid)` → exists query
-- `follow_repository.searchByDisplayName(query, limit)` → `profiles` `ilike '%query%'` (RLS는 `using(true)`라 누구나 검색됨, 단 카운트는 합리적 limit으로)
+- `follow_repository.searchByDisplayName(query, limit)` → `profiles` `ilike '%query%'` + 클라이언트 `.eq('is_library_public', true)`. RLS(좁혀진 `using(is_library_public = true OR id = auth.uid())`)가 1차 게이트, 클라 필터가 2차(defense in depth — DECISIONS 2026-05-18 P0). 비공개 프로필·본명 닉네임은 검색 결과 0 row. 카운트는 합리적 limit으로.
 - `follow_repository.listFollowing(uid)` / `listFollowers(uid)` → profile join
 - `follow_repository.followersCountForBook(bookId)` — "이 책을 담은 친구 N명" — `user_books_friends_read` 정책 통과한 row 카운트 (`user_books inner join follows ...`).
 
@@ -225,7 +227,7 @@ user_crypto_envelopes⏳ PK = user_id                    — E2EE 마스터키 w
 | `20260518xxxxxx_user_books_reading_dates.sql` | `user_books`에 `started_at`/`finished_at date` + CHECK + partial index 2개 (PR17-A) | ✅ |
 | `20260517130000_quotes_e2ee.sql` | `quotes`에 `text_encrypted bytea`/`manual_book_text_encrypted bytea`/`crypto_version smallint`/`is_private boolean` + `text` NOT NULL 해제 + CHECK 재정의 + 잠금 partial index (PR16-A) | ✅ |
 | `20260517140000_user_crypto_envelopes.sql` | `user_crypto_envelopes` 테이블 — E2EE 마스터키 wrap (PR16-A) | ✅ |
-| ⏳ `20260518xxxxxx_follows_and_public_profile.sql` | `follows` 테이블 + `profiles.is_library_public` 컬럼 + RLS 정책 3종(`user_books_friends_read`·`quotes_friends_read`·`follows` self-only) + `follows_followee_idx` (PR18-A) | ⏳ |
+| ⏳ `20260518xxxxxx_follows_and_public_profile.sql` | `follows` 테이블 + `profiles.is_library_public` 컬럼 + `profiles.public_handle text unique` 컬럼(V1.0.1 hotfix 대비, DECISIONS 2026-05-18) + RLS 정책 3종(`user_books_friends_read`·`quotes_friends_read`·`follows` self-only) + `profiles` SELECT RLS 좁힘(`is_library_public = true OR id = auth.uid()`) + `follows_followee_idx` (PR18-A) | ⏳ |
 
 작업 방식: 새 마이그레이션 작성 후 `npx --yes supabase db push` (`supabase` 명령은 PATH에 없음 — `npx --yes` 사용, 프롬프트는 `printf 'y\n' |`로 통과).
 

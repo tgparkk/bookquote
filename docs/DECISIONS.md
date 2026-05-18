@@ -5,6 +5,41 @@
 
 ---
 
+## 2026-05-18 — 친구 서재 탐험 P0/P1 흡수 (검색 funnel 사수 + 본명·잠금 누수 0% 게이트 + 일정 5~6주 양보)
+
+- **결정**: 2026-05-17 PR18 결정의 핵심 모델(단방향 follow·프로필 토글·hard exclude·BottomNav 4탭·홈 미섞기)은 *유지*하되, 매니저 모드 4명(critic·planner·designer·qa-tester) 병렬 검토로 발견된 P0 3건 + P1 4건을 PR18 분할 *내부*로 흡수. deep link sender(PR18-D)는 critic 손으로 **유지**(친구 발견 funnel의 두 다리 사수). 한 달 패키지 약속은 5~6주로 양보(planner의 critical path 추정 받아들임).
+- **이유**: 4명 중 2명 이상 *독립 발견*한 약점 3건은 출시 후 신뢰 파괴 1순위 — ① 닉네임 회피 ↔ `display_name ilike` 검색의 silent killer(critic + qa-tester): 본명 회피를 유도하면 닉네임이 의미없는 문자열로 수렴 → 검색 무력화 → 친구 발견 funnel이 deep link 단일 경로로 축소 → 단방향 follow의 "모르는 사람 발견" 가치 0 ② PR18-B 닉네임 prerequisite가 *강제 게이트* 아님(planner + qa-tester): PR18-C가 PR18-B 없이 머지되면 본명 노출 사고가 곧 신호 ③ 친구 진입점 전무 + 선행 신호 부재(planner + qa-tester): 현재 `me_screen` "친구 찾기"는 V1엔 숨김. PR18-B에서 활성화하지만 그동안 진입점 0. 재검토 트리거가 모두 *사후* 신호. 출시 전 가족 5명 단계에서 잡을 선행 지표 부재.
+- **P0 (출시 전 반드시 조치)**:
+  - `profiles` SELECT RLS를 `using(true)` → `using(is_library_public = true OR id = auth.uid())`로 좁힘. 비공개 프로필이 검색·`/u/:userId`에 0 row로 응답. 본명 노출 원천 차단.
+  - `follow_repository.searchByDisplayName` 쿼리에 클라이언트 단 `.eq('is_library_public', true)` 명시 필터 추가 — defense in depth(DB+클라 이중 방어).
+  - **PR18-B → PR18-C 강제 게이트** 신설: 닉네임 미설정(또는 email local-part 의심 패턴) 사용자가 `/u/:userId` 또는 "내 프로필 공개" 토글 접근 시 풀스크린 "닉네임 먼저 설정해주세요" gate. PR18-C 본 화면 진입 봉쇄.
+  - 닉네임 패턴 자동 감지 — `display_name`이 email local-part 의심 패턴(`.`·`_`·`@` 앞 형식)이면 공개 토글 활성화 직전 강제 다이얼로그 + 추천 닉네임 제안. 다이얼로그 OK 연타 회피 위해 *닉네임 입력 확인 후*에만 활성화.
+- **P1 (강력 권고, 흡수)**:
+  - `profiles.public_handle text unique` 컬럼을 PR18-A 마이그레이션에 *미리 박기* — V1.0엔 미사용, V1.0.1에 "@핸들 검색" 경로로 활성화. 스키마 마이그레이션 비용 0 추가, 데이터 backfill만으로 hotfix 가능. critic의 닉네임-검색 충돌 funnel 회피 두 번째 다리. unique constraint는 처음부터 박아 향후 핸들 점거 사고 0.
+  - Me Switch 옆 현재 노출 상태 카피 — "현재 비공개 — 검색에 표시 안 됨" / "현재 공개 — 닉네임 `<display_name>`로 검색됨". 사용자가 자기 노출 상태를 *언제든* 인지.
+  - 홈 빈 상태 CTA에 "친구 찾기 →" 1줄 — 조건부(인용구 ≥1개 + 친구 0명). 신규 가입자 친구 진입점 마찰 해소. 인용구 0개일 때는 기존 인용구 CTA가 우선(qa-tester).
+  - 친구 프로필 비공개 빈상태에 `FollowState` enum 분기 카피(팔로우 전 vs 팔로잉 다른 문구) — designer 손. 인지 부조화("내 팔로우가 먹혔나?") 회피. 본문 카피가 상태 설명하므로 SnackBar는 단순 확인만.
+- **P2 (지표·테스트)**:
+  - PR18-A 직후 PostHog 선행 이벤트 3종 등재: `friend_search_zero_result_exit`(검색 0건 후 종료), `library_public_toggle_unchanged`(Me 진입 후 토글 미변경 종료), `book_detail_friend_count_zero`("친구 N명" 0 노출 빈도). 가족 5명 가입 단계에서 임계 ≥40%면 *출시 전* 재검토 — 사후 클레임이 아닌 선행 신호.
+  - PR18-E 침투 테스트에 X-feature 매트릭스 추가 — 잠금×친구×캘린더 3축 (8조합 중 4 골든). 친구의 잠금 인용구가 캘린더 마커에 안 뜨는지 / 비공개 프로필 사용자의 캘린더 통계가 친구 화면에 노출 안 되는지 등.
+  - 본인 진입 redirect를 라우터 `_redirect` 단계로 끌어올림(현 명세는 initState) — 1프레임 흰 화면 깜박임 회피 + RLS 회귀 가드.
+- **갱신된 PR 분할**:
+  - **18-A** 마이그레이션 + 도메인 + `follow_repository` 코어 — 기존(`follows` + `profiles.is_library_public` + RLS 3종) + **`profiles.public_handle text unique` 컬럼 추가** + **`profiles` SELECT RLS 좁힘**(`is_library_public = true OR id = auth.uid()`).
+  - **18-B** 검색·카운트 + Me 토글·닉네임 편집 — 기존 + **닉네임 패턴 감지 다이얼로그** + **Switch 상태 카피** + **`searchByDisplayName` 클라 필터** + **홈 빈 상태 CTA 친구 링크**(조건부) + **PostHog 선행 이벤트 3종 등재**.
+  - **18-B/C 게이트** (신설 sub-PR): 닉네임 미설정/의심 패턴 사용자 → `/u/:userId` 풀스크린 gate. PR18-B 머지 후, PR18-C 진입 전 별도 sub-PR.
+  - **18-C** `/u/:userId` 친구 프로필 화면 — 기존 + **`FollowState` enum 분기 카피** + **본인 진입 라우터 `_redirect` 가드**.
+  - **18-D** 책 상세 친구 N명 + deep link sender — *유지*(critic 손, 친구 발견 funnel의 두 번째 다리).
+  - **18-E** 골든 + RLS 침투 + release APK — 기존 + **X-feature 매트릭스**(잠금×친구×캘린더 3축, 8조합 중 4 골든) + **PostHog 선행 이벤트 발동 검증**.
+- **의존 순서**: PR16-C-2(잠금 password 화면) → PR16-D/E → PR18-A. E2EE 트랙을 *완전히* 닫고 PR18 진입. 병렬 X(planner — 회귀 베이스 흔들림 회피).
+- **일정 양보**: 한 달 → 5~6주(2026-06-08 ~ 06-22 → 06-22 ~ 06-29 범위). 사용자 모토 "서두르지 않고 고득하게"와 정합. 추가 1~2주는 P0 게이트 강화(+0.5주) + X-feature 매트릭스(+0.5주) + 일정 여유(+0.5~1주).
+- **재검토 트리거 (선행 신호 신설)**:
+  - 가족·지인 5명 가입 단계에서 `friend_search_zero_result_exit ≥ 40%` → PR18-A에 박아둔 `public_handle` 검색 활성화를 V1.0.1 → V1.0으로 격상.
+  - `library_public_toggle_unchanged ≥ 60%` → 토글 UX 재설계(설명 보강 또는 기본값 변경 검토).
+  - `book_detail_friend_count_zero ≥ 80%` → 친구 N명 표시 UX 재검토(다른 retention 후크 탐색).
+- **대체**: 2026-05-17 "친구 서재 탐험 V1.0 합류" 결정의 PR 분할·일정·재검토 트리거 부분을 갱신. 핵심 모델(단방향 follow·프로필 토글·hard exclude·BottomNav 4탭·홈 미섞기)은 유지.
+
+---
+
 ## 2026-05-17 — 친구 서재 탐험 V1.0 합류 (단방향 follow + 프로필 토글 + 잠금 자동 제외)
 
 - **결정**: 친구 follow/타임라인을 V1.5+로 미뤘던 2026-05-12 결정을 부분 뒤집어 V1.0 패키지에 합류. 단 **풀-소셜 X**: ① 모델 = 단방향 follow(트위터식, request-accept 없음) ② 공개 정책 = 프로필 단위 토글 `profiles.is_library_public bool default false`(per-quote `is_public` X) ③ 잠금 인용구(`quotes.is_private = true`, PR16)는 RLS에서 **hard exclude** — 친구 화면에 절대 노출 0% 보장 ④ 친구 발견 = `display_name` 검색 + 카드 공유 deep link → 보낸 사람 서재 두 경로만, 카톡 매칭 X ⑤ 화면 신설 1개(`/u/:userId` 친구 프로필 read-only) + 기존 화면 갱신 2건(Me "친구 찾기" 활성화 + 책 상세 "이 책을 담은 친구 N명" 1줄). BottomNav 슬롯 추가 X, 홈 피드에 친구 인용구 섞기 X — "내 인용 피드" 정체성 사수.
