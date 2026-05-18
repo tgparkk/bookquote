@@ -8,8 +8,9 @@ import 'card_watermark.dart';
 
 /// T2 — 따뜻 카드. `docs/design/templates/02-warm.md`.
 ///
-/// 9:16·4:5는 좌측 표지 패널 + 우측 텍스트 패널의 sideBySide,
-/// 1:1은 표지 상단 가로 전체 + 텍스트 하단의 topBottom(Spotify 스타일).
+/// 4:5는 좌측 표지 패널 + 우측 텍스트 패널의 sideBySide,
+/// 9:16·1:1은 표지 상단 가로 전체 + 텍스트 하단의 topBottom(Spotify 스타일).
+/// 9:16에서 sideBySide를 쓰면 표지가 세로 스트립처럼 압축돼 홍보 효과가 약화 — topBottom으로 분기.
 class WarmCard extends StatelessWidget {
   const WarmCard({
     super.key,
@@ -32,9 +33,11 @@ class WarmCard extends StatelessWidget {
     CardRatio.story: _Variant(
       width: 1080,
       height: 1920,
-      mode: _Mode.sideBySide,
-      coverPanelSize: 380,
-      paddingTop: 240,
+      mode: _Mode.topBottom,
+      coverPanelSize: 480,
+      paddingTop: 144,
+      coverWidth: 320,
+      coverHeight: 448,
     ),
     CardRatio.feed: _Variant(
       width: 1080,
@@ -42,6 +45,8 @@ class WarmCard extends StatelessWidget {
       mode: _Mode.topBottom,
       coverPanelSize: 360,
       paddingTop: 96,
+      coverWidth: 240,
+      coverHeight: 336,
     ),
     CardRatio.post: _Variant(
       width: 1080,
@@ -49,6 +54,8 @@ class WarmCard extends StatelessWidget {
       mode: _Mode.sideBySide,
       coverPanelSize: 360,
       paddingTop: 160,
+      coverWidth: 300,
+      coverHeight: 420,
     ),
   };
 
@@ -59,7 +66,12 @@ class WarmCard extends StatelessWidget {
     final fontSize = getEffectiveQuoteFontSize(data.charCount, fontStep);
     final lineHeight = getQuoteLineHeight(fontSize);
 
-    final cover = _CoverPanel(mode: v.mode, data: data, palette: palette);
+    final cover = _CoverPanel(
+      data: data,
+      palette: palette,
+      coverWidth: v.coverWidth,
+      coverHeight: v.coverHeight,
+    );
     final text = _TextPanel(
       variant: v,
       background: background,
@@ -121,6 +133,8 @@ class _Variant {
     required this.mode,
     required this.coverPanelSize,
     required this.paddingTop,
+    required this.coverWidth,
+    required this.coverHeight,
   });
 
   final double width;
@@ -128,30 +142,33 @@ class _Variant {
   final _Mode mode;
   final double coverPanelSize;
   final double paddingTop;
+  final double coverWidth;
+  final double coverHeight;
 }
 
 class _CoverPanel extends StatelessWidget {
   const _CoverPanel({
-    required this.mode,
     required this.data,
     required this.palette,
+    required this.coverWidth,
+    required this.coverHeight,
   });
 
-  final _Mode mode;
   final QuoteCardData data;
   final ExtractedPalette palette;
+  final double coverWidth;
+  final double coverHeight;
 
   @override
   Widget build(BuildContext context) {
-    final isHorizontal = mode == _Mode.sideBySide;
     return Container(
       color: palette.dominant,
       alignment: Alignment.center,
       child: BookCover(
         url: data.coverUrl,
         title: data.bookTitle ?? '',
-        width: isHorizontal ? 300 : 240,
-        height: isHorizontal ? 420 : 336,
+        width: coverWidth,
+        height: coverHeight,
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
     );

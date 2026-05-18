@@ -69,9 +69,11 @@ class QuoteListCard extends StatelessWidget {
                       quote.text ?? '',
                       maxLines: expanded ? null : 3,
                       overflow: expanded ? null : TextOverflow.ellipsis,
+                      // 산세리프(스캔용) — 세리프 NotoSerifKR은 공유 카드(감상용) 전용.
                       style: TextStyle(
-                        fontFamily: AppFonts.quote,
-                        fontSize: AppFontSize.sm,
+                        fontFamily: AppFonts.ui,
+                        fontSize: AppFontSize.base,
+                        fontWeight: FontWeight.w500,
                         height: AppLineHeight.relaxed,
                         color: AppColors.primary800,
                       ),
