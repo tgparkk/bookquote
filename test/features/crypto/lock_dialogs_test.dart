@@ -185,4 +185,92 @@ void main() {
       expect(find.text('잠금 인용구 공유'), findsNothing);
     });
   });
+
+  group('ChangePasswordDialog (PR16-D)', () {
+    final fakeEnvelope = CryptoEnvelope(
+      wrappedKey: Uint8List(48),
+      wrapNonce: Uint8List(12),
+      kdfSalt: Uint8List(16),
+      kdfIters: 600000,
+      kdfVersion: 1,
+    );
+
+    Future<void> openChange(WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: Center(
+                  child: ElevatedButton(
+                    onPressed: () => showDialog<bool>(
+                      context: context,
+                      builder: (_) =>
+                          ChangePasswordDialog(envelope: fakeEnvelope),
+                    ),
+                    child: const Text('open'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('현재 비밀번호 빈 입력 차단', (tester) async {
+      await openChange(tester);
+      // current는 비워두고 new + confirm만 채움
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(1), 'newpassword');
+      await tester.enterText(fields.at(2), 'newpassword');
+      await tester.tap(find.text('변경'));
+      await tester.pump();
+      expect(find.text('현재 비밀번호를 입력해주세요.'), findsOneWidget);
+      expect(find.byType(ChangePasswordDialog), findsOneWidget);
+    });
+
+    testWidgets('새 비밀번호 6자 미만 차단', (tester) async {
+      await openChange(tester);
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'currentpw');
+      await tester.enterText(fields.at(1), 'abc');
+      await tester.enterText(fields.at(2), 'abc');
+      await tester.tap(find.text('변경'));
+      await tester.pump();
+      expect(find.text('새 비밀번호는 6자 이상이어야 해요.'), findsOneWidget);
+    });
+
+    testWidgets('새 비밀번호 두 입력 불일치 차단', (tester) async {
+      await openChange(tester);
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'currentpw');
+      await tester.enterText(fields.at(1), 'longenough');
+      await tester.enterText(fields.at(2), 'different!');
+      await tester.tap(find.text('변경'));
+      await tester.pump();
+      expect(find.text('새 비밀번호가 서로 달라요.'), findsOneWidget);
+    });
+
+    testWidgets('취소 → 다이얼로그 닫힘', (tester) async {
+      await openChange(tester);
+      expect(find.byType(ChangePasswordDialog), findsOneWidget);
+      await tester.tap(find.text('취소'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ChangePasswordDialog), findsNothing);
+    });
+
+    testWidgets('새 비밀번호 한국어도 runes 기준 6자', (tester) async {
+      await openChange(tester);
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'currentpw');
+      await tester.enterText(fields.at(1), '책귀잠금'); // 4 runes
+      await tester.enterText(fields.at(2), '책귀잠금');
+      await tester.tap(find.text('변경'));
+      await tester.pump();
+      expect(find.text('새 비밀번호는 6자 이상이어야 해요.'), findsOneWidget);
+    });
+  });
 }

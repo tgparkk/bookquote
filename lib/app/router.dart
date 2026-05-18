@@ -22,6 +22,7 @@ import '../features/auth/login_screen.dart';
 import '../features/book/book_detail_screen.dart';
 import '../features/card_editor/card_editor_screen.dart';
 import '../features/card_editor/quick_share_screen.dart';
+import '../features/crypto/presentation/lock_password_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/me/me_screen.dart';
@@ -109,7 +110,17 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: '/me', builder: (_, _) => const MeScreen()),
+            GoRoute(
+              path: '/me',
+              builder: (_, _) => const MeScreen(),
+              routes: [
+                GoRoute(
+                  path: 'lock-password',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (_, _) => const LockPasswordScreen(),
+                ),
+              ],
+            ),
           ]),
         ],
       ),

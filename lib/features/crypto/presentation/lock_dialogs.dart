@@ -14,6 +14,10 @@
 // [showPrivateShareWarningDialog] — PR16-C-2. 잠금 인용구를 카드로 만들어 공유하기
 // 직전 "이미지에는 평문이 박힙니다" 경고. 사용자가 본문 보안과 카드 공유의 의미를
 // 혼동하지 않도록 1회 명시 확인. true = 그래도 공유 / false = 취소.
+//
+// [ChangePasswordDialog] — PR16-D. 현재 비밀번호 검증(openEnvelope) → 새 비밀번호로
+// rewrap → envelope_repository.updateWrap → cacheMasterKey. K는 그대로라
+// 인용구 재암호화 0. 현재 비밀번호 오답이면 mac mismatch → "현재 비밀번호가 달라요".
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/material.dart';
@@ -371,5 +375,175 @@ Future<bool> showPrivateShareWarningDialog(BuildContext context) async {
     },
   );
   return ok == true;
+}
+
+// ─────────────────────────────────────────────────────────
+// 비밀번호 변경 — 현재 비밀번호 검증 후 rewrap (PR16-D)
+// ─────────────────────────────────────────────────────────
+
+class ChangePasswordDialog extends ConsumerStatefulWidget {
+  const ChangePasswordDialog({super.key, required this.envelope});
+
+  final CryptoEnvelope envelope;
+
+  @override
+  ConsumerState<ChangePasswordDialog> createState() =>
+      _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends ConsumerState<ChangePasswordDialog> {
+  final _current = TextEditingController();
+  final _newPassword = TextEditingController();
+  final _confirm = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _current.dispose();
+    _newPassword.dispose();
+    _confirm.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final cur = _current.text;
+    final np = _newPassword.text;
+    final cf = _confirm.text;
+    if (cur.isEmpty) {
+      setState(() => _error = '현재 비밀번호를 입력해주세요.');
+      return;
+    }
+    if (np.runes.length < _minPasswordLen) {
+      setState(() => _error = '새 비밀번호는 $_minPasswordLen자 이상이어야 해요.');
+      return;
+    }
+    if (np != cf) {
+      setState(() => _error = '새 비밀번호가 서로 달라요.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final keyService = ref.read(keyServiceProvider);
+      final envelopeRepo = ref.read(envelopeRepositoryProvider);
+      // 1. 현재 비밀번호로 envelope을 열어 K 추출(자기 자신 확인 + K 획득).
+      //    SecretBoxAuthenticationError가 mac mismatch 시 throw.
+      final masterKey = await keyService.openEnvelope(
+        password: cur,
+        envelope: widget.envelope,
+      );
+      // 2. K는 그대로 두고 새 비밀번호로 wrap만 갱신(인용구 재암호화 0).
+      final rewrap = await keyService.rewrap(
+        masterKey: masterKey,
+        newPassword: np,
+      );
+      final newEnvelope = CryptoEnvelope(
+        wrappedKey: rewrap.wrappedKey,
+        wrapNonce: rewrap.wrapNonce,
+        kdfSalt: rewrap.kdfSalt,
+        kdfIters: widget.envelope.kdfIters,
+        kdfVersion: widget.envelope.kdfVersion,
+      );
+      await envelopeRepo.updateWrap(newEnvelope);
+      // 3. 캐시 K 재박음 — 같은 K지만 다른 기기에서 변경 흐름 진입했다면
+      //    이 시점이 캐시 신규 생성 동선이기도 함.
+      await keyService.cacheMasterKey(masterKey);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on SecretBoxAuthenticationError {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = '현재 비밀번호가 달라요.';
+      });
+    } on EnvelopeRepositoryException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = e.code == 'NOT_AUTHENTICATED'
+            ? '로그인이 필요해요.'
+            : '비밀번호 변경에 실패했어요.';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = '비밀번호 변경에 실패했어요.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return AlertDialog(
+      title: const Text('잠금 비밀번호 변경'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '현재 비밀번호를 확인한 뒤 새 비밀번호로 바꿔요. '
+              '기존 잠금 인용구는 그대로 읽을 수 있어요(재암호화 X).',
+              style: textTheme.bodyMedium?.copyWith(color: AppColors.primary700),
+            ),
+            const SizedBox(height: AppSpacing.s4),
+            TextField(
+              controller: _current,
+              enabled: !_busy,
+              autofocus: true,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: '현재 비밀번호'),
+            ),
+            const SizedBox(height: AppSpacing.s2),
+            TextField(
+              controller: _newPassword,
+              enabled: !_busy,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: '새 비밀번호 ($_minPasswordLen자 이상)',
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s2),
+            TextField(
+              controller: _confirm,
+              enabled: !_busy,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: '새 비밀번호 확인'),
+              onSubmitted: (_) => _submit(),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: AppSpacing.s2),
+              Text(
+                _error!,
+                style: textTheme.bodySmall
+                    ?.copyWith(color: AppColors.semanticError),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.of(context).pop(false),
+          child: const Text('취소'),
+        ),
+        FilledButton(
+          onPressed: _busy ? null : _submit,
+          child: _busy
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('변경'),
+        ),
+      ],
+    );
+  }
 }
 

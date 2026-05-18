@@ -100,6 +100,20 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
     }
   }
 
+  /// PR16-D: _LockedView [잠금 해제] 핸들러. UnlockDialog → 마스터키 캐시.
+  /// 성공 시 quote 재로드 + bootstrap 재실행 → 자동 시트 흐름 정상 진입.
+  Future<void> _onUnlockTap() async {
+    final ok = await ensureMasterKeyReady(context, ref);
+    if (!ok || !mounted) return;
+    ref.invalidate(quoteCardDataProvider(widget.quoteId));
+    setState(() {
+      _data = null;
+      _ready = false;
+      _autoSheetTriggered = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+  }
+
   Future<void> _share() async {
     if (_sharing || _data == null) return;
     // PR16-C-2: 잠금 인용구 공유 직전 평문 경고. 자동 시트(_bootstrap 끝) 첫 진입과
@@ -214,7 +228,10 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
       );
     }
     // PR16-C-2: 잠금 + 키 없음 — 카드 미리보기·[다시 공유] 버튼 자체를 숨기고 안내.
-    if (_data?.isLockedAndUnreadable ?? false) return const _LockedView();
+    // PR16-D: [잠금 해제] 콜백 — 성공 시 quote 재로드 + bootstrap 재실행.
+    if (_data?.isLockedAndUnreadable ?? false) {
+      return _LockedView(onUnlock: _onUnlockTap);
+    }
 
     final state = ref.watch(cardEditorControllerProvider);
     final template = CardTemplate.byId(state.templateId);
@@ -416,8 +433,11 @@ class _ErrorView extends StatelessWidget {
 
 /// 잠금 인용구이지만 이 기기에서 본문 복호화 키가 준비되지 않은 상태.
 /// PR16-C-2 — 자동 시트·공유 진입을 봉쇄하고 사용자에게 해제 경로 안내.
+/// PR16-D — [잠금 해제] 1탭으로 같은 화면에서 UnlockDialog 진입.
 class _LockedView extends StatelessWidget {
-  const _LockedView();
+  const _LockedView({this.onUnlock});
+
+  final VoidCallback? onUnlock;
 
   @override
   Widget build(BuildContext context) {
@@ -439,11 +459,28 @@ class _LockedView extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.s2),
             const Text(
-              '본문이 잠겨 있어요. 인용구 입력 화면에서 잠금을 해제하거나\n'
-              '다른 기기의 잠금 비밀번호로 풀면 카드로 만들 수 있어요.',
+              '본문이 잠겨 있어요. 잠금 비밀번호로 풀면\n카드로 만들 수 있어요.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.primary500),
             ),
+            if (onUnlock != null) ...<Widget>[
+              const SizedBox(height: AppSpacing.s6),
+              FilledButton.icon(
+                onPressed: onUnlock,
+                icon: const Icon(Icons.lock_open_outlined, size: 18),
+                label: const Text('잠금 해제'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.accent500,
+                  foregroundColor: AppColors.secondary50,
+                  minimumSize: const Size.fromHeight(48),
+                  textStyle: const TextStyle(
+                    fontFamily: AppFonts.ui,
+                    fontWeight: FontWeight.w600,
+                    fontSize: AppFontSize.base,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

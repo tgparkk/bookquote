@@ -64,6 +64,12 @@ class MeScreen extends ConsumerWidget {
           ],
 
           const _SectionHeader('설정'),
+          if (loggedIn)
+            _ActionTile(
+              icon: Icons.key_outlined,
+              title: '잠금 비밀번호',
+              onTap: () => context.push('/me/lock-password'),
+            ),
           const _ValueTile(
             icon: Icons.brightness_6_outlined,
             title: '다크 모드',
