@@ -56,6 +56,9 @@
 ### 후속 작업 백로그 (Stage 2 마무리 전후 — 우선순위 낮음)
 - **(V1.0.1)** 서재 [책] 세그먼트 — 표지 long-press → 액션시트 ("인용구 추가 / 읽기 시작 / 다 읽음 / 공유"). Letterboxd 패턴(DECISIONS 2026-05-17 채택 UX ③). 캘린더 PR17과 별도 PR.
 - **(논의 필요, 2026-05-18 요청)** 공유 시 책 구매링크(교보문고) 첨부 — 카드 공유 시 본문 또는 deep link에 ISBN 기반 교보문고 링크를 함께 보내 retention/제휴 검토. 매니저 모드 가상 팀 토론으로 ① 카피·노출 위치(시트 보조 줄 vs 카드 본문 vs 단축링크) ② 제휴 ID/UTM 정책 ③ 책마다 ISBN→URL 매핑 가능성(알라딘 API 결과의 `isbn13` 활용) ④ 비제휴 책(자유 입력 `manual_book_text`)에 대한 폴백 정책 ⑤ "광고처럼 느끼지 않게" 톤 — 5개 결정점 사전 협의 필요.
+- **🚨 (출시 블로커, 2026-05-18 발견)** 이메일 매직링크가 `sttgpark@gmail.com` 본인 계정 외 수신 안 됨 — 모든 신규 가입 사실상 차단. 추정 원인: ① Supabase 빌트인 SMTP의 무료 플랜 제한(프로젝트 owner 이메일만 수신) ② Resend 등 third-party SMTP 미연동 / sandbox 모드 ③ 이메일 발송 quota 초과. 해결 = Resend·SendGrid·AWS SES 등 SMTP 제공자 연결 + 도메인 검증 + Supabase Authentication > Email Provider 연결. **V1.0 출시 전 반드시 해결**(이 블로커 미해결 시 스토어 등록·베타 테스트 모두 불가).
+- **(V1.0.1 후보, 2026-05-18 요청)** 구글 로그인 추가 — Supabase Auth Google provider 연결 + Google Cloud Console OAuth 클라이언트 ID/Secret 발급 + 안드로이드 SHA-1 등록 + iOS URL scheme. 매직링크 1차 외 진입점 확장. 단순(SMTP 제한 의존 없음)이라 구현 부담 낮음 — V1.0 출시 전 묶기 검토 가능.
+- **(V1.5 → V1.0.1 끌어올림 검토, 2026-05-18 요청)** 카카오 로그인 — DECISIONS 2026-05-10에서 V1.5로 미뤄둔 상태(이유: `account_email` scope에 카카오 비즈 인증 필요). 본인 카카오 계정 + 비즈 앱 전환·검수 완료 시 V1.0.1로 끌어올림. 카톡 친구 매칭(PR18 친구 발견 funnel의 두 번째 다리 후보)도 카카오 로그인 의존이라 묶어 검토.
 - 아웃박스 `connectivity_plus` 연결-회복 트리거(현재 포그라운드 복귀 시만) + 홈/인용목록에 "동기화 대기 N개" 배너
 - 인용구 [수정] (= `/quote/new?quoteId=` 편집 모드) · 카드/목록의 인라인 [무드 변경]
 - 인용 목록 정렬(책별 그룹 / 페이지순) · 인용구 텍스트 검색(서버 `ilike`) · 홈/책상세 무드 칩 탭 → `/library?tab=quotes&mood=` navigation
