@@ -17,9 +17,14 @@ class CardShareException implements Exception {
 
 /// 카드 PNG를 OS 공유 시트로 보낸다. 사용자가 취소해도 정상(예외 아님).
 /// 호출자는 `CardShareException`만 try/catch 하면 된다.
+///
+/// [text]가 있으면 메시지 본문에 포함된다 — 보통 책 상세 deep link (V1 K-factor).
+/// Kakao 같은 일부 앱은 이미지만 받고 텍스트를 드롭하지만, Telegram·SMS·메일 등
+/// 대다수 경로에서 링크가 함께 전달된다.
 Future<ShareResult> shareCardImage({
   required XFile file,
   String? subject,
+  String? text,
   Rect? sharePositionOrigin,
 }) async {
   try {
@@ -27,6 +32,7 @@ Future<ShareResult> shareCardImage({
       ShareParams(
         files: <XFile>[file],
         subject: subject,
+        text: text,
         sharePositionOrigin: sharePositionOrigin,
       ),
     );

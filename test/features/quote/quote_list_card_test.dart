@@ -149,4 +149,60 @@ void main() {
       expect(find.byIcon(Icons.lock_outline_rounded), findsNothing);
     });
   });
+
+  group('readOnly (PR18-C 친구 인용구 카드)', () {
+    testWidgets('readOnly=true + 펼침 → [바로 공유]·[카드 디자인]·[삭제] 모두 숨김', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: QuoteListCard(
+              quote: _quote(),
+              expanded: true,
+              readOnly: true,
+              onShare: () {},
+              onMakeCard: () {},
+              onDelete: () {},
+            ),
+          ),
+        ),
+      );
+      expect(find.text('바로 공유'), findsNothing);
+      expect(find.text('카드 디자인'), findsNothing);
+      expect(find.text('삭제'), findsNothing);
+    });
+
+    testWidgets('readOnly=true + onOpenBook → [책 보기] 노출 + 콜백 발화', (tester) async {
+      var open = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: QuoteListCard(
+              quote: _quote(),
+              expanded: true,
+              readOnly: true,
+              onOpenBook: () => open++,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('책 보기'), findsOneWidget);
+      await tester.tap(find.text('책 보기'));
+      expect(open, 1);
+    });
+
+    testWidgets('readOnly=true + onOpenBook 없음 → [책 보기] 숨김', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: QuoteListCard(
+              quote: _quote(),
+              expanded: true,
+              readOnly: true,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('책 보기'), findsNothing);
+    });
+  });
 }

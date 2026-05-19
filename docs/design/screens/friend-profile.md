@@ -140,5 +140,6 @@
 - 헤더 팔로워/팔로잉 카운트는 *링크처럼 보이게* 색 강조(`primary700`) + Semantics `button`.
 
 ## 변경 이력
+- 2026-05-19 **PR18-C 본 구현 완료** — 마이그레이션 1(`20260519120000_follows_public_read.sql`: `follows` SELECT RLS 확장 — 두 endpoint 모두 공개 프로필이면 누구나 read, 카운트·시트 노출 가능) + 화면(`friend_profile_screen.dart`) + providers(`friend_providers.dart`) + repo 메서드 4종(`ProfileRepository.getById` · `FollowRepository.listFollowing/listFollowers/countFollowing/countFollowers` · `BookRepository.listFriendBooks` · `QuoteRepository.listFriendQuotesWithBook`). `quote_list_card.dart`에 `readOnly`/`onOpenBook` prop 추가. router `/u/:userId` GoRoute + 본인 진입 redirect `_redirect`. `friend_search_screen.dart` ListTile `onTap` → `/u/:userId`. 신규 테스트 12개(readOnly 3 + friend_profile 9). flutter analyze clean, 239/239 통과. release APK 빌드 검증.
 - 2026-05-18 P0/P1 흡수 — DECISIONS 2026-05-18 "친구 서재 탐험 P0/P1 흡수"에 따른 갱신. ① 본인 진입 redirect를 라우터 `_redirect`로 끌어올림(initState → 라우터 가드, 1프레임 깜박임 회피) ② 닉네임 미설정/의심 패턴 사용자 풀스크린 게이트 `_NicknameGateView` 신규(PR18-B/C 강제 게이트) ③ 비공개 빈상태에 `FollowState` enum 분기 카피(팔로우 전 vs 팔로잉 다른 문구 — designer 인지 부조화 회피). ④ §3 상태 표에 게이트·FollowState 분기 row 추가.
 - 2026-05-17 초안 — DECISIONS 2026-05-17 "친구 서재 탐험 V1.0 합류" 결정 직후. PR18-C 본 구현 전 7섹션 명세 + 보안 침투 가드 8건 명시.

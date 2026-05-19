@@ -32,6 +32,24 @@ class ProfileRepository {
     return uid;
   }
 
+  /// 특정 사용자 프로필 1행. RLS상 `is_library_public=true`이거나 본인 id면 반환,
+  /// 그 외엔 0 row → null. 친구 프로필 진입(`/u/:userId` PR18-C)이 이걸 첫 fetch로
+  /// 호출 → null이면 "사용자를 찾을 수 없어요" 빈상태로 분기.
+  Future<Profile?> getById(String userId) async {
+    try {
+      final row = await _client
+          .from(_table)
+          .select(
+            'id, display_name, avatar_url, public_handle, is_library_public',
+          )
+          .eq('id', userId)
+          .maybeSingle();
+      return row == null ? null : Profile.fromRow(row);
+    } on PostgrestException catch (e) {
+      throw ProfileRepositoryException('FETCH_FAILED', e.message);
+    }
+  }
+
   /// 본인 프로필 1행. 미로그인이면 null. 가입 트리거가 빈 row를 자동 생성하므로
   /// 정상 흐름에서는 항상 존재.
   Future<Profile?> getMine() async {

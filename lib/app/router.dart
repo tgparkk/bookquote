@@ -27,6 +27,7 @@ import '../features/follow/presentation/friend_search_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/me/me_screen.dart';
+import '../features/profile/presentation/friend_profile_screen.dart';
 import '../features/quote/quote_input_screen.dart';
 import 'auth_state_provider.dart';
 import 'go_router_refresh_stream.dart';
@@ -67,12 +68,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/callback',
         builder: (_, _) => const AuthCallbackScreen(),
       ),
+      // PR18-C — 친구 프로필 `/u/:userId` (풀스크린, 셸 밖).
+      // 인증 필수는 `_redirect`가, 본인 진입 차단도 `_redirect`에서 처리.
+      GoRoute(
+        path: '/u/:userId',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (_, state) =>
+            FriendProfileScreen(userId: state.pathParameters['userId']!),
+      ),
       GoRoute(
         path: '/book/:id',
         builder: (_, state) => BookDetailScreen(
           bookId: state.pathParameters['id']!,
           // 공유 카드 deep link(`?from=share`)로 들어오면 "내 서재에 담기"가 1급.
           from: state.uri.queryParameters['from'],
+          // PR20-C: 카드 발신자 uid — 공유 deep link에 박힘. 공개 프로필이면
+          // "[이 사람 서재 ▸]" 칩 노출 → K-factor 다리.
+          sender: state.uri.queryParameters['sender'],
         ),
       ),
       GoRoute(
@@ -159,6 +171,15 @@ String? _redirect(BuildContext context, GoRouterState state) {
   // 그 외는 로그인 필수
   if (!loggedIn) {
     return '/auth/login?from=${Uri.encodeComponent(loc)}';
+  }
+
+  // PR18-C — `/u/:userId` 본인 진입은 `/me`로 redirect (1프레임 흰 화면 회피).
+  if (loc.startsWith('/u/')) {
+    final segs = loc.split('/');
+    if (segs.length >= 3 && segs[2].isNotEmpty) {
+      final targetUid = segs[2];
+      if (targetUid == session.user.id) return '/me';
+    }
   }
   return null;
 }

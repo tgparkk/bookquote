@@ -1,6 +1,9 @@
 import 'package:bookquote/features/book/book_detail_screen.dart';
 import 'package:bookquote/features/book/domain/book.dart';
 import 'package:bookquote/features/book/state/book_providers.dart';
+import 'package:bookquote/features/follow/state/follow_providers.dart';
+import 'package:bookquote/features/profile/domain/profile.dart';
+import 'package:bookquote/features/profile/state/friend_providers.dart';
 import 'package:bookquote/features/quote/domain/quote.dart';
 import 'package:bookquote/features/quote/domain/quote_mood.dart';
 import 'package:bookquote/features/quote/state/quote_providers.dart';
@@ -32,9 +35,12 @@ void main() {
   Future<void> pump(
     WidgetTester tester, {
     String? from,
+    String? sender,
+    Profile? senderProfile,
     Book? book = _book,
     List<Quote> quotes = const [],
     bool inLibrary = false,
+    int friendsWithBookCount = 0,
   }) async {
     tester.view.physicalSize = const Size(1000, 2400);
     tester.view.devicePixelRatio = 1.0;
@@ -47,9 +53,14 @@ void main() {
           bookByIdProvider('b1').overrideWith((ref) => book),
           bookQuotesProvider('b1').overrideWith((ref) => quotes),
           isInLibraryProvider('b1').overrideWith((ref) => inLibrary),
+          friendsWithBookCountProvider('b1')
+              .overrideWith((ref) async => friendsWithBookCount),
+          if (sender != null)
+            friendProfileProvider(sender)
+                .overrideWith((ref) async => senderProfile),
         ],
         child: MaterialApp(
-          home: BookDetailScreen(bookId: 'b1', from: from),
+          home: BookDetailScreen(bookId: 'b1', from: from, sender: sender),
         ),
       ),
     );
@@ -122,5 +133,56 @@ void main() {
     expect(find.text('이 책을 더 이상 볼 수 없어요'), findsOneWidget);
     expect(find.widgetWithText(OutlinedButton, '홈으로'), findsOneWidget);
     expect(find.widgetWithText(OutlinedButton, '내 서재'), findsOneWidget);
+  });
+
+  group('PR18-D — "이 책을 담은 친구 N명"', () {
+    testWidgets('친구 0명 → 행 자체 숨김 (빈상태 회피)', (tester) async {
+      await pump(tester);
+      expect(find.textContaining('이 책을 담은 친구'), findsNothing);
+    });
+
+    testWidgets('친구 N≥1 → "이 책을 담은 친구 N명" 행 노출', (tester) async {
+      await pump(tester, friendsWithBookCount: 3);
+      expect(find.text('이 책을 담은 친구 3명'), findsOneWidget);
+    });
+  });
+
+  group('PR20-C — sender 컨텍스트 (deep link)', () {
+    const senderUid = 'friend-uid';
+    const senderProfile = Profile(
+      id: senderUid,
+      displayName: '지윤',
+      isLibraryPublic: true,
+    );
+
+    testWidgets('from=share + sender 공개 프로필 → 발신자 이름 + [이 사람 서재 보기] 버튼',
+        (tester) async {
+      await pump(
+        tester,
+        from: 'share',
+        sender: senderUid,
+        senderProfile: senderProfile,
+      );
+      expect(find.text('지윤님이 이 책의 한 줄을 보냈어요.'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, '이 사람 서재 보기'), findsOneWidget);
+    });
+
+    testWidgets('from=share + sender 비공개(null) → 익명 카피, 버튼 없음',
+        (tester) async {
+      await pump(
+        tester,
+        from: 'share',
+        sender: senderUid,
+        senderProfile: null,
+      );
+      expect(find.textContaining('누군가 이 책의 한 줄을 보냈어요'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, '이 사람 서재 보기'), findsNothing);
+    });
+
+    testWidgets('from=share + sender 없음 → 익명 카피, 버튼 없음', (tester) async {
+      await pump(tester, from: 'share');
+      expect(find.textContaining('누군가 이 책의 한 줄을 보냈어요'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, '이 사람 서재 보기'), findsNothing);
+    });
   });
 }

@@ -383,7 +383,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
 
   // ── 저장 ───────────────────────────────────────────────
 
-  Future<void> _submit({required bool thenCard}) async {
+  Future<void> _submit() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
@@ -489,26 +489,65 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
       return;
     }
 
-    if (thenCard) {
-      // 입력 화면을 카드 에디터로 치환 — 저장 끝난 입력 폼으로 되돌아오지 않게.
-      router.pushReplacement('/quote/${created.id}/card');
-    } else {
-      // PR15-A (1): 책 연결된 인용구 저장 직후엔 "이 책에 한 줄 더" 단축 action
-      // 노출 — S3(같은 책 5번 입력) 반복 사이클 진입 마찰 5배 감소. 차별화 ④ 보호.
-      final savedBookId = _book?.id;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(
-          content: const Text('인용구를 저장했어요.'),
-          action: savedBookId == null
-              ? null
-              : SnackBarAction(
-                  label: '이 책에 한 줄 더',
-                  onPressed: () => router.push('/quote/new?bookId=$savedBookId'),
+    // UX#1 (PR20-A): 저장→공유 액션 모델 통일. 입력 화면은 단일 [저장]만,
+    // 카드 디자인/바로 공유 분기는 *저장 직후* 부모 화면 SnackBar에서 결정 — hot
+    // 컨텍스트 안에서 1탭으로 다음 행위 선택. PR15-A "이 책에 한 줄 더"도 같은
+    // SnackBar로 흡수(책 연결 시만 노출).
+    final savedBookId = _book?.id;
+    final quoteId = created.id;
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+        duration: const Duration(seconds: 6),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('인용구를 저장했어요.'),
+            const SizedBox(height: AppSpacing.s1),
+            Wrap(
+              spacing: AppSpacing.s2,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    messenger.hideCurrentSnackBar();
+                    router.push('/quote/$quoteId/share');
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.accent400,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  child: const Text('바로 공유'),
                 ),
-        ));
-      navigator.pop();
-    }
+                TextButton(
+                  onPressed: () {
+                    messenger.hideCurrentSnackBar();
+                    router.push('/quote/$quoteId/card');
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.secondary50,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  child: const Text('카드 디자인'),
+                ),
+                if (savedBookId != null)
+                  TextButton(
+                    onPressed: () {
+                      messenger.hideCurrentSnackBar();
+                      router.push('/quote/new?bookId=$savedBookId');
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.secondary50,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: const Text('이 책에 한 줄 더'),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ));
+    navigator.pop();
   }
 
   // ── 뒤로가기 ────────────────────────────────────────────
@@ -679,7 +718,8 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
 
               const SizedBox(height: AppSpacing.s6),
 
-              // CTA — 편집 모드면 [수정 저장] 단일, 신규는 [카드 만들기 →] + [저장만]
+              // CTA — 단일 [저장] (편집 모드면 [수정 저장]). 카드 디자인/바로 공유
+              // 분기는 저장 직후 SnackBar action으로 위임 (UX#1 PR20-A).
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent500,
@@ -688,8 +728,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
                   disabledForegroundColor: AppColors.primary400,
                   minimumSize: const Size.fromHeight(48),
                 ),
-                onPressed:
-                    (canSave && !saving) ? () => _submit(thenCard: true) : null,
+                onPressed: (canSave && !saving) ? _submit : null,
                 child: saving
                     ? const SizedBox(
                         height: 18,
@@ -699,17 +738,8 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
                           color: AppColors.secondary50,
                         ),
                       )
-                    : Text(_isEditMode ? '수정 저장' : '카드 만들기 →'),
+                    : Text(_isEditMode ? '수정 저장' : '저장'),
               ),
-              if (!_isEditMode) ...[
-                const SizedBox(height: AppSpacing.s2),
-                TextButton(
-                  onPressed: (canSave && !saving)
-                      ? () => _submit(thenCard: false)
-                      : null,
-                  child: const Text('저장만 하기'),
-                ),
-              ],
             ],
           ),
         ),

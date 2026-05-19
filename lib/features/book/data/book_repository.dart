@@ -192,6 +192,25 @@ class BookRepository {
     }
   }
 
+  /// 친구의 공개 서재 책 목록 (PR18-C 친구 프로필 책 탭).
+  /// `user_books_friends_read` RLS(`auth.uid()` follower + 친구 `is_library_public=true`)가
+  /// 게이트 — 정책 통과 못하면 0 row. 클라이언트엔 단순 `eq('user_id', userId)` 쿼리만.
+  Future<List<Book>> listFriendBooks(String userId, {int limit = 50}) async {
+    try {
+      final rows = await _client
+          .from(_userBooksTable)
+          .select('book:books(*)')
+          .eq('user_id', userId)
+          .order('added_at', ascending: false)
+          .limit(limit);
+      return rows
+          .map((r) => Book.fromJson(r['book'] as Map<String, dynamic>))
+          .toList();
+    } on PostgrestException catch (e) {
+      throw BookRepositoryException('LIST_FRIEND_LIBRARY_FAILED', e.message);
+    }
+  }
+
   Future<Book?> getByIsbn(String isbn13) async {
     try {
       final row = await _client

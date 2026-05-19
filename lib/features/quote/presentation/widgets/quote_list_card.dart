@@ -24,6 +24,8 @@ class QuoteListCard extends StatelessWidget {
     this.onShare,
     this.onMakeCard,
     this.onDelete,
+    this.readOnly = false,
+    this.onOpenBook,
   });
 
   final Quote quote;
@@ -34,6 +36,14 @@ class QuoteListCard extends StatelessWidget {
   final VoidCallback? onShare;
   final VoidCallback? onMakeCard;
   final VoidCallback? onDelete;
+
+  /// PR18-C 친구 프로필 인용구 카드 — 액션 전부 숨김(공유·카드 디자인·삭제·수정).
+  /// 펼침 시 [📕 책 보기 ▸]만(`onOpenBook` 있을 때).
+  final bool readOnly;
+
+  /// PR18-C — 친구 인용구 펼침 시 책 상세로 이동. `book_id`가 null이면 null 전달
+  /// (호출자가 disabled 분기).
+  final VoidCallback? onOpenBook;
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +145,26 @@ class QuoteListCard extends StatelessWidget {
                           children: [for (final m in quote.moods) _MoodBadge(m)],
                         ),
                       ),
+                    if (expanded && readOnly && onOpenBook != null) ...[
+                      const SizedBox(height: AppSpacing.s3),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: onOpenBook,
+                          icon: const Icon(
+                            Icons.menu_book_outlined,
+                            size: 16,
+                          ),
+                          label: const Text('책 보기'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.accent700,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
+                      ),
+                    ],
                     if (expanded &&
+                        !readOnly &&
                         (onShare != null ||
                             onMakeCard != null ||
                             onDelete != null)) ...[

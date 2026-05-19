@@ -9,6 +9,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
@@ -217,15 +218,21 @@ class _ResultTileState extends ConsumerState<_ResultTile> {
         ? String.fromCharCode(p.displayName!.runes.first)
         : '?';
     return ListTile(
+      onTap: () => context.push('/u/${p.id}'),
       leading: CircleAvatar(
         backgroundColor: AppColors.accent200,
-        child: Text(
-          initial,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.primary900,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        backgroundImage: (p.avatarUrl?.isNotEmpty ?? false)
+            ? NetworkImage(p.avatarUrl!)
+            : null,
+        child: (p.avatarUrl?.isNotEmpty ?? false)
+            ? null
+            : Text(
+                initial,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.primary900,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
       ),
       title: Text(
         p.displayName ?? '(이름 없음)',

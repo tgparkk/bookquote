@@ -367,6 +367,50 @@ class QuoteRepository {
     }
   }
 
+  /// 친구의 공개·잠금아닌 인용구 + 책 (PR18-C 친구 프로필 인용구 탭).
+  ///
+  /// `quotes_friends_read` RLS(친구 + `is_library_public=true` + `is_private=false`)가
+  /// 게이트 — 정책 통과 못하면 0 row. 클라이언트엔 fallback 코드 X(DB가 막음 = 신뢰
+  /// 단일 출처). 잠금 인용구는 *카드 자체가 안 나옴*.
+  ///
+  /// cursor-after `(created_at desc, id desc)`로 무한스크롤. moods 필터는 V1엔 없음
+  /// (남의 인용구는 시간순으로만 — 친구 프로필 인용 탭 단순화).
+  Future<List<QuoteWithBook>> listFriendQuotesWithBook(
+    String userId, {
+    QuoteCursor? after,
+    int limit = 15,
+  }) async {
+    try {
+      var query =
+          _client.from(_table).select('*, book:books(*)').eq('user_id', userId);
+      if (after != null) {
+        final ts = after.createdAt.toUtc().toIso8601String();
+        query = query
+            .or('created_at.lt.$ts,and(created_at.eq.$ts,id.lt.${after.id})');
+      }
+      final rows = await query
+          .order('created_at', ascending: false)
+          .order('id', ascending: false)
+          .limit(limit);
+      final out = <QuoteWithBook>[];
+      for (final r in rows) {
+        final row = Map<String, dynamic>.from(r);
+        final bookJson = row['book'];
+        // RLS가 is_private=false만 통과시키므로 복호화 불필요 — 그래도 분기 안전.
+        final quote = await _decryptIfPrivate(row);
+        out.add((
+          quote: quote,
+          book: bookJson is Map<String, dynamic>
+              ? Book.fromJson(bookJson)
+              : null,
+        ));
+      }
+      return out;
+    } on PostgrestException catch (e) {
+      throw QuoteRepositoryException('LIST_FRIEND_FAILED', e.message);
+    }
+  }
+
   /// is_private=true인 row의 *_encrypted 컬럼을 캐시된 마스터키로 풀어 row의 평문
   /// 컬럼('text', 'manual_book_text')에 채운다. 키가 없거나 복호화 실패면 평문 컬럼은
   /// 그대로 null이고 Quote.text도 null로 — UI(PR16-C)가 [Quote.isPrivate]로 분기.
@@ -400,6 +444,52 @@ class QuoteRepository {
       }
     }
     return Quote.fromJson(row);
+  }
+
+  /// 내 인용구 텍스트 검색 (PR20-B 출시 블로커 UX#2). `text` + `manual_book_text`
+  /// ilike `'%query%'`. RLS가 본인 것만 자연 게이트. 잠금 인용구(text=null,
+  /// `is_private=true`)는 NULL이 ilike 매칭 안 되므로 자연 제외.
+  ///
+  /// 빈 쿼리는 즉시 빈 리스트. ilike 와일드카드(`%`/`_`)는 escape.
+  /// 책 정보 임베드해 N+1 회피.
+  Future<List<QuoteWithBook>> searchMyQuotesWithBook(
+    String query, {
+    int limit = 30,
+  }) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return const [];
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return const [];
+    final escaped = trimmed
+        .replaceAll(r'\', r'\\')
+        .replaceAll('%', r'\%')
+        .replaceAll('_', r'\_');
+    final pattern = '%$escaped%';
+    try {
+      final rows = await _client
+          .from(_table)
+          .select('*, book:books(*)')
+          .eq('user_id', uid)
+          .or('text.ilike.$pattern,manual_book_text.ilike.$pattern')
+          .order('created_at', ascending: false)
+          .order('id', ascending: false)
+          .limit(limit);
+      final out = <QuoteWithBook>[];
+      for (final r in rows) {
+        final row = Map<String, dynamic>.from(r);
+        final bookJson = row['book'];
+        final quote = await _decryptIfPrivate(row);
+        out.add((
+          quote: quote,
+          book: bookJson is Map<String, dynamic>
+              ? Book.fromJson(bookJson)
+              : null,
+        ));
+      }
+      return out;
+    } on PostgrestException catch (e) {
+      throw QuoteRepositoryException('SEARCH_FAILED', e.message);
+    }
   }
 
   /// 내 인용구 총 개수. 비로그인이면 0. ('내 정보' 화면 요약용)

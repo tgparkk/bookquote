@@ -14,11 +14,21 @@ import '../../data/share_service.dart';
 /// 첫 공유 안내 SnackBar 1회 노출 플래그 (PR15-A — 차별화 강화 onboarding).
 const String _kFirstShareHintShown = 'card_share_first_hint_shown_v1';
 
+/// 받는 사람용 deep link scheme. AndroidManifest/Info.plist에 등록된 intent filter.
+const String _kDeepLinkScheme = 'io.github.tgparkk.bookquote';
+
 /// 카드 PNG가 준비된 뒤 호출. 사용자가 시트를 dismiss 해도 정상.
+///
+/// [bookId]와 [senderUid]가 둘 다 제공되면 공유 텍스트에 deep link를 포함한다
+/// (`io.github.tgparkk.bookquote://book/<bookId>?from=share&sender=<senderUid>`).
+/// 받는 사람이 링크를 탭하면 책 상세로 이동 + "[이 사람 서재 ▸]" 노출 — V1 K-factor
+/// 핵심 다리 (PR20-C). bookId 없으면(manual_book_text만) 링크 미포함.
 Future<void> showCardShareSheet({
   required BuildContext context,
   required XFile file,
   String? shareText,
+  String? bookId,
+  String? senderUid,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -28,23 +38,45 @@ Future<void> showCardShareSheet({
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
     ),
-    builder: (ctx) => _CardShareSheet(file: file, shareText: shareText),
+    builder: (ctx) => _CardShareSheet(
+      file: file,
+      shareText: shareText,
+      bookId: bookId,
+      senderUid: senderUid,
+    ),
   );
 }
 
+String? buildDeepLinkForShare({String? bookId, String? senderUid}) {
+  if (bookId == null || bookId.isEmpty) return null;
+  final base = '$_kDeepLinkScheme://book/$bookId?from=share';
+  return (senderUid == null || senderUid.isEmpty)
+      ? base
+      : '$base&sender=$senderUid';
+}
+
 class _CardShareSheet extends StatelessWidget {
-  const _CardShareSheet({required this.file, required this.shareText});
+  const _CardShareSheet({
+    required this.file,
+    required this.shareText,
+    required this.bookId,
+    required this.senderUid,
+  });
 
   final XFile file;
   final String? shareText;
+  final String? bookId;
+  final String? senderUid;
 
   Future<void> _share(BuildContext context, String? prefix) async {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    final deepLink = buildDeepLinkForShare(bookId: bookId, senderUid: senderUid);
     try {
       await shareCardImage(
         file: file,
         subject: prefix == null ? null : '$prefix — 책귀',
+        text: deepLink,
       );
       if (navigator.canPop()) navigator.pop();
       // PR15-A (2): 첫 공유 직후 단 1회 — "다른 곳에도 보낼 수 있어요" closure

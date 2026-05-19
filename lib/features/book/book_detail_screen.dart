@@ -13,7 +13,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/auth_state_provider.dart';
+import '../../core/supabase/supabase_init.dart';
+import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/tokens.dart';
+import '../follow/state/follow_providers.dart';
+import '../profile/domain/profile.dart';
+import '../profile/state/friend_providers.dart';
 import '../quote/presentation/widgets/quote_list_card.dart';
 import '../quote/state/quote_providers.dart';
 import 'data/book_repository.dart';
@@ -24,12 +29,21 @@ import 'presentation/widgets/star_rating.dart';
 import 'state/book_providers.dart';
 
 class BookDetailScreen extends ConsumerWidget {
-  const BookDetailScreen({super.key, required this.bookId, this.from});
+  const BookDetailScreen({
+    super.key,
+    required this.bookId,
+    this.from,
+    this.sender,
+  });
 
   final String bookId;
 
   /// deep link 진입 출처. `'share'` / `'kakao'`면 "공유받은 책" 모드.
   final String? from;
+
+  /// 공유 카드 deep link의 발신자 uid (PR20-C). 공개 프로필이면 "[이 사람 서재 ▸]"
+  /// 칩 노출. 본인이거나 비공개 프로필이면 칩 숨김 (RLS 0 row → friendProfileProvider null).
+  final String? sender;
 
   bool get _fromShare => from == 'share' || from == 'kakao';
 
@@ -51,7 +65,7 @@ class BookDetailScreen extends ConsumerWidget {
       body: asyncBook.when(
         data: (book) => book == null
             ? const _NotFoundView()
-            : _BookBody(book: book, fromShare: _fromShare),
+            : _BookBody(book: book, fromShare: _fromShare, sender: sender),
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.accent500),
         ),
@@ -66,10 +80,15 @@ class BookDetailScreen extends ConsumerWidget {
 // ── 본문 ──────────────────────────────────────────────────
 
 class _BookBody extends ConsumerWidget {
-  const _BookBody({required this.book, required this.fromShare});
+  const _BookBody({
+    required this.book,
+    required this.fromShare,
+    required this.sender,
+  });
 
   final Book book;
   final bool fromShare;
+  final String? sender;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -94,7 +113,7 @@ class _BookBody extends ConsumerWidget {
       ),
       children: [
         if (fromShare) ...[
-          const _SharedBanner(),
+          _SharedBanner(sender: sender),
           const SizedBox(height: AppSpacing.s4),
           _LibraryActionButton(bookId: book.id, prominent: true),
           const SizedBox(height: AppSpacing.s6),
@@ -146,6 +165,8 @@ class _BookBody extends ConsumerWidget {
           const SizedBox(height: AppSpacing.s2),
           _LibraryActionButton(bookId: book.id, prominent: false),
         ],
+        // PR18-D — "이 책을 담은 친구 N명" — N≥1일 때만 자체 렌더(빈상태 회피)
+        _FriendsWithBookRow(bookId: book.id),
         const SizedBox(height: AppSpacing.s8),
         // "이 책에서 모은 구절"
         _BookQuotesSection(bookId: book.id),
@@ -163,11 +184,26 @@ class _BookBody extends ConsumerWidget {
 
 // ── "공유받은 책" 배너 (deep link 진입 시) ─────────────────────
 
-class _SharedBanner extends StatelessWidget {
-  const _SharedBanner();
+class _SharedBanner extends ConsumerWidget {
+  const _SharedBanner({required this.sender});
+
+  /// 카드 deep link sender uid. 공개 프로필이면 발신자 이름 + "[이 사람 서재 ▸]"
+  /// 버튼 노출(PR20-C). 본인이거나 비공개 프로필이면 익명 카피만.
+  final String? sender;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 본인 uid는 redirect로 막혔어야 하지만 deep link 위변조 대비 — 본인이면 익명 카피.
+    final myUid = isSupabaseReady ? supabase.auth.currentUser?.id : null;
+    final senderUid = (sender == null || sender == myUid) ? null : sender;
+    // RLS상 공개 프로필 OR 본인이면 row → 비공개면 null 자연 fallback.
+    final senderProfile = senderUid == null
+        ? null
+        : ref.watch(friendProfileProvider(senderUid)).value;
+    final senderName = senderProfile?.displayName;
+    final text = senderName != null && senderName.isNotEmpty
+        ? '$senderName님이 이 책의 한 줄을 보냈어요.'
+        : '누군가 이 책의 한 줄을 보냈어요. 마음에 들면 서재에 담아보세요.';
     return Container(
       padding: const EdgeInsets.all(AppSpacing.s3),
       decoration: BoxDecoration(
@@ -175,23 +211,43 @@ class _SharedBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.accent200),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('💬', style: TextStyle(fontSize: 16)),
-          const SizedBox(width: AppSpacing.s2),
-          Expanded(
-            child: Text(
-              '누군가 이 책의 한 줄을 보냈어요. 마음에 들면 서재에 담아보세요.',
-              style: TextStyle(
-                fontFamily: AppFonts.ui,
-                fontSize: AppFontSize.sm,
-                fontWeight: FontWeight.w600,
-                height: AppLineHeight.normal,
-                color: AppColors.accent800,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('💬', style: TextStyle(fontSize: 16)),
+              const SizedBox(width: AppSpacing.s2),
+              Expanded(
+                child: Text(
+                  text,
+                  style: const TextStyle(
+                    fontFamily: AppFonts.ui,
+                    fontSize: AppFontSize.sm,
+                    fontWeight: FontWeight.w600,
+                    height: AppLineHeight.normal,
+                    color: AppColors.accent800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (senderProfile != null) ...[
+            const SizedBox(height: AppSpacing.s2),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => context.push('/u/$senderUid'),
+                icon: const Icon(Icons.chevron_right_rounded, size: 16),
+                label: const Text('이 사람 서재 보기'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.accent700,
+                  visualDensity: VisualDensity.compact,
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -734,6 +790,166 @@ class _BookRatingRowState extends ConsumerState<_BookRatingRow> {
       rating: rating,
       size: 24,
       onRated: _busy ? null : _rate,
+    );
+  }
+}
+
+// ── PR18-D — "이 책을 담은 친구 N명" ───────────────────────────
+
+/// 헤더 행 — N≥1일 때만 자체 렌더(빈상태 회피). 탭 = 시트 미니리스트.
+class _FriendsWithBookRow extends ConsumerWidget {
+  const _FriendsWithBookRow({required this.bookId});
+
+  final String bookId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncCount = ref.watch(friendsWithBookCountProvider(bookId));
+    final n = asyncCount.value ?? 0;
+    if (n <= 0) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.s6),
+      child: InkWell(
+        onTap: () => _openFriendsWithBookSheet(context, bookId),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.s2,
+            horizontal: AppSpacing.s1,
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.group_outlined,
+                size: 18,
+                color: AppColors.primary500,
+              ),
+              const SizedBox(width: AppSpacing.s2),
+              Expanded(
+                child: Text(
+                  '이 책을 담은 친구 $n명',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.primary700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: AppColors.primary400,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _openFriendsWithBookSheet(BuildContext context, String bookId) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => _FriendsWithBookSheet(bookId: bookId),
+  );
+}
+
+class _FriendsWithBookSheet extends ConsumerWidget {
+  const _FriendsWithBookSheet({required this.bookId});
+
+  final String bookId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(friendsWithBookProvider(bookId));
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.5,
+      maxChildSize: 0.9,
+      builder: (_, scrollController) => Column(
+        children: [
+          const SizedBox(height: AppSpacing.s2),
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.primary300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.s4),
+            child: Text('이 책을 담은 친구', style: AppTextStyles.headlineMedium),
+          ),
+          Expanded(
+            child: async.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.accent500),
+              ),
+              error: (_, _) => Center(
+                child: Text(
+                  '목록을 불러오지 못했어요.',
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.primary500),
+                ),
+              ),
+              data: (profiles) {
+                if (profiles.isEmpty) {
+                  return Center(
+                    child: Text(
+                      '아직 이 책을 담은 친구가 없어요',
+                      style: AppTextStyles.bodyMedium
+                          .copyWith(color: AppColors.primary500),
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  controller: scrollController,
+                  itemCount: profiles.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (_, i) =>
+                      _FriendsWithBookTile(profile: profiles[i]),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FriendsWithBookTile extends StatelessWidget {
+  const _FriendsWithBookTile({required this.profile});
+
+  final Profile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = profile.displayName ?? '(이름 없음)';
+    final initial = name.isEmpty ? '?' : String.fromCharCode(name.runes.first);
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: AppColors.accent200,
+        backgroundImage: (profile.avatarUrl?.isNotEmpty ?? false)
+            ? NetworkImage(profile.avatarUrl!)
+            : null,
+        child: (profile.avatarUrl?.isNotEmpty ?? false)
+            ? null
+            : Text(
+                initial,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.primary900,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+      ),
+      title: Text(name, style: AppTextStyles.bodyLarge),
+      onTap: () {
+        Navigator.of(context).pop();
+        context.push('/u/${profile.id}');
+      },
     );
   }
 }

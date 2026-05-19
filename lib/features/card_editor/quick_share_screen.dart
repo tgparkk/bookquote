@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/supabase/supabase_init.dart';
 import '../../core/theme/tokens.dart';
 import '../crypto/presentation/lock_dialogs.dart';
 import 'data/card_renderer.dart';
@@ -152,6 +153,8 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
         context: context,
         file: file,
         shareText: _data!.quoteText,
+        bookId: _data!.bookId,
+        senderUid: supabase.auth.currentUser?.id,
       );
     } on CardRenderException {
       if (!mounted) return;

@@ -27,3 +27,19 @@ final myFollowingCountProvider = FutureProvider.autoDispose<int>((ref) async {
   final repo = ref.watch(followRepositoryProvider);
   return repo.myFollowingCount();
 });
+
+/// 이 책을 담은 *친구* 수 (PR18-D). 책 상세 헤더에서 watch — N≥1일 때만 렌더.
+final friendsWithBookCountProvider =
+    FutureProvider.autoDispose.family<int, String>((ref, bookId) async {
+  final repo = ref.watch(followRepositoryProvider);
+  return repo.countFriendsWithBook(bookId);
+});
+
+/// 이 책을 담은 친구 프로필 목록 (PR18-D 시트 미니리스트). 시트 열릴 때만 watch.
+final friendsWithBookProvider =
+    FutureProvider.autoDispose.family<List<Profile>, String>(
+  (ref, bookId) async {
+    final repo = ref.watch(followRepositoryProvider);
+    return repo.friendsWithBook(bookId);
+  },
+);

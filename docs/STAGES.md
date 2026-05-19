@@ -7,7 +7,82 @@
 
 ---
 
-## ▶ 다음 세션 시작점 (2026-05-18 기준 — PR19 + PR16-C-2/D/E + PR18-A/B 완료 · E2EE 트랙 종료 · 친구 트랙 검색·토글·홈 CTA 진입점 살아남 · 다음 = PR18-C `/u/:userId` 친구 프로필 화면)
+## ▶ 다음 세션 시작점 (2026-05-19 기준 — PR18-C/D + PR20-A/B/C/D 완료 · 매니저 UX 종합 5건 중 4건 처리 · 남은 출시 블로커 = SMTP 1건만)
+
+**PR20-D 산출** (2026-05-19, 홈 친구 최근 활동 1줄 배너 — UX#4 K-factor 다리):
+- **마이그레이션** `20260519140000_friend_recent_activity.sql` — RPC `friend_recent_activity(since timestamptz)` SECURITY INVOKER. quotes/profiles RLS 자연 게이트 활용(친구 + 공개 + 잠금 아님). user별 group-by + max(created_at) desc 정렬, limit 20. 원격 push 완료.
+- **`friend_activity_provider.dart`** — `FriendActivity` typedef (`userId·displayName·avatarUrl·count·latest`) + `friendActivityProvider` autoDispose FutureProvider. last_seen SharedPreferences (`friend_activity_last_seen_v1`) — 미설정 시 기본 7일 lookback. `markFriendActivitySeen()` 헬퍼.
+- **`FriendActivityBanner`** ConsumerWidget — 0건이면 자체 숨김. 1건 = "지윤님이 새 인용구 3개를 보탰어요" / ≥2건 = "지윤 외 N명이 새 인용구를 보탰어요". 탭 시 `markFriendActivitySeen` + invalidate + `/u/<first>` push. accent50 배경 + accent200 border.
+- **홈 통합** — OutboxBanner 다음, RecallCard 위. pull-to-refresh도 `invalidate(friendActivityProvider)` 추가.
+- **테스트**: friend_activity_banner_test 신규 3건(0건 숨김 / 1건 단수 카피 / ≥2건 외 N명). 전체 251/251 통과. analyze clean.
+
+**PR20-C 산출** (2026-05-19, sender 컨텍스트 deep link 영속 + K-factor 다리 — UX#3):
+
+**PR20-C 산출** (2026-05-19, sender 컨텍스트 deep link 영속 + K-factor 다리 — UX#3):
+- **share text에 deep link 포함** — `share_sheet.buildDeepLinkForShare(bookId, senderUid)` → `io.github.tgparkk.bookquote://book/<id>?from=share&sender=<uid>`. share_plus `ShareParams.text`로 전달. Kakao 단톡은 이미지만 받지만 Telegram·SMS·메일·트위터 등은 텍스트도 받음 → V1 K-factor 다리 살아남(받는 사람이 링크 탭 → 책 상세 진입).
+- **`shareCardImage(text:)`** — share_service에 `text` 파라미터 추가. 카드 에디터·quick_share 두 진입점 모두 `data.bookId` + `supabase.auth.currentUser?.id` 전달.
+- **`router /book/:id`** — `?sender=<uid>` 쿼리 파싱 → `BookDetailScreen.sender` prop.
+- **`_SharedBanner`** ConsumerWidget으로 승격 — sender uid를 `friendProfileProvider`로 watch. **공개 프로필** OR 본인이면 row, 그 외 RLS 0 row → null 자연 분기. 공개면 "지윤님이 이 책의 한 줄을 보냈어요." + `[이 사람 서재 보기 ▸]` TextButton → `context.push('/u/<sender>')`. 비공개/본인/sender 없음 → 익명 카피 "누군가 이 책의 한 줄을 보냈어요." (위변조 deep link 대비). `isSupabaseReady` 가드로 테스트 환경 호환.
+- **Stack dedup**(같은 책 무한 누적) + **payload SharedPreferences 영속화**는 V1.0.1 hotfix로 분리(IA expert도 ranked nice-to-have). URL-based passing이 GoRouter back stack에 자동 보존되므로 V1 정상 흐름은 작동.
+- **테스트**: book_detail_screen_test PR20-C 그룹 3건(공개 sender 발신자명+버튼 / 비공개 sender 익명 / sender 없음 익명). 전체 248/248 통과. analyze clean.
+
+**PR20-B 산출** (2026-05-19, 인용구 텍스트 검색 — UX#2):
+
+**PR20-B 산출** (2026-05-19, 인용구 텍스트 검색 — UX#2):
+- `QuoteRepository.searchMyQuotesWithBook(query, limit)` — `text` + `manual_book_text` `ilike '%query%'` OR + ilike escape(`%`/`_`/`\`) + `created_at desc/id desc`. RLS가 본인 것만 게이트. 잠금 인용구(`text=null`)는 NULL ilike 비매칭 → **자연 제외**(서버에 평문 0 원칙 일관).
+- `quoteSearchProvider(query)` autoDispose family (`flutter_riverpod`).
+- `QuoteSearchDelegate extends SearchDelegate<void>` — Material `showSearch` 표준 사용. `ValueNotifier<String> _debounced` + `Timer(300ms)` 디버운스. `_Hint`/`_ZeroResult`/`_ErrorView` + 결과는 `QuoteListCard` 탭 → `/quote/:id/share`(검색은 hot 컨텍스트 → 1탭 = 바로 공유. 전문가 #3 R4 retention 의도).
+- 홈 AppBar + 서재 AppBar 둘 다 `IconButton(search_rounded)` → `showSearch(context, QuoteSearchDelegate())`. 재사용 1 delegate.
+- 잠금 본문 검색 제외는 _Hint 1줄 안내(첫 진입 시 무조건 노출 — dismissable X, 마찰 0).
+- 테스트: quote_search_test 신규 3건(힌트 / 0건 ZeroResult / ≥1건 카드). 전체 245/245 통과. analyze clean. release APK 검증.
+
+**PR20-A 산출** (2026-05-19, 저장→공유 액션 모델 통일 — UX#1):
+
+**매니저 모드 UX 종합** (2026-05-19, 모바일 UX 전문가 3명 병렬 점검 — Day 0 onboarding / IA·네비게이션 / D1-D30 retention):
+- **출시 블로커** 5건: ① SMTP 연동(알려진) ② 인용구 텍스트 검색(D30 unmet need, V1.0.1 → V1.0 격상) ③ 홈 "최근 친구 활동" 1줄 배너(K-factor 핵심) ④ 친구 trail route dedup + sender 컨텍스트 영속화 ⑤ 저장→공유 액션 모델 통일.
+- **V1.0.1 hotfix**: `/me/lock-password`·`/me/friend-search` top-level 승격(Me 서브트리 안티 패턴) · OCR 코치마크(클립보드 빈 상태 OS Live Text 안내) · Self-set local reminder · 홈 무드 다시보기 칩.
+- **무효**: 카드 에디터 "스텁" 진단 — PR7-PR12 모두 완료(전문가 README 구버전 라벨 오독).
+
+**PR20-A 산출** (2026-05-19, 저장→공유 액션 모델 통일 — UX#1):
+- `quote_input_screen._submit` `thenCard` 파라미터 제거 → 단일 흐름. CTA 두 버튼([카드 만들기 →]/[저장만 하기])을 단일 [저장](편집 모드는 [수정 저장])로 통합.
+- 저장 직후 SnackBar (6s) — 커스텀 content Column에 본문 + Wrap actions: `[바로 공유]`(accent400) + `[카드 디자인]` + (책 연결 시) `[이 책에 한 줄 더]`(PR15-A 흡수). 홈/책상세 어디서 진입하든 *방금 만들었다* hot 컨텍스트 안에서 1탭으로 다음 행위 선택.
+- 카드 디자인 진입점은 이제 ① 홈 카드 펼침 ② 저장 직후 SnackBar 2곳만 — 입력 화면 안의 [카드 만들기 →] 사라짐 → 인지 부하 −1.
+- 테스트: quote_input_screen_test에 단일 CTA 노출 + 옛 라벨 부재 회귀 가드 추가. 전체 242/242 통과. analyze clean. release APK 검증.
+
+**PR18-D 산출** (2026-05-19, 책 상세 "이 책을 담은 친구 N명" 행 + 시트):
+
+**PR18-D 산출** (2026-05-19, 책 상세 "이 책을 담은 친구 N명" 행 + 시트):
+- **마이그레이션 없음** — `user_books_friends_read` RLS가 이미 가시성 게이트. 클라이언트 2-step(`user_books.eq(book_id).neq(user_id=self).count(exact)` → `profiles.inFilter('id', ids)`)로 RLS 그대로 활용. RPC `followers_count_for_book` + 인덱스는 V1 미사용(측정 후 hotfix 슬롯).
+- **`FollowRepository.countFriendsWithBook(bookId)`** — RLS 통과 row 카운트 + 본인 제외(`neq(user_id, uid)`). 미로그인은 0. **`friendsWithBook(bookId, limit)`** — 2-step 프로필 목록, `added_at desc` 정렬 보존.
+- **providers**: `friendsWithBookCountProvider(bookId)`(헤더에서 즉시 watch) + `friendsWithBookProvider(bookId)`(시트 열릴 때 lazy fetch).
+- **`book_detail_screen._FriendsWithBookRow`** — 헤더 행 다음, "이 책에서 모은 구절" 위. `count <= 0`이면 자체 숨김(빈상태 회피, 디자인 결정). 탭 → `_FriendsWithBookSheet`(`DraggableScrollableSheet` 0.5/0.9, 아바타+display_name ListTile, 탭 시 `/u/:userId`로 push + 시트 닫힘).
+- **테스트**: book_detail_screen_test에 PR18-D 그룹 2개(`friendsCount=0 → 행 숨김` / `N≥1 → "N명" 행 노출`). 신규 13건 누계(PR18-C 12 + PR18-D 2 — 사실상 +2). 전체 241/241 통과. `flutter analyze` clean. release APK 빌드 검증.
+
+**PR18-C 산출** (2026-05-19, `/u/:userId` 친구 프로필 풀스크린):
+- **마이그레이션** `20260519120000_follows_public_read.sql` — `follows` SELECT RLS 확장: 두 endpoint 모두 `is_library_public=true`면 누구나 read 가능. 친구 프로필 헤더 "팔로워 N · 팔로잉 N" 카운트 + 카운트 시트 노출 가능하게(트위터식 social proof, friend-profile.md §7). 비공개 프로필 follow 그래프는 본인 외 0 row 유지. 원격 push 완료(project `ndbvptxwznogcuuumzzh`).
+- **repo 메서드 추가**:
+  - `ProfileRepository.getById(userId)` — RLS상 공개 프로필 OR 본인이면 row, 그 외 null
+  - `FollowRepository.listFollowing/listFollowers(userId, limit)` + `countFollowing/countFollowers(userId)` — 2-step (`follows` rows → `profiles` `inFilter('id', ids)`로 N+1 회피). follow 순서 보존 reorder.
+  - `BookRepository.listFriendBooks(userId, limit)` — `user_books_friends_read` RLS 게이트(클라 쿼리는 단순 `eq('user_id', userId)`)
+  - `QuoteRepository.listFriendQuotesWithBook(userId, after, limit)` — `quotes_friends_read` RLS(is_private=false) 게이트, cursor-after `(created_at desc, id desc)`
+- **신규 화면** `lib/features/profile/presentation/friend_profile_screen.dart` + `state/friend_providers.dart` — 헤더(아바타·display_name·카운트·팔로우 버튼 낙관 토글 + 언팔로우 확인 다이얼로그) + 세그먼트 [책 ↔ 인용구] + 잠긴 서재 빈상태(`FollowState` 분기 카피: 팔로우 전 "공개 설정을 켜면 보여요" / 팔로잉 중 "팔로우 중이에요…") + `_NicknameGateView`(`.`·`_` 포함 또는 빈 닉네임 풀스크린 봉쇄) + `_FollowersSheet`(`DraggableScrollableSheet` → 아바타+display_name ListTile → 무한 깊이 `/u/:uid` push) + `_NotFoundView`(profile null 시 [홈으로]).
+- **router** `/u/:userId` top-level GoRoute + `_redirect` 본인 진입 시 `/me`로 redirect(1프레임 흰 화면 회피, 라우터 가드 단계 처리). 인증 게이트는 기존 `loggedIn` 분기에 자연 흡수(`from=/u/:userId` 보존).
+- **`quote_list_card.dart`** `readOnly` + `onOpenBook` prop 추가 — 친구 인용구 카드는 [공유]·[카드 디자인]·[삭제] 모두 숨김, 펼침 시 [책 보기]만(book_id null이면 그것도 숨김).
+- **`friend_search_screen.dart`** ListTile `onTap` → `/u/:userId` 라우팅 + avatar_url 폴백(이니셜 → NetworkImage).
+- **테스트**: `quote_list_card_test` readOnly 그룹 3개 + `friend_profile_screen_test` 9개 신규 = 신규 12개. 전체 239/239 통과. `flutter analyze` clean. release APK 빌드 검증(`feedback_release_only_traps` 패턴 통과). **남은 V1.0 작업** = PR18-E(RLS 침투 회귀 테스트 — 잠금 인용구·비공개 프로필·비팔로워 0 row 단언) + Stage 5 출시 본 작업.
+
+**PR18-C 산출** (2026-05-19, `/u/:userId` 친구 프로필 풀스크린):
+- **마이그레이션** `20260519120000_follows_public_read.sql` — `follows` SELECT RLS 확장: 두 endpoint 모두 `is_library_public=true`면 누구나 read 가능. 친구 프로필 헤더 "팔로워 N · 팔로잉 N" 카운트 + 카운트 시트 노출 가능하게(트위터식 social proof, friend-profile.md §7). 비공개 프로필 follow 그래프는 본인 외 0 row 유지. 원격 push 완료(project `ndbvptxwznogcuuumzzh`).
+- **repo 메서드 추가**:
+  - `ProfileRepository.getById(userId)` — RLS상 공개 프로필 OR 본인이면 row, 그 외 null
+  - `FollowRepository.listFollowing/listFollowers(userId, limit)` + `countFollowing/countFollowers(userId)` — 2-step (`follows` rows → `profiles` `inFilter('id', ids)`로 N+1 회피). follow 순서 보존 reorder.
+  - `BookRepository.listFriendBooks(userId, limit)` — `user_books_friends_read` RLS 게이트(클라 쿼리는 단순 `eq('user_id', userId)`)
+  - `QuoteRepository.listFriendQuotesWithBook(userId, after, limit)` — `quotes_friends_read` RLS(is_private=false) 게이트, cursor-after `(created_at desc, id desc)`
+- **신규 화면** `lib/features/profile/presentation/friend_profile_screen.dart` + `state/friend_providers.dart` — 헤더(아바타·display_name·카운트·팔로우 버튼 낙관 토글 + 언팔로우 확인 다이얼로그) + 세그먼트 [책 ↔ 인용구] + 잠긴 서재 빈상태(`FollowState` 분기 카피: 팔로우 전 "공개 설정을 켜면 보여요" / 팔로잉 중 "팔로우 중이에요…") + `_NicknameGateView`(`.`·`_` 포함 또는 빈 닉네임 풀스크린 봉쇄) + `_FollowersSheet`(`DraggableScrollableSheet` → 아바타+display_name ListTile → 무한 깊이 `/u/:uid` push) + `_NotFoundView`(profile null 시 [홈으로]).
+- **router** `/u/:userId` top-level GoRoute + `_redirect` 본인 진입 시 `/me`로 redirect(1프레임 흰 화면 회피, 라우터 가드 단계 처리). 인증 게이트는 기존 `loggedIn` 분기에 자연 흡수(`from=/u/:userId` 보존).
+- **`quote_list_card.dart`** `readOnly` + `onOpenBook` prop 추가 — 친구 인용구 카드는 [공유]·[카드 디자인]·[삭제] 모두 숨김, 펼침 시 [책 보기]만(book_id null이면 그것도 숨김).
+- **`friend_search_screen.dart`** ListTile `onTap` → `/u/:userId` 라우팅 + avatar_url 폴백(이니셜 → NetworkImage).
+- **테스트**: `quote_list_card_test` readOnly 그룹 3개 + `friend_profile_screen_test` 9개 신규 = 신규 12개. 전체 239/239 통과. `flutter analyze` clean. release APK 빌드 검증(`feedback_release_only_traps` 패턴 통과). **남은 V1.0 작업** = PR18-D(책 상세 친구 미니리스트 + `followers_count_for_book` RPC) + PR18-E(RLS 침투 회귀 테스트 — 잠금 인용구·비공개 프로필·비팔로워 0 row 단언) + Stage 5 출시 본 작업.
 
 **상태**: Stage 0~1 완료 + 화면 설계 완료 + Stage 2 본 작업 종료(PR1~6 + 별점) + **Stage 3 전체 완료 — PR7~PR12(+PR10.5 1탭 공유, +인용구 편집 모드, +출시 약관 페이지)** + **PR13 출시 직전 P0 fix 2건(F1·B11)** + **PR14 출시 직전 P1 15건 6 sub-PR 완료**(A 아웃박스 안전성·B 인용구 입력 검증·C 카드 lifecycle·D UX·접근성·E Markdown XFile + draft 시점·F 매직링크 타임아웃 안내). 다음은 **Stage 5 본 작업**(스토어 등록·PostHog·인스타·커뮤니티 게시) + **B9 검증**. `flutter analyze` clean, `flutter test` 127개 통과. 마이그레이션 5개(`quotes`, `user_books.rating`, `my_quote_mood_counts`, **`cards`**, +Stage1 4개) 원격 적용 완료. main에 push됨. 실기기(SM F956N) PR10 검증 통과 — 카카오톡/인스타 공유 OK. **PR10 hotfix 2건**(2026-05-16): ① `main/AndroidManifest.xml` `INTERNET` 권한 누락(debug/profile에만 있어 release APK는 모든 네트워크 호출 SocketException) ② `card_renderer.dart`의 `boundary.debugNeedsPaint` 사용 — SDK 내부에서 assert로만 초기화되는 late bool 반환이라 release/profile에서 `LateInitializationError`. 둘 다 PR5/PR10 시점부터 잠재해 있던 release-only 버그. 향후 모든 release 빌드는 이 두 함정 인지하고 동작.
 

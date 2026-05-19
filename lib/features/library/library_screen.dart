@@ -17,6 +17,7 @@ import '../book/presentation/widgets/book_cover.dart';
 import '../book/state/book_providers.dart';
 import '../quote/domain/quote_mood.dart';
 import '../quote/presentation/quote_list_view.dart';
+import '../quote/presentation/quote_search_delegate.dart';
 import 'presentation/calendar_segment.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
@@ -75,7 +76,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('내 서재')),
+      appBar: AppBar(
+        title: const Text('내 서재'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search_rounded),
+            tooltip: '인용구 검색',
+            onPressed: () =>
+                showSearch(context: context, delegate: QuoteSearchDelegate()),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           _SegmentHeader(

@@ -110,3 +110,11 @@ class CreateQuoteController extends AsyncNotifier<void> {
 
 final createQuoteControllerProvider =
     AsyncNotifierProvider<CreateQuoteController, void>(CreateQuoteController.new);
+
+/// 인용구 본문 검색 (PR20-B). 호출자가 300ms debounce 후 watch — 매 키 입력마다
+/// 새 fetch는 비용 폭증. autoDispose라 검색 시트 닫히면 결과 캐시도 해제.
+final quoteSearchProvider = FutureProvider.autoDispose
+    .family<List<QuoteWithBook>, String>((ref, query) async {
+  final repo = ref.watch(quoteRepositoryProvider);
+  return repo.searchMyQuotesWithBook(query);
+});

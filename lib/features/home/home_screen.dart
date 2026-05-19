@@ -14,6 +14,9 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/tokens.dart';
 import '../quote/data/quote_outbox.dart';
 import '../quote/data/quote_repository.dart';
+import '../follow/presentation/widgets/friend_activity_banner.dart';
+import '../follow/state/friend_activity_provider.dart';
+import '../quote/presentation/quote_search_delegate.dart';
 import '../quote/presentation/widgets/outbox_banner.dart';
 import '../quote/presentation/widgets/quote_list_card.dart';
 import '../quote/presentation/widgets/recall_card.dart';
@@ -126,17 +129,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Widget build(BuildContext context) {
     final feed = ref.watch(quoteFeedProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('책귀')),
+      appBar: AppBar(
+        title: const Text('책귀'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search_rounded),
+            tooltip: '인용구 검색',
+            onPressed: () =>
+                showSearch(context: context, delegate: QuoteSearchDelegate()),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           const OutboxBanner(),
+          // PR20-D — 친구가 새 인용구 추가했음을 인지할 유일한 다리 (V1엔 Realtime 없음).
+          const FriendActivityBanner(),
           const RecallCard(),
           // PR18-B: 인용구 ≥1이고 친구 0명일 때만 친구 찾기 CTA 노출
           // (인용구 0개일 땐 빈상태 CTA가 우선 — 진입점 마찰 해소, qa-tester 권고).
           if (feed.value?.isNotEmpty ?? false) const FriendSearchCta(),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: () => ref.read(quoteFeedProvider.notifier).refresh(),
+              onRefresh: () async {
+                ref.invalidate(friendActivityProvider);
+                await ref.read(quoteFeedProvider.notifier).refresh();
+              },
               child: feed.when(
                 loading: () => const Center(
                   child: CircularProgressIndicator(color: AppColors.accent500),
