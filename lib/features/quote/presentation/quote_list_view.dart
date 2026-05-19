@@ -17,6 +17,7 @@ import '../domain/quote_mood.dart';
 import '../state/quote_feed_provider.dart';
 import '../state/quote_providers.dart';
 import 'widgets/mood_chips.dart';
+import 'widgets/mood_hub_grid.dart';
 import 'widgets/outbox_banner.dart';
 import 'widgets/quote_list_card.dart';
 
@@ -44,15 +45,70 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
   Object? _error;
   String? _expandedId;
 
+  /// PR22 무드 hub. null = 아직 결정 안 됨, 종류 ≥3이면 hub 모드 진입(_mood가
+  /// null인 동안). 단면 진입(_mood != null)은 스냅샷 유지하되 단면 데이터 별도 fetch.
+  List<MoodHubSnapshot>? _snapshots;
+
+  /// hub 진입 결정 + 시간순 fallback 선택은 무드 종류 ≥3 기준. 진입 화면 차이가
+  /// 큰 변화이므로 외부에서 명확히 가늠하기 위해 게터로 노출.
+  bool get _hubMode =>
+      widget.initialMood == null &&
+      _mood == null &&
+      _snapshots != null &&
+      _snapshots!.length >= 3;
+
   @override
   void initState() {
     super.initState();
     _mood = widget.initialMood;
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadCounts();
-      _reload();
+      if (widget.initialMood != null) {
+        // 단면 진입(딥링크 등) — hub 단계 건너뜀.
+        _loadCounts();
+        _reload();
+      } else {
+        _resolveEntryMode();
+      }
     });
+  }
+
+  /// 무드 종류 ≥3면 hub 모드, 아니면 시간순 fallback. 호출 후 hub 모드일 땐
+  /// `_snapshots` + `_counts`가 채워지고 `_items`는 비어 있다(필요 시 사용자가
+  /// 무드 카드 탭으로 단면 fetch). fallback일 땐 `_snapshots=null` + 기존 시간순.
+  Future<void> _resolveEntryMode() async {
+    try {
+      final snaps = await ref
+          .read(quoteRepositoryProvider)
+          .listMoodHubSnapshots();
+      if (!mounted) return;
+      if (snaps.length >= 3) {
+        // hub 모드 — counts도 snapshots에서 도출(RPC 1회 절약).
+        final byMood = <QuoteMood, int>{};
+        var total = 0;
+        for (final s in snaps) {
+          byMood[s.mood] = s.count;
+          total += s.count;
+        }
+        setState(() {
+          _snapshots = snaps;
+          _counts = (total: total, byMood: byMood);
+          _loading = false;
+          _error = null;
+        });
+      } else {
+        // 시간순 fallback — 신규 D1~D7 또는 무드 종류 적은 사용자.
+        setState(() => _snapshots = null);
+        await _loadCounts();
+        await _reload();
+      }
+    } catch (_) {
+      // hub fetch 실패 → 시간순 fallback (운영 안전성).
+      if (!mounted) return;
+      setState(() => _snapshots = null);
+      await _loadCounts();
+      await _reload();
+    }
   }
 
   @override
@@ -129,6 +185,9 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
       _mood = mood;
       _expandedId = null;
     });
+    // hub 모드 복귀(_mood=null + 충분한 무드)는 items reload 불필요 — snapshots는
+    // 살아있고 MoodHubGrid가 직접 그린다. 단면 진입·단면 간 전환만 _reload.
+    if (_hubMode) return;
     _reload();
   }
 
@@ -177,23 +236,47 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
 
   @override
   Widget build(BuildContext context) {
+    // 외부 invalidation 동기화 채널 — `_items`/`_snapshots`는 로컬 state라
+    // `invalidate(quoteFeedProvider)` 같은 신호를 자체적으로 못 받는다(잠금 해제 후
+    // 카드가 stale로 잠긴 표시 유지하던 버그의 직접 원인). quoteFeedProvider가 새
+    // 데이터를 받으면 hub/단면 모드에 맞춰 재해결.
+    ref.listen<AsyncValue<List<QuoteWithBook>>>(quoteFeedProvider, (prev, next) {
+      if (next is AsyncData && prev != next) {
+        if (widget.initialMood == null) {
+          _resolveEntryMode();
+        } else {
+          _loadCounts();
+          _reload();
+        }
+      }
+    });
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const OutboxBanner(),
-        _FilterChips(
-          selected: _mood,
-          counts: _counts,
-          onSelect: _selectMood,
-        ),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: () async {
-              await _loadCounts();
-              await _reload();
-            },
-            child: _body(context),
+        if (!_hubMode)
+          _FilterChips(
+            selected: _mood,
+            counts: _counts,
+            onSelect: _selectMood,
           ),
+        Expanded(
+          child: _hubMode
+              ? RefreshIndicator(
+                  onRefresh: _resolveEntryMode,
+                  child: MoodHubGrid(
+                    snapshots: _snapshots!,
+                    onMoodTap: _selectMood,
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: () async {
+                    await _loadCounts();
+                    await _reload();
+                  },
+                  child: _body(context),
+                ),
         ),
       ],
     );

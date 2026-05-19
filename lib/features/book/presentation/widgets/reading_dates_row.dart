@@ -64,6 +64,7 @@ class _ReadingDatesRowState extends ConsumerState<ReadingDatesRow> {
       ref.invalidate(readingDatesProvider(widget.bookId));
       ref.invalidate(myLibraryProvider);
       ref.invalidate(isInLibraryProvider(widget.bookId));
+      ref.invalidate(currentlyReadingProvider); // PR23 홈 "지금 읽고 있어요" 갱신
       if (shouldAutoStart) {
         messenger
           ..clearSnackBars()

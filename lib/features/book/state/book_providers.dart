@@ -48,3 +48,11 @@ final readingDatesProvider =
     FutureProvider.autoDispose.family<ReadingDates, String>((ref, bookId) async {
   return ref.read(bookRepositoryProvider).getReadingDates(bookId);
 });
+
+/// PR23: 지금 읽고 있는 책 (홈 NowReadingRow). 시작/완독 변경 시
+/// `ref.invalidate(currentlyReadingProvider)`. 홈은 BottomNav 첫 슬롯이라
+/// 캐시 유지가 자연(autoDispose 안 둠).
+final currentlyReadingProvider =
+    FutureProvider<List<CurrentlyReading>>((ref) async {
+  return ref.read(bookRepositoryProvider).listCurrentlyReading();
+});

@@ -102,13 +102,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
         ],
       ),
-      floatingActionButton: _tab == 0
-          ? FloatingActionButton.extended(
+      // PR24 옵션 C — [책]·[캘린더] 탭에 [+ 책 추가] FAB. [인용구] 탭은 FAB 없음
+      // (BottomNav 가운데 [+] 인용구 추가와 의미 충돌 회피).
+      floatingActionButton: _tab == 1
+          ? null
+          : FloatingActionButton.extended(
               onPressed: _onAddBook,
               icon: const Icon(Icons.add),
               label: const Text('책 추가'),
-            )
-          : null,
+            ),
     );
   }
 }

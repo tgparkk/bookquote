@@ -27,6 +27,9 @@ class BookRepositoryException implements Exception {
   String toString() => 'BookRepositoryException($code): $message';
 }
 
+/// PR23: 지금 읽고 있는 책 1건 — 책 메타 + 시작일.
+typedef CurrentlyReading = ({Book book, DateTime startedAt});
+
 class BookRepository {
   BookRepository(this._client);
 
@@ -320,6 +323,35 @@ class BookRepository {
         );
       }
       throw BookRepositoryException('SET_READING_DATE_FAILED', e.message);
+    }
+  }
+
+  /// PR23: 지금 읽고 있는 책 — `started_at IS NOT NULL AND finished_at IS NULL`.
+  /// 홈 NowReadingRow 가로 스크롤용. 최근 시작순 limit. partial index
+  /// `user_books_started_idx`(20260517 마이그레이션)로 풀 스캔 회피.
+  Future<List<CurrentlyReading>> listCurrentlyReading({int limit = 7}) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return const [];
+    try {
+      final rows = await _client
+          .from(_userBooksTable)
+          .select('started_at, book:books(*)')
+          .eq('user_id', uid)
+          .not('started_at', 'is', null)
+          .filter('finished_at', 'is', null)
+          .order('started_at', ascending: false)
+          .limit(limit);
+      return rows
+          .map(
+            (r) => (
+              book: Book.fromJson(r['book'] as Map<String, dynamic>),
+              startedAt: parseReadingDate(r['started_at'] as String?) ??
+                  DateTime.now(),
+            ),
+          )
+          .toList();
+    } on PostgrestException catch (e) {
+      throw BookRepositoryException('LIST_CURRENTLY_READING_FAILED', e.message);
     }
   }
 

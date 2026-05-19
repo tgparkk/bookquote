@@ -7,7 +7,76 @@
 
 ---
 
-## ▶ 다음 세션 시작점 (2026-05-19 기준 — PR18-C/D + PR20-A/B/C/D 완료 · 매니저 UX 종합 5건 중 4건 처리 · 남은 출시 블로커 = SMTP 1건만)
+## ▶ 다음 세션 시작점 (2026-05-19 기준 — PR18-C/D + PR20-A/B/C/D 완료 · 매니저 UX 종합 5건 중 4건 처리 · **PR21 OAuth 전환 코드 단계 완료**(콘솔 작업 본인 손) · **PR22 무드 hub + PR23 NowReadingRow + PR24 서재 FAB 옵션 C + 잠금 해제 stale 버그 fix 완료**(stash 상태에서 진행))
+
+**PR22 + PR23 + PR24 + 잠금 해제 버그 fix 산출 (2026-05-19)**:
+
+매니저 모드 UX 3팀 6명 재토론 + 사용자 시나리오 4단계(D1·D7·D30·D90) 정합 결과 — 매니저 모드 5건에 *누락된 IA 충돌*(홈 vs 서재 [인용구])을 박태건 님 직접 발견. 코드 4트랙 동시 진행 (PR21 stash 상태에서 매직링크 코드 위에 작업, OAuth 작업과 코드 영역 안 겹침).
+
+- **PR22 — 서재 [인용구] = 무드 hub 재정의** (IA 중복 해소):
+  - 마이그레이션 `20260519150000_mood_hub_snapshots.sql` — RPC `my_quote_mood_hub_snapshots()` SECURITY INVOKER. CTE 2단(`counts` GROUP BY + `samples` DISTINCT ON `text IS NOT NULL`)로 무드별 카운트 + 평문 대표 1줄 한 round-trip 반환. 잠금 인용구는 카운트 포함 / 발췌는 NULL. **원격 push 본인 손**(`supabase db push` 또는 대시보드 SQL Editor).
+  - `QuoteRepository.listMoodHubSnapshots()` + typedef `MoodHubSnapshot(mood, count, sampleText?)`. 카운트 내림차순 정렬.
+  - `MoodHubGrid` 신규 위젯 — 2열 그리드, childAspectRatio 0.95. 카드 = 아이콘 + 라벨 + 카운트 + 평문 발췌(없으면 "잠긴 인용구만 있어요"). `mood_chips.moodColorOf` 재사용(시각 언어 일관). RefreshIndicator 호환 위해 `AlwaysScrollableScrollPhysics`. Material 아이콘 매핑: 위로 favorite_outline / 먹먹 cloud / 새벽3시 nightlight / 통찰 lightbulb / 설렘 auto_awesome.
+  - `QuoteListView` 진입 분기 — `initialMood == null && 무드 종류 ≥3`이면 hub 모드(MoodHubGrid), 아니면 시간순. `_resolveEntryMode` 메서드가 hub fetch 후 결정 + 실패 시 시간순 안전 후퇴. _selectMood가 hub 복귀(_mood=null + snapshots≥3)에서 items reload 안 함 — 칩 "전체" 한 번으로 hub 자연 복귀.
+  - `ref.listen(quoteFeedProvider)` 외부 invalidation 채널 — initialMood null이면 `_resolveEntryMode`, 아니면 단면 reload.
+  - 테스트: `mood_hub_grid_test.dart` 3건(카드 렌더·카운트·발췌 / 카드 탭 콜백 mood 전달 / 빈 snapshots 크래시 없음). QuoteListView 분기는 Repository 의존 깊어 폰 시각 검증으로.
+
+- **PR23 — 홈 "지금 읽고 있어요" 1행** (생산 ramp):
+  - `BookRepository.listCurrentlyReading(limit=7)` — `started_at IS NOT NULL AND finished_at IS NULL` + books join. started_at desc. 메모리 partial index `user_books_started_idx`(20260517 마이그레이션) 재활용. typedef `CurrentlyReading(book, startedAt)`.
+  - `currentlyReadingProvider` FutureProvider(non-autoDispose — 홈 BottomNav 첫 슬롯 캐시 유지).
+  - `NowReadingRow` 신규 — 헤더 "📖 지금 읽고 있어요" + 가로 스크롤 책 표지 행(width 64, height 96, row 142). 끝에 [+] 카드. 빈 상태 = "지금 읽는 책이 없어요" + "[＋ 시작한 책 알려주기]" 카드 1장. 책 표지 탭 = `/quote/new?bookId=...` 직진(*적기로 가는 다리*). [+] 또는 빈 상태 탭 = `showBookSearchSheet` → `setReadingDate(started_at=today)` + `invalidate(currentlyReadingProvider)` + SnackBar [한 줄 적기] action.
+  - 홈 통합: FriendActivityBanner 다음, RecallCard 위 (사용자 mockup 정합).
+  - `reading_dates_row.dart` set 후 `invalidate(currentlyReadingProvider)` 추가 — 책 상세에서 시작/완독 변경 시 홈 NowReadingRow 자동 갱신.
+
+- **PR24 — 서재 FAB 옵션 C**:
+  - `library_screen.dart` FAB 분기: `_tab == 1`(인용구)면 null, 그 외(책·캘린더)는 `[+ 책 추가]`. 인용구 탭은 BottomNav 가운데 [+] 인용구 추가와 의미 충돌 회피 (사용자 직접 결정 — 매니저 모드 옵션 비교 후).
+
+- **🐛 잠금 해제 stale 버그 fix** (사용자 발견):
+  - **원인**: `QuoteListView._items`는 *로컬 list state*라 외부 `invalidate(quoteFeedProvider)` 신호를 받지 못함. 편집 모드(`/quote/new?quoteId=...`)에서 잠금 해제 후 저장 → invalidate 호출돼도 서재 [인용구]의 카드는 stale로 남아 🔒 마크 유지. 카드 탭 시 `quoteByIdProvider`는 fresh fetch라 잠금 해제된 본문이 보임 — 두 경로의 동기화 갭이 사용자 증상.
+  - **fix**: ① `QuoteListView.build()`에 `ref.listen(quoteFeedProvider)` 추가 → invalidate 신호 수신 시 `_resolveEntryMode`(initialMood null) 또는 `_loadCounts + _reload`(단면) 호출 ② `quote_input_screen.dart` 편집 모드 invalidate 블록에 `bookQuotesProvider` 추가(책 상세 미니리스트 stale도 함께 해소).
+
+- **검증 — 합산 254/254 통과** (PR22-PR24 신규 3건 = mood_hub_grid 3건). `flutter analyze` clean. release APK **67.7MB**(PR21 시점 67.6MB +0.1MB)로 SM F956N 설치 검증 완료.
+
+- **본인 손 작업 (남은 V1.0 블로커)**:
+  1. Supabase 마이그레이션 원격 push (`supabase db push` 또는 대시보드 SQL Editor) — `20260519150000_mood_hub_snapshots.sql`. push 안 해도 hub UI는 시간순으로 자연 fallback(서비스 정상). push하면 hub 활성화.
+  2. OAuth 콘솔 작업(`docs/ops/oauth-setup.md`) — Play Console 차단 답변 무관하게 Google·Kakao 진행 가능. 끝나면 `git stash pop` → 빌드.
+  3. Play Console 개발자 지원팀 답변 대기(1~3주).
+
+**▶ 다음 세션 시작점 (위 마이그레이션 push + OAuth 콘솔 + Play Console 답변 후)**: `git stash pop` → `flutter pub get` → 빌드 → 폰 검증 → V1.0 출시 본 작업.
+
+**PR21 산출 (2026-05-19, 매직링크 제거 + 구글·카카오 OAuth SDK 직접 통합)**:
+도메인 미보유로 Resend SMTP 경로가 막혀 매직링크를 V1에서 제거. 구글은 `google_sign_in`, 카카오는 `kakao_flutter_sdk_user`로 ID Token을 직접 받아 `supabase.auth.signInWithIdToken`에 전달하는 SDK 우회 방식. 카카오 비즈 앱 인증 없이도 KOE205 회피.
+- **의존성** — `google_sign_in: ^6.2.1`, `kakao_flutter_sdk_user: ^1.10.0` 추가.
+- **`auth_controller.dart`** — `sendMagicLink` 제거. `signInWithGoogle`(웹 client ID로 `serverClientId` 지정 → Supabase audience 검증) + `signInWithKakao`(카카오톡 설치 시 `loginWithKakaoTalk` 우선, 실패 시 `loginWithKakaoAccount` 자연 fallback). `signOut`은 SDK 토큰도 함께 정리(narrow `on PlatformException` swallow).
+- **`login_screen.dart`** — 매직링크 폼·`_SentNotice`·F1 회귀 제거. 두 OAuth 버튼 1급(구글 OutlinedButton + 카카오 FilledButton `#FEE500`). env 키 미주입 시 disabled + 안내 텍스트.
+- **`env.dart`** — `KAKAO_NATIVE_APP_KEY`·`GOOGLE_WEB_CLIENT_ID` 컴파일 타임 상수 + `isKakaoConfigured`·`isGoogleConfigured` 게터.
+- **`main.dart`** — `KakaoSdk.init`(env 키 있을 때만).
+- **`AndroidManifest.xml`** — `com.kakao.sdk.flutter.AuthCodeCustomTabsActivity` 등록 + `kakao${KAKAO_NATIVE_APP_KEY}://oauth` scheme. `app/build.gradle.kts`에서 `local.properties`의 `kakao.nativeAppKey` 읽어 `manifestPlaceholders["KAKAO_NATIVE_APP_KEY"]`로 주입.
+- **`Info.plist`** — 카카오 URL scheme(`kakaoKAKAO_NATIVE_APP_KEY` placeholder — 본인이 실제 키로 치환) + `LSApplicationQueriesSchemes`(`kakaokompassauth`, `kakaolink`).
+- **`deep_link_handler.dart`** — auth callback 분기·`getSessionFromUrl` 호출 제거. 인앱 라우트(`/book/:id`)만 처리.
+- **router·`auth_callback_screen.dart` 삭제** — `/auth/callback`·`/callback` 라우트 제거, `_redirect`의 isAuthPath 분기 단순화.
+- **테스트** — `login_screen_test.dart` 매직링크 회귀 가드 3건 제거. OAuth 버튼 노출·매직링크 UI 부재 회귀·env 미주입 disabled 안내 3건 신규.
+- **본인 손 작업(가이드 분리)** = `docs/ops/oauth-setup.md` — Google Cloud Console + Kakao Developers + Supabase Dashboard 단계별. 키해시 추출 PowerShell 명령, 자주 발생 문제 7건 표 포함.
+
+**To-Do 6건 갱신 (PR21로 1·2번 흡수)** — 매니저 모드 백엔드 토론 결과 그대로 유지:
+
+- **출시 전 To-Do 6건**:
+  1. **(완료 — PR21 코드 단계) 매직링크 제거 + 구글·카카오 OAuth SDK 통합** — 도메인 부담 회피하며 출시 가능. *남은 작업 = 본인 콘솔 작업 + 키 박기 + 실기기 검증 (`docs/ops/oauth-setup.md` 가이드).* SMTP·도메인 트랙은 V1.0.1 hotfix로 강등(매직링크 부활 옵션).
+  2. **(완료 — PR21 코드 단계) ~~구글·카카오 OAuth 콘솔 설정~~** — 1번과 통합. 카카오는 비즈 앱 인증 *불필요*(SDK 우회 + OpenID Connect 활성화만).
+  3. **(블로커) 개인정보처리방침 국외이전 고지 분리 신설** — `docs/privacy/index.html` 6장(처리위탁)과 별도로 "개인정보 국외이전 고지" 섹션 신설. 항목: 수탁사 Supabase Inc.(미국) · 실제 처리지 AWS ap-northeast-2(서울) · 이전 항목(이메일/닉네임/아바타URL/팔로우/책 메타데이터) · 이전 시점(가입 즉시 + 이용 중 상시) · 보유기간(탈퇴 또는 위탁계약 종료 시까지) · 이전 근거(정보주체 동의). 가입 동의 화면에 **국외이전 동의 체크박스 분리**.
+  4. **(블로커) Supabase DPA 서면 보관 + 키 회전 SOP 문서화** — Supabase에 DPA(Data Processing Agreement) 요청·수령·보관. `docs/` 또는 비공개 위치에 service_role 키·Edge Function 시크릿 회전 SOP(주기·트리거·절차) 1페이지. *G/H 합의 결과 — 출시 전 *고지+운영*의 두 다리 모두 박는다.*
+  5. **(블로커) 이식성 hedge 1 — 레이어 누수 5곳 정리** — 화면에서 직접 `supabase.auth.currentUser` 읽는 곳을 controller/provider 뒤로 격리: `book_detail_screen.dart:197`, `card_editor_screen.dart:294`, `quick_share_screen.dart:157`, `splash_screen.dart:54`, `deep_link_handler.dart:85`. 향후 어떤 백엔드로 가든 단일 교체 지점 확보.
+  6. **(블로커) 이식성 hedge 2 — pgTAP RLS 단위 테스트** `supabase/tests/database/`에 RLS 정책 25개 검증 자산 추가. 기존 `rls_friends.test.sql` 패턴 확장. 회귀 가드 + 백엔드 이전 시 의미론적 동등성 증명 자산.
+
+- **재평가 트리거** (다음 중 **하나라도** 충족 시 마이그레이션 논의 재개. 그 전까지 동결):
+  - (a) MAU 5,000 돌파 **또는** 월 실청구 $50 초과 90일 연속
+  - (b) Edge Function p95 > 800ms 2주 지속
+  - (c) Supabase 측 SLA 위반 사고 누적 2건
+  - (d) 오프라인 작성 UX가 정성 피드백 top-3 불만 진입
+  - (e) 신규 기능(검색·랭킹 등)이 RLS 표현력 한계에 부딪힘
+
+- **남은 V1.0 작업** = 위 6건(블로커) + PR16 E2EE 잔여(C/D/E) + PR18-E(RLS 침투 회귀 테스트) + Stage 5 출시 본 작업(스토어 등록·PostHog·인스타·커뮤니티) + B9 검증.
+- **외부 서비스 등재 이력 보충**: PostHog(funnel·retention), Resend(SMTP만), Sentry/Crashlytics(미래 release-only 함정 가드)는 모두 **Supabase 대체가 아니라 보완 레이어**. 트리거 발동 시 백엔드 교체해도 그대로 따라옴.
 
 **PR20-D 산출** (2026-05-19, 홈 친구 최근 활동 1줄 배너 — UX#4 K-factor 다리):
 - **마이그레이션** `20260519140000_friend_recent_activity.sql` — RPC `friend_recent_activity(since timestamptz)` SECURITY INVOKER. quotes/profiles RLS 자연 게이트 활용(친구 + 공개 + 잠금 아님). user별 group-by + max(created_at) desc 정렬, limit 20. 원격 push 완료.

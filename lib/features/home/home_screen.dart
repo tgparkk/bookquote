@@ -23,6 +23,7 @@ import '../quote/presentation/widgets/recall_card.dart';
 import '../quote/state/quote_feed_provider.dart';
 import '../quote/state/quote_providers.dart';
 import 'presentation/widgets/friend_search_cta.dart';
+import 'presentation/widgets/now_reading_row.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -145,6 +146,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           const OutboxBanner(),
           // PR20-D — 친구가 새 인용구 추가했음을 인지할 유일한 다리 (V1엔 Realtime 없음).
           const FriendActivityBanner(),
+          // PR23 — "지금 읽고 있어요" 1행: 적기로 가는 retention ramp.
+          const NowReadingRow(),
           const RecallCard(),
           // PR18-B: 인용구 ≥1이고 친구 0명일 때만 친구 찾기 CTA 노출
           // (인용구 0개일 땐 빈상태 CTA가 우선 — 진입점 마찰 해소, qa-tester 권고).

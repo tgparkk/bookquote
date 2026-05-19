@@ -47,6 +47,10 @@ typedef QuoteWithBook = ({Quote quote, Book? book});
 /// 내 인용구 무드 통계 — 전체 수 + 무드별 개수 (서재 인용 뷰 필터 칩용).
 typedef MoodCounts = ({int total, Map<QuoteMood, int> byMood});
 
+/// 무드 hub 카드용 스냅샷 — 무드별 카운트 + 대표 한 줄 발췌(평문 인용구만).
+/// 잠금 인용구는 카운트에는 포함되되 발췌는 null (PR22).
+typedef MoodHubSnapshot = ({QuoteMood mood, int count, String? sampleText});
+
 /// `my_quote_mood_counts` RPC 결과 행들을 파싱 — `'__total__'` 행은 전체 수,
 /// 나머지는 무드 name별 개수(알 수 없는 name은 무시).
 MoodCounts parseMoodCounts(List<dynamic> rows) {
@@ -517,6 +521,34 @@ class QuoteRepository {
       return parseMoodCounts(rows);
     } on PostgrestException catch (e) {
       throw QuoteRepositoryException('COUNT_FAILED', e.message);
+    }
+  }
+
+  /// PR22: 무드 hub 카드용 스냅샷. 각 무드별 카운트 + 가장 최근 평문 한 줄 발췌
+  /// (잠금 인용구는 발췌 X). 클라가 알 수 없는 mood name은 무시 (도메인 변경 대비).
+  Future<List<MoodHubSnapshot>> listMoodHubSnapshots() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return const [];
+    try {
+      final rows = await _client.rpc('my_quote_mood_hub_snapshots')
+          as List<dynamic>;
+      final out = <MoodHubSnapshot>[];
+      for (final r in rows) {
+        final map = r as Map;
+        final name = map['mood'] as String;
+        final mood = QuoteMood.fromName(name);
+        if (mood == null) continue;
+        out.add((
+          mood: mood,
+          count: (map['cnt'] as num).toInt(),
+          sampleText: map['sample_text'] as String?,
+        ));
+      }
+      // 카운트 내림차순 정렬 — 가장 많이 모은 무드가 그리드 첫 자리.
+      out.sort((a, b) => b.count.compareTo(a.count));
+      return out;
+    } on PostgrestException catch (e) {
+      throw QuoteRepositoryException('MOOD_HUB_FAILED', e.message);
     }
   }
 }

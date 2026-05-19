@@ -437,7 +437,8 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
       ref
         ..invalidate(quoteFeedProvider)
         ..invalidate(quoteByIdProvider(widget.quoteId!))
-        ..invalidate(moodCountsProvider); // PR15-B 무드 변경 가능 → 카운트 갱신
+        ..invalidate(moodCountsProvider) // PR15-B 무드 변경 가능 → 카운트 갱신
+        ..invalidate(bookQuotesProvider); // 책 상세 미니리스트 stale 방지(잠금 해제 등)
       messenger
         ..clearSnackBars()
         ..showSnackBar(const SnackBar(content: Text('수정 내용을 저장했어요.')));
