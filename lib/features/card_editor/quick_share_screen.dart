@@ -7,6 +7,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -407,7 +408,10 @@ class _ErrorView extends StatelessWidget {
               '카드 정보를 불러오지 못했어요',
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            if (diagMessage != null) ...<Widget>[
+            // 진단 스택은 디버그 빌드에서만 노출 — release에선 raw 에러를
+            // 사용자에게 보이지 않는다(error-handling §9). release-only 버그
+            // 디버깅이 끝나 화면 표시 임무 종료.
+            if (kDebugMode && diagMessage != null) ...<Widget>[
               const SizedBox(height: AppSpacing.s3),
               Container(
                 padding: const EdgeInsets.all(AppSpacing.s3),

@@ -180,6 +180,9 @@ class _BlurredBackground extends StatelessWidget {
       child: CachedNetworkImage(
         imageUrl: data.coverUrl!,
         fit: BoxFit.cover,
+        // blur 35px 배경이라 저해상도 디코드로 시각 차이 없음 — 원본 해상도
+        // 디코딩은 순수 메모리 낭비(B9).
+        memCacheWidth: 250,
         placeholder: (_, _) => ColoredBox(color: palette.dominant),
         errorWidget: (_, _, _) => ColoredBox(color: palette.dominant),
       ),

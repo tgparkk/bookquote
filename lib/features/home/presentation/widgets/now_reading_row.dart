@@ -19,6 +19,7 @@ import '../../../book/domain/reading_dates.dart';
 import '../../../book/presentation/book_search_sheet.dart';
 import '../../../book/presentation/widgets/book_cover.dart';
 import '../../../book/state/book_providers.dart';
+import '../../../library/state/calendar_providers.dart';
 
 class NowReadingRow extends ConsumerWidget {
   const NowReadingRow({super.key});
@@ -264,6 +265,9 @@ Future<void> _onAddTap(BuildContext context, WidgetRef ref) async {
           date: DateTime.now(),
         );
     ref.invalidate(currentlyReadingProvider);
+    ref.invalidate(userBooksCalendarProvider); // 서재 [캘린더] 마커 갱신
+    ref.invalidate(myLibraryProvider); // setReadingDate가 user_books row 자동 INSERT
+    ref.invalidate(isInLibraryProvider(book.id));
     if (!context.mounted) return;
     messenger
       ..clearSnackBars()

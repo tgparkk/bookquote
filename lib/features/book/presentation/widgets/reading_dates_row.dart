@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/tokens.dart';
+import '../../../library/state/calendar_providers.dart';
 import '../../data/book_repository.dart';
 import '../../domain/reading_dates.dart';
 import '../../state/book_providers.dart';
@@ -65,6 +66,7 @@ class _ReadingDatesRowState extends ConsumerState<ReadingDatesRow> {
       ref.invalidate(myLibraryProvider);
       ref.invalidate(isInLibraryProvider(widget.bookId));
       ref.invalidate(currentlyReadingProvider); // PR23 홈 "지금 읽고 있어요" 갱신
+      ref.invalidate(userBooksCalendarProvider); // 서재 [캘린더] 마커 갱신
       if (shouldAutoStart) {
         messenger
           ..clearSnackBars()

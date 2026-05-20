@@ -38,6 +38,13 @@ class BookCover extends StatelessWidget {
       );
     }
 
+    // 표지를 표시 크기에 맞춰 디코딩 — memCacheWidth가 없으면 표지를 원본
+    // 해상도로 디코딩해 ImageCache(기본 100MB)에 누적, 저사양폰 메모리를
+    // 압박한다(B9). 단계값으로 양자화해 비슷한 크기 호출처가 캐시 엔트리를
+    // 공유하게 한다. export는 toImage 별도 경로라 영향 없음.
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final memWidth = _decodeWidthFor(width * dpr);
+
     return ClipRRect(
       borderRadius: radius,
       child: CachedNetworkImage(
@@ -45,6 +52,7 @@ class BookCover extends StatelessWidget {
         width: width,
         height: height,
         fit: BoxFit.cover,
+        memCacheWidth: memWidth,
         fadeInDuration: const Duration(milliseconds: 120),
         placeholder: (_, _) => _Placeholder(
           title: title,
@@ -61,6 +69,14 @@ class BookCover extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 표지 디코딩 폭을 단계값(256/512/1280)으로 양자화. 비슷한 크기의 호출처가
+/// 같은 ImageCache 엔트리를 공유하게 해 표지 비트맵 메모리 누적을 줄인다.
+int _decodeWidthFor(double neededPx) {
+  if (neededPx <= 256) return 256;
+  if (neededPx <= 512) return 512;
+  return 1280;
 }
 
 class _Placeholder extends StatelessWidget {
