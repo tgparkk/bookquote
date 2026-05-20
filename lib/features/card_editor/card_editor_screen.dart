@@ -15,7 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/supabase/supabase_init.dart';
+import '../../app/auth_state_provider.dart';
 import '../../core/theme/tokens.dart';
 import '../crypto/presentation/lock_dialogs.dart';
 import 'data/card_renderer.dart';
@@ -291,7 +291,7 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
         file: file,
         shareText: data.quoteText,
         bookId: data.bookId,
-        senderUid: supabase.auth.currentUser?.id,
+        senderUid: ref.read(currentUserIdProvider),
       );
     } on CardRenderException {
       if (!mounted) return;

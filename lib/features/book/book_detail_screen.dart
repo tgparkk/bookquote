@@ -13,7 +13,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/auth_state_provider.dart';
-import '../../core/supabase/supabase_init.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/tokens.dart';
 import '../follow/state/follow_providers.dart';
@@ -194,7 +193,7 @@ class _SharedBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // 본인 uid는 redirect로 막혔어야 하지만 deep link 위변조 대비 — 본인이면 익명 카피.
-    final myUid = isSupabaseReady ? supabase.auth.currentUser?.id : null;
+    final myUid = ref.watch(currentUserIdProvider);
     final senderUid = (sender == null || sender == myUid) ? null : sender;
     // RLS상 공개 프로필 OR 본인이면 row → 비공개면 null 자연 fallback.
     final senderProfile = senderUid == null

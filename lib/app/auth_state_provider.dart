@@ -26,3 +26,10 @@ final currentSessionProvider = Provider<Session?>((ref) {
   if (!isSupabaseReady) return null;
   return supabase.auth.currentSession;
 });
+
+/// 현재 로그인 사용자 uid. 비로그인·환경 미초기화면 null.
+/// 화면 코드가 `supabase.auth.currentUser`를 직접 읽지 않고 이 provider를
+/// 거치게 해 인증 접근을 단일 지점으로 격리한다.
+final currentUserIdProvider = Provider<String?>((ref) {
+  return ref.watch(currentSessionProvider)?.user.id;
+});

@@ -48,8 +48,11 @@ insert into public.books (id, isbn13, title, source) values
 insert into public.user_books (user_id, book_id) values
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '99999999-9999-9999-9999-999999999999');
 insert into public.quotes (id, user_id, book_id, text, is_private) values
-  ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '99999999-9999-9999-9999-999999999999', 'A public', false),
-  ('22222222-2222-2222-2222-222222222222', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '99999999-9999-9999-9999-999999999999', null,      true);
+  ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '99999999-9999-9999-9999-999999999999', 'A public', false);
+-- 잠금 인용구: CHECK quotes_text_xor_encrypted — is_private=true면 text NULL +
+-- text_encrypted NOT NULL + crypto_version NOT NULL.
+insert into public.quotes (id, user_id, book_id, text, is_private, text_encrypted, crypto_version) values
+  ('22222222-2222-2222-2222-222222222222', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '99999999-9999-9999-9999-999999999999', null, true, '\xdeadbeef'::bytea, 1);
 
 -- C(비공개): 서재 + 공개 인용구 — RLS상 친구에게도 안 보여야 함
 insert into public.user_books (user_id, book_id) values
