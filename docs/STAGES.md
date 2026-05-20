@@ -39,8 +39,9 @@
 
 - **본인 손 작업 (남은 V1.0 블로커)**:
   1. Supabase 마이그레이션 원격 push (`supabase db push` 또는 대시보드 SQL Editor) — `20260519150000_mood_hub_snapshots.sql`. push 안 해도 hub UI는 시간순으로 자연 fallback(서비스 정상). push하면 hub 활성화.
-  2. OAuth 콘솔 작업(`docs/ops/oauth-setup.md`) — Play Console 차단 답변 무관하게 Google·Kakao 진행 가능. 끝나면 `git stash pop` → 빌드.
-  3. Play Console 개발자 지원팀 답변 대기(1~3주).
+  2. **release 서명 키스토어 생성** — `android/app/build.gradle.kts`의 release buildType이 현재 `signingConfig = signingConfigs.getByName("debug")`(TODO 상태, debug 키 서명). Google Play는 debug 키 APK를 거부하므로 출시 전 release 키스토어 생성 + `build.gradle.kts` signingConfig 교체 필수. **OAuth 콘솔 작업의 선행 조건** — 카카오/구글 키 해시는 *최종 서명 키* 기준이라, release 키스토어를 먼저 만들고 그 키 해시를 콘솔에 등록해야 한다(debug 키 해시로 등록 후 release 키로 바꾸면 OAuth 로그인 깨짐). Play App Signing 사용 시에도 업로드 키는 필요.
+  3. OAuth 콘솔 작업(`docs/ops/oauth-setup.md`) — Play Console 차단 답변 무관하게 Google·Kakao 진행 가능. **단 2번(release 키스토어) 완료 후** 그 키 해시로 등록할 것. 끝나면 `git stash pop` → 빌드.
+  4. Play Console 개발자 지원팀 답변 대기(1~3주).
 
 **▶ 다음 세션 시작점 (위 마이그레이션 push + OAuth 콘솔 + Play Console 답변 후)**: `git stash pop` → `flutter pub get` → 빌드 → 폰 검증 → V1.0 출시 본 작업.
 
