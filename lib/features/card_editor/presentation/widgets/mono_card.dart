@@ -115,8 +115,9 @@ class MonoCard extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: AppFonts.ui,
                       fontWeight: FontWeight.w400,
-                      fontSize: AppFontSize.sm,
-                      letterSpacing: AppFontSize.sm * AppLetterSpacing.wider,
+                      // 책 정보 시인성 보강(2026-05-21) — sm(13)→base(15).
+                      fontSize: AppFontSize.base,
+                      letterSpacing: AppFontSize.base * AppLetterSpacing.wider,
                       color: AppColors.primary300,
                     ),
                     maxLines: 1,
@@ -129,8 +130,9 @@ class MonoCard extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: AppFonts.ui,
                       fontWeight: FontWeight.w400,
-                      fontSize: AppFontSize.xs,
-                      letterSpacing: AppFontSize.xs * AppLetterSpacing.wider,
+                      // 책 정보 시인성 보강(2026-05-21) — xs(11)→sm(13).
+                      fontSize: AppFontSize.sm,
+                      letterSpacing: AppFontSize.sm * AppLetterSpacing.wider,
                       color: AppColors.primary400,
                     ),
                     maxLines: 1,

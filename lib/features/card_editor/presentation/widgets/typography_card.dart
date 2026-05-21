@@ -128,38 +128,47 @@ class _BookInfo extends StatelessWidget {
     final hasTitle = data.bookTitle != null && data.bookTitle!.isNotEmpty;
     final hasAuthor = data.bookAuthor != null && data.bookAuthor!.isNotEmpty;
     return Opacity(
-      opacity: 0.60,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          if (hasTitle)
-            Text(
-              data.bookTitle!,
-              style: TextStyle(
-                fontFamily: AppFonts.ui,
-                fontWeight: FontWeight.w400,
-                fontSize: AppFontSize.xs,
-                color: palette.subtextOnBackground,
+      // 책 정보 시인성 보강(2026-05-21) — 폰트 확대에 맞춰 0.60→0.72.
+      // 여전히 코너의 조용한 footnote 톤은 유지.
+      opacity: 0.72,
+      child: ConstrainedBox(
+        // 우하단 코너 폭 제한 — 폰트 확대 후 긴 제목이 좌측으로 넘쳐 인용구와
+        // 겹치지 않도록 ellipsis 경계를 준다(Positioned가 right만 지정해 무제한).
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (hasTitle)
+              Text(
+                data.bookTitle!,
+                style: TextStyle(
+                  fontFamily: AppFonts.ui,
+                  fontWeight: FontWeight.w400,
+                  // xs(11)→base(15) — 다른 템플릿 제목 스케일과 정합.
+                  fontSize: AppFontSize.base,
+                  color: palette.subtextOnBackground,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          if (hasAuthor) ...<Widget>[
-            const SizedBox(height: AppSpacing.s1),
-            Text(
-              data.bookAuthor!,
-              style: TextStyle(
-                fontFamily: AppFonts.ui,
-                fontWeight: FontWeight.w400,
-                fontSize: AppFontSize.xs,
-                color: palette.subtextOnBackground,
+            if (hasAuthor) ...<Widget>[
+              const SizedBox(height: AppSpacing.s1),
+              Text(
+                data.bookAuthor!,
+                style: TextStyle(
+                  fontFamily: AppFonts.ui,
+                  fontWeight: FontWeight.w400,
+                  // xs(11)→sm(13) — 다른 템플릿 저자 스케일과 정합.
+                  fontSize: AppFontSize.sm,
+                  color: palette.subtextOnBackground,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
