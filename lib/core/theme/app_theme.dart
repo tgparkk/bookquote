@@ -34,8 +34,12 @@ abstract final class AppTheme {
         iconTheme: const IconThemeData(color: AppColors.primary800, size: 22),
       ),
 
+      // 카드 배경은 화면 배경(secondary200 #FAFAF8)보다 *한 톤 어둡게* 둔다.
+      // 라이트 테마라 화면이 거의 흰색 — 카드를 더 밝게 만들 여지가 없어,
+      // 어둡게 해서 경계 대비를 확보한다(2026-05-21 디자이너 매니저 회의 결정).
+      // 그림자(AppShadows.card)·테두리는 안 씀 — 그림자는 V1.5 다크모드 때.
       cardTheme: CardThemeData(
-        color: AppColors.secondary100,
+        color: AppColors.secondary300,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
