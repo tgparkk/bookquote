@@ -118,9 +118,9 @@ void main() {
     expect(find.widgetWithText(OutlinedButton, '팔로잉'), findsOneWidget);
   });
 
-  testWidgets('공개 프로필 + 책 0권 → 세그먼트 + 빈상태 "아직 공개한 책이 없어요"',
+  testWidgets('공개 프로필 + 팔로잉 중 + 책 0권 → 세그먼트 + "아직 공개한 책이 없어요"',
       (tester) async {
-    await pump(tester, profile: _profile());
+    await pump(tester, profile: _profile(), isFollowing: true);
 
     expect(find.byType(SegmentedButton<int>), findsOneWidget);
     expect(find.text('아직 공개한 책이 없어요'), findsOneWidget);
@@ -134,7 +134,12 @@ void main() {
       title: '미드나잇 라이브러리',
       author: '매트 헤이그',
     );
-    await pump(tester, profile: _profile(), books: const [book]);
+    await pump(
+      tester,
+      profile: _profile(),
+      books: const [book],
+      isFollowing: true,
+    );
 
     expect(find.text('미드나잇 라이브러리'), findsOneWidget);
     expect(find.text('매트 헤이그'), findsOneWidget);
@@ -143,6 +148,19 @@ void main() {
     await tester.tap(find.text('인용구'));
     await tester.pumpAndSettle();
     expect(find.text('공개된 인용구가 없어요'), findsOneWidget);
+  });
+
+  testWidgets('공개 프로필 + 비팔로워 → 빈상태가 "팔로우하면..." 카피',
+      (tester) async {
+    // 공개 프로필이라도 비팔로워는 RLS상 책·인용구 0 row — 빈상태 카피가
+    // "아직 공개한 책이 없어요"가 아니라 팔로우 유도여야 한다.
+    await pump(tester, profile: _profile(), isFollowing: false);
+
+    expect(find.text('팔로우하면 책을 볼 수 있어요'), findsOneWidget);
+
+    await tester.tap(find.text('인용구'));
+    await tester.pumpAndSettle();
+    expect(find.text('팔로우하면 인용구를 볼 수 있어요'), findsOneWidget);
   });
 
   testWidgets('헤더 카운트 노출 — "팔로워 N" / "팔로잉 N"', (tester) async {

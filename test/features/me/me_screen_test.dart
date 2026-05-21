@@ -1,3 +1,4 @@
+import 'package:bookquote/features/follow/state/follow_providers.dart';
 import 'package:bookquote/features/me/me_screen.dart';
 import 'package:bookquote/features/me/state/me_providers.dart';
 import 'package:bookquote/features/profile/data/profile_repository.dart';
@@ -17,7 +18,7 @@ void main() {
     String? displayName,
   }) async {
     // 섹션이 많아 기본 600px 뷰포트엔 다 안 들어간다 — 한 화면에 담기게 키운다.
-    tester.view.physicalSize = const Size(1000, 2600);
+    tester.view.physicalSize = const Size(1000, 2800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -38,6 +39,7 @@ void main() {
           ),
           myQuoteCountProvider.overrideWith((ref) => 12),
           myBookCountProvider.overrideWith((ref) => 3),
+          myFollowingCountProvider.overrideWith((ref) => 5),
           appVersionProvider
               .overrideWith((ref) => (version: '1.0.0', buildNumber: '1')),
         ],
@@ -71,6 +73,9 @@ void main() {
     expect(find.widgetWithText(TextButton, '회원 탈퇴'), findsOneWidget);
     // 친구 — PR18-B에서 V1.0 활성화 (DECISIONS 2026-05-18)
     expect(find.text('친구 찾기'), findsOneWidget);
+    // 내 팔로잉 명단 진입 타일 (2026-05-21 매니저 회의 — V1.0)
+    expect(find.text('내 친구'), findsOneWidget);
+    expect(find.text('5명'), findsOneWidget);
   });
 
   testWidgets('카카오 로그인(이메일 없음) — 닉네임이 대표로 보이고 "이메일 없음"이 안 뜬다',

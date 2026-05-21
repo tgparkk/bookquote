@@ -239,6 +239,7 @@ class _Body extends ConsumerWidget {
               _BooksSliver(userId: userId)
             else
               _QuotesSliver(
+                userId: userId,
                 items: quotes,
                 loading: quotesLoading,
                 loadingMore: quotesLoadingMore,
@@ -560,7 +561,7 @@ class _BooksSliver extends ConsumerWidget {
       ),
       data: (books) {
         if (books.isEmpty) {
-          return const SliverToBoxAdapter(child: _EmptyBooksView());
+          return SliverToBoxAdapter(child: _EmptyBooksView(userId: userId));
         }
         return SliverPadding(
           padding: const EdgeInsets.fromLTRB(
@@ -626,11 +627,16 @@ class _BookRow extends StatelessWidget {
   }
 }
 
-class _EmptyBooksView extends StatelessWidget {
-  const _EmptyBooksView();
+class _EmptyBooksView extends ConsumerWidget {
+  const _EmptyBooksView({required this.userId});
+
+  final String userId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 공개 프로필이라도 비팔로워는 RLS상 책이 0 row — "공개한 책이 없어요"는
+    // 오해를 부른다. 팔로우 여부로 카피를 분기(2026-05-21 매니저 회의).
+    final isFollowing = ref.watch(isFollowingProvider(userId)).value ?? false;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.s6,
@@ -647,7 +653,7 @@ class _EmptyBooksView extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.s4),
           Text(
-            '아직 공개한 책이 없어요',
+            isFollowing ? '아직 공개한 책이 없어요' : '팔로우하면 책을 볼 수 있어요',
             textAlign: TextAlign.center,
             style: AppTextStyles.headlineSmall,
           ),
@@ -661,6 +667,7 @@ class _EmptyBooksView extends StatelessWidget {
 
 class _QuotesSliver extends StatelessWidget {
   const _QuotesSliver({
+    required this.userId,
     required this.items,
     required this.loading,
     required this.loadingMore,
@@ -670,6 +677,7 @@ class _QuotesSliver extends StatelessWidget {
     required this.onRetry,
   });
 
+  final String userId;
   final List<QuoteWithBook> items;
   final bool loading;
   final bool loadingMore;
@@ -696,7 +704,7 @@ class _QuotesSliver extends StatelessWidget {
       );
     }
     if (items.isEmpty) {
-      return const SliverToBoxAdapter(child: _EmptyQuotesView());
+      return SliverToBoxAdapter(child: _EmptyQuotesView(userId: userId));
     }
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(
@@ -739,11 +747,14 @@ class _QuotesSliver extends StatelessWidget {
   }
 }
 
-class _EmptyQuotesView extends StatelessWidget {
-  const _EmptyQuotesView();
+class _EmptyQuotesView extends ConsumerWidget {
+  const _EmptyQuotesView({required this.userId});
+
+  final String userId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFollowing = ref.watch(isFollowingProvider(userId)).value ?? false;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.s6,
@@ -760,7 +771,7 @@ class _EmptyQuotesView extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.s4),
           Text(
-            '공개된 인용구가 없어요',
+            isFollowing ? '공개된 인용구가 없어요' : '팔로우하면 인용구를 볼 수 있어요',
             textAlign: TextAlign.center,
             style: AppTextStyles.headlineSmall,
           ),

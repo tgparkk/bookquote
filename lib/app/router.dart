@@ -26,6 +26,7 @@ import '../features/card_editor/card_editor_screen.dart';
 import '../features/card_editor/quick_share_screen.dart';
 import '../features/crypto/presentation/lock_password_screen.dart';
 import '../features/follow/presentation/friend_search_screen.dart';
+import '../features/follow/presentation/my_following_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/me/me_screen.dart';
@@ -128,6 +129,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                   path: 'friend-search',
                   parentNavigatorKey: _rootNavigatorKey,
                   builder: (_, _) => const FriendSearchScreen(),
+                ),
+                GoRoute(
+                  path: 'following',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (_, _) => const MyFollowingScreen(),
                 ),
               ],
             ),

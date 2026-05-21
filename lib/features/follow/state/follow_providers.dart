@@ -2,6 +2,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/auth_state_provider.dart';
 import '../../profile/domain/profile.dart';
 import '../data/follow_repository.dart';
 
@@ -26,6 +27,17 @@ final friendSearchProvider =
 final myFollowingCountProvider = FutureProvider.autoDispose<int>((ref) async {
   final repo = ref.watch(followRepositoryProvider);
   return repo.myFollowingCount();
+});
+
+/// 내가 팔로우한 사람들의 프로필 목록 (V1.0 — 내 팔로잉 명단 화면 `/me/following`).
+/// `listFollowing`이 profiles RLS를 거치므로 비공개로 전환한 팔로위는 누락될 수
+/// 있다. 미로그인/환경 미초기화면 빈 리스트.
+final myFollowingProvider =
+    FutureProvider.autoDispose<List<Profile>>((ref) async {
+  final uid = ref.watch(currentUserIdProvider);
+  if (uid == null) return const <Profile>[];
+  final repo = ref.watch(followRepositoryProvider);
+  return repo.listFollowing(uid);
 });
 
 /// 이 책을 담은 *친구* 수 (PR18-D). 책 상세 헤더에서 watch — N≥1일 때만 렌더.

@@ -15,6 +15,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/tokens.dart';
 import '../account/account_deletion.dart';
 import '../auth/auth_controller.dart';
+import '../follow/state/follow_providers.dart';
 import '../profile/data/profile_repository.dart';
 import '../profile/presentation/profile_settings_tiles.dart';
 import '../quote/data/quote_outbox.dart';
@@ -72,6 +73,13 @@ class MeScreen extends ConsumerWidget {
 
           if (loggedIn) ...[
             const _SectionHeader('친구'),
+            _CountTile(
+              icon: Icons.group_outlined,
+              title: '내 친구',
+              unit: '명',
+              count: ref.watch(myFollowingCountProvider),
+              onTap: () => context.push('/me/following'),
+            ),
             _ActionTile(
               icon: Icons.people_outline,
               title: '친구 찾기',
