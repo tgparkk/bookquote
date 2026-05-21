@@ -27,6 +27,7 @@ final quoteCardDataProvider = FutureProvider.autoDispose
     // 카드 에디터/quick_share가 isLockedAndUnreadable로 잠금 안내 화면 분기 (PR16-C-2).
     quoteText: quote.text ?? '',
     bookId: book?.id,
+    bookIsbn13: book?.isbn13,
     bookTitle: book?.title ?? quote.manualBookText,
     bookAuthor: book?.author,
     bookPublisher: book?.publisher,

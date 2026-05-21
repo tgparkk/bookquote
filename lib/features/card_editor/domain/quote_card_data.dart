@@ -7,6 +7,7 @@ class QuoteCardData {
   const QuoteCardData({
     required this.quoteText,
     this.bookId,
+    this.bookIsbn13,
     this.bookTitle,
     this.bookAuthor,
     this.bookPublisher,
@@ -17,6 +18,8 @@ class QuoteCardData {
   final String quoteText;
   /// PR11에서 추가 — `cards.book_id` INSERT용. book이 join되지 않으면 null.
   final String? bookId;
+  /// V1.0 — 공유 시 교보문고 구매 링크 생성용 ISBN13. book이 join되지 않으면 null.
+  final String? bookIsbn13;
   final String? bookTitle;
   final String? bookAuthor;
   final String? bookPublisher;

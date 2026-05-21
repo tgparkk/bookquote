@@ -22,12 +22,14 @@ const String _kDeepLinkScheme = 'io.github.tgparkk.bookquote';
 /// [bookId]와 [senderUid]가 둘 다 제공되면 공유 텍스트에 deep link를 포함한다
 /// (`io.github.tgparkk.bookquote://book/<bookId>?from=share&sender=<senderUid>`).
 /// 받는 사람이 링크를 탭하면 책 상세로 이동 + "[이 사람 서재 ▸]" 노출 — V1 K-factor
-/// 핵심 다리 (PR20-C). bookId 없으면(manual_book_text만) 링크 미포함.
+/// 핵심 다리 (PR20-C). bookId 없으면(manual_book_text만) deep link 미포함.
+/// [bookIsbn13]이 있으면 교보문고 검색(구매) 링크도 공유 텍스트에 함께 첨부한다(V1.0).
 Future<void> showCardShareSheet({
   required BuildContext context,
   required XFile file,
   String? shareText,
   String? bookId,
+  String? bookIsbn13,
   String? senderUid,
 }) {
   return showModalBottomSheet<void>(
@@ -42,6 +44,7 @@ Future<void> showCardShareSheet({
       file: file,
       shareText: shareText,
       bookId: bookId,
+      bookIsbn13: bookIsbn13,
       senderUid: senderUid,
     ),
   );
@@ -55,28 +58,55 @@ String? buildDeepLinkForShare({String? bookId, String? senderUid}) {
       : '$base&sender=$senderUid';
 }
 
+/// 책 ISBN13으로 교보문고 검색 링크를 만든다(공유 텍스트 첨부 — V1.0).
+/// ISBN으로 직접 상품 URL은 만들 수 없어 검색 결과로 연결 — ISBN13은 unique라
+/// 사실상 그 책 한 권. isbn13이 없으면(직접 입력 책) null.
+String? buildBookPurchaseUrl(String? isbn13) {
+  final v = isbn13?.trim() ?? '';
+  if (v.isEmpty) return null;
+  return 'https://search.kyobobook.co.kr/search'
+      '?keyword=${Uri.encodeQueryComponent(v)}';
+}
+
+/// 공유 메시지 본문 — deep link(K-factor)와 책 구매 링크(있을 때)를 조립한다.
+/// 둘 다 없으면 null(이미지만 공유).
+String? buildShareMessage({String? deepLink, String? purchaseUrl}) {
+  final parts = <String>[
+    if (deepLink != null && deepLink.isNotEmpty) deepLink,
+    if (purchaseUrl != null && purchaseUrl.isNotEmpty)
+      '📖 이 책 보러 가기 · 교보문고\n$purchaseUrl',
+  ];
+  return parts.isEmpty ? null : parts.join('\n\n');
+}
+
 class _CardShareSheet extends StatelessWidget {
   const _CardShareSheet({
     required this.file,
     required this.shareText,
     required this.bookId,
+    required this.bookIsbn13,
     required this.senderUid,
   });
 
   final XFile file;
   final String? shareText;
   final String? bookId;
+  final String? bookIsbn13;
   final String? senderUid;
 
   Future<void> _share(BuildContext context, String? prefix) async {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     final deepLink = buildDeepLinkForShare(bookId: bookId, senderUid: senderUid);
+    final text = buildShareMessage(
+      deepLink: deepLink,
+      purchaseUrl: buildBookPurchaseUrl(bookIsbn13),
+    );
     try {
       await shareCardImage(
         file: file,
         subject: prefix == null ? null : '$prefix — 책귀',
-        text: deepLink,
+        text: text,
       );
       if (navigator.canPop()) navigator.pop();
       // PR15-A (2): 첫 공유 직후 단 1회 — "다른 곳에도 보낼 수 있어요" closure

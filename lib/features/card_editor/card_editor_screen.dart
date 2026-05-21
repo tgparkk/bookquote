@@ -291,6 +291,7 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
         file: file,
         shareText: data.quoteText,
         bookId: data.bookId,
+        bookIsbn13: data.bookIsbn13,
         senderUid: ref.read(currentUserIdProvider),
       );
     } on CardRenderException {

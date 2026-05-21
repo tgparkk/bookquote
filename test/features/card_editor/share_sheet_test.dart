@@ -36,4 +36,43 @@ void main() {
     expect(find.text('다른 앱으로 공유'), findsOneWidget);
     expect(find.text('저장 권한이 없어도 공유는 그대로 할 수 있어요.'), findsOneWidget);
   });
+
+  group('buildBookPurchaseUrl (V1.0 — 책 구매 링크)', () {
+    test('ISBN13 → 교보문고 검색 URL', () {
+      expect(
+        buildBookPurchaseUrl('9791191056556'),
+        'https://search.kyobobook.co.kr/search?keyword=9791191056556',
+      );
+    });
+
+    test('null·빈 ISBN → null (직접 입력 책 폴백)', () {
+      expect(buildBookPurchaseUrl(null), isNull);
+      expect(buildBookPurchaseUrl('   '), isNull);
+    });
+  });
+
+  group('buildShareMessage', () {
+    test('deep link + 구매 링크 모두 포함', () {
+      final msg = buildShareMessage(
+        deepLink: 'io.x://book/1',
+        purchaseUrl: 'https://search.kyobobook.co.kr/search?keyword=978',
+      );
+      expect(msg, contains('io.x://book/1'));
+      expect(msg, contains('교보문고'));
+      expect(msg, contains('https://search.kyobobook.co.kr/search?keyword=978'));
+    });
+
+    test('구매 링크만 — deep link 없는 직접 입력 책', () {
+      final msg = buildShareMessage(
+        deepLink: null,
+        purchaseUrl: 'https://search.kyobobook.co.kr/search?keyword=978',
+      );
+      expect(msg, contains('교보문고'));
+      expect(msg, isNot(contains('book/')));
+    });
+
+    test('둘 다 없으면 null (이미지만 공유)', () {
+      expect(buildShareMessage(deepLink: null, purchaseUrl: null), isNull);
+    });
+  });
 }
