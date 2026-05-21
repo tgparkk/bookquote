@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 
 import 'app/deep_link_handler.dart';
 import 'app/router.dart';
+import 'core/config/env.dart';
 import 'core/supabase/supabase_init.dart';
 import 'core/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // 웹에서 URL이 `localhost:8080/auth/callback`처럼 보이게 (#/ 해시 전략 X).
-  // 매직링크 redirect URL과 정확히 일치해야 SDK·라우터 둘 다 안 깨진다.
+  // 웹에서 URL이 `localhost:8080/...`처럼 보이게 (#/ 해시 전략 X).
   usePathUrlStrategy();
   await initSupabase();
-  // 모바일에서 매직링크/OAuth 콜백을 받으려면 app_links 스트림을 구독해야 함.
+  // PR21: 카카오 SDK 초기화 — 네이티브 앱 키 없으면 건너뜀(빌드는 통과,
+  // 카카오 버튼은 disabled 상태로 노출).
+  if (Env.isKakaoConfigured) {
+    KakaoSdk.init(nativeAppKey: Env.kakaoNativeAppKey);
+  }
+  // 인앱 deep link(`io.github.tgparkk.bookquote://book/:id`) 처리.
   // 웹은 SDK가 URL을 자동 감지하므로 핸들러는 no-op.
   await DeepLinkHandler().start();
   runApp(const ProviderScope(child: BookquoteApp()));

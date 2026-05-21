@@ -55,6 +55,8 @@ dependencies:
   table_calendar: ^3.1.3     # 서재 [캘린더] 세그먼트 (PR17-C)
   cryptography: ^2.7.0       # E2EE 본문 AES-256-GCM + PBKDF2-HMAC-SHA512 (PR16-A) — 순수 Dart, native 의존 0
   flutter_secure_storage: ^10.2.0  # 마스터키 K 캐시 (PR16-A) — Android Keystore + iOS Keychain (^9.x는 win32 ^5와만 호환 → package_info_plus 충돌)
+  google_sign_in: ^6.2.1     # 구글 OAuth (PR21) — Supabase signInWithIdToken에 토큰 전달
+  kakao_flutter_sdk_user: ^1.10.0  # 카카오 OAuth (PR21) — SDK 직접 통합으로 비즈 앱 인증 우회 (KOE205 회피)
 
 dev_dependencies:
   flutter_test:

@@ -28,16 +28,39 @@
 	<true/>
 	<key>CFBundleURLTypes</key>
 	<array>
+		<!-- 인앱 deep link: io.github.tgparkk.bookquote://book/:id (공유 카드 K-factor) -->
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>io.github.tgparkk.bookquote.auth</string>
+			<string>io.github.tgparkk.bookquote</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>io.github.tgparkk.bookquote</string>
 			</array>
 		</dict>
+		<!-- PR21: 카카오 OAuth 콜백. scheme = kakao{NATIVE_APP_KEY}.
+		     실제 키로 본인이 교체해야 함 — 아래 KAKAO_NATIVE_APP_KEY 부분을
+		     카카오 디벨로퍼스 네이티브 앱 키로 치환 (예: kakao1234567890abcdef).
+		     자세한 절차는 docs/ops/oauth-setup.md 참고. -->
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>kakao</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kakaoKAKAO_NATIVE_APP_KEY</string>
+			</array>
+		</dict>
+	</array>
+	<!-- PR21: 카카오 SDK가 카카오톡 앱 설치 여부 확인 + 카카오톡으로 인증 호출
+	     시 사용. 미선언 시 `isKakaoTalkInstalled`가 항상 false 반환되어 항상
+	     웹 로그인으로 빠짐. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>kakaokompassauth</string>
+		<string>kakaolink</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

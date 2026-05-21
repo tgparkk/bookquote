@@ -1,18 +1,20 @@
-// 모바일 deep link 처리.
+// 모바일 인앱 deep link 처리.
 //
-// 두 종류의 link가 OS를 거쳐 들어온다:
-//   1) 인증 콜백 — `io.github.tgparkk.bookquote://auth/callback?code=...`
-//      (매직링크 / OAuth). Supabase SDK의 `getSessionFromUrl`로 PKCE 코드 교환.
-//   2) 인앱 라우트 — `io.github.tgparkk.bookquote://book/<id>?from=share`
-//      (공유 카드 → 책 상세, Stage 3~4 K-factor). GoRouter로 라우팅한다.
-//      콜드스타트 진입은 라우터가 아직 없으므로 보류했다가 스플래시가 소비한다
-//      (`splash_screen.dart`의 `_resolve` → `consumePendingRoute`).
+// V1에서 처리하는 link 한 종류:
+//   - 인앱 라우트 — `io.github.tgparkk.bookquote://book/<id>?from=share`
+//     (공유 카드 → 책 상세, K-factor). GoRouter로 라우팅한다.
+//     콜드스타트 진입은 라우터가 아직 없으므로 보류했다가 스플래시가 소비한다
+//     (`splash_screen.dart`의 `_resolve` → `consumePendingRoute`).
 //
-// 웹은 `Supabase.initialize`의 `detectSessionInUri`가 인증을 자동 처리하고 인앱 링크는
-// 브라우저 URL이 처리하므로 이 핸들러는 mobile/desktop 전용. `kIsWeb`이면 no-op.
+// OAuth(구글·카카오)는 각 SDK가 자체 채널(ASWebAuthenticationSession,
+// Android Custom Tabs)로 처리하므로 여기서 가로채지 않는다. PR21 이전엔
+// 매직링크 PKCE 코드 교환도 처리했으나 매직링크 자체가 제거되어 분기 삭제.
 //
-// 같은 URI를 (단톡방을 스크롤하며 여러 번 탭하는 등) 재처리하지 않도록 세션 동안 본
-// URI를 기억한다 — deep link 무한 루프 / 중복 이동 방지.
+// 웹은 브라우저 URL이 직접 처리하므로 이 핸들러는 mobile/desktop 전용.
+// `kIsWeb`이면 no-op.
+//
+// 같은 URI를 (단톡방을 스크롤하며 여러 번 탭하는 등) 재처리하지 않도록 세션 동안
+// 본 URI를 기억한다 — deep link 무한 루프 / 중복 이동 방지.
 
 import 'dart:async';
 
@@ -80,21 +82,6 @@ class DeepLinkHandler {
     if (!isSupabaseReady) return;
     if (!_seen.add(uri.toString())) return; // 이미 처리한 URI
 
-    if (_isAuthCallback(uri)) {
-      try {
-        final res = await supabase.auth.getSessionFromUrl(uri);
-        if (kDebugMode) {
-          final s = res.session;
-          debugPrint(
-            '[deep-link] session set. user=${s.user.email} expires=${DateTime.fromMillisecondsSinceEpoch((s.expiresAt ?? 0) * 1000)}',
-          );
-        }
-      } catch (e) {
-        debugPrint('[deep-link] getSessionFromUrl failed: $e');
-      }
-      return;
-    }
-
     final route = _routeFor(uri);
     if (route == null) return; // 알 수 없는 deep link — 무시 (크래시 금지)
 
@@ -106,11 +93,6 @@ class DeepLinkHandler {
       _pendingRoute = route;
     }
   }
-
-  bool _isAuthCallback(Uri uri) =>
-      uri.path.startsWith('/auth/callback') ||
-      uri.host == 'auth' ||
-      uri.queryParameters.containsKey('code');
 
   /// 인앱 라우트로 매핑. `io.github.tgparkk.bookquote://book/:id?from=share`는
   /// Dart URI 파서가 `host='book'`, `path='/:id'`로 쪼갠다 → `/book/:id?from=share`.

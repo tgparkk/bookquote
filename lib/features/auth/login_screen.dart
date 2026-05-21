@@ -1,190 +1,158 @@
-import 'package:flutter/foundation.dart';
+// 책귀 — 로그인 화면 (PR21 OAuth 전용)
+//
+// V1 매직링크 제거 이후 진입점은 구글·카카오 두 OAuth. 환경 키가 없으면
+// 해당 버튼은 disabled로 노출돼 본인 디버그 환경에서도 즉시 원인 파악 가능.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/config/env.dart';
 import '../../core/theme/tokens.dart';
 import 'auth_controller.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
+class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
-}
-
-class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  bool _linkSent = false;
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    super.dispose();
-  }
-
-  String _redirectUrl() {
-    if (kIsWeb) return '${Uri.base.origin}/auth/callback';
-    return 'io.github.tgparkk.bookquote://auth/callback';
-  }
-
-  Future<void> _sendLink() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    final email = _emailController.text.trim();
-
-    await ref.read(authControllerProvider.notifier).sendMagicLink(
-          email: email,
-          redirectTo: _redirectUrl(),
-        );
-
-    final state = ref.read(authControllerProvider);
-    if (!mounted) return;
-    state.when(
-      data: (_) {
-        setState(() => _linkSent = true);
-      },
-      loading: () {},
-      error: (e, _) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(SnackBar(content: Text(authErrorMessage(e))));
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
     final auth = ref.watch(authControllerProvider);
     final isLoading = auth.isLoading;
+
+    Future<void> handle(Future<void> Function() action) async {
+      await action();
+      if (!context.mounted) return;
+      final state = ref.read(authControllerProvider);
+      state.when(
+        data: (_) {},
+        loading: () {},
+        error: (e, _) {
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(SnackBar(content: Text(authErrorMessage(e))));
+        },
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('로그인')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.s6),
-          child: _linkSent
-              ? _SentNotice(
-                  email: _emailController.text.trim(),
-                  onResetEmail: () => setState(() => _linkSent = false),
-                )
-              : Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text('책귀에 오신 걸 환영합니다',
-                          style: textTheme.headlineMedium),
-                      const SizedBox(height: AppSpacing.s2),
-                      Text(
-                        '이메일을 입력하면 로그인 링크를 보내드려요. 비밀번호 없이 한 번에.',
-                        style: textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: AppSpacing.s8),
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: const InputDecoration(
-                          labelText: '이메일',
-                          hintText: 'you@example.com',
-                          prefixIcon: Icon(Icons.email_outlined),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
-                        textInputAction: TextInputAction.go,
-                        enabled: !isLoading,
-                        validator: (v) {
-                          final value = v?.trim() ?? '';
-                          if (value.isEmpty) return '이메일을 입력해주세요.';
-                          if (!value.contains('@') || !value.contains('.')) {
-                            return '올바른 이메일 주소를 입력해주세요.';
-                          }
-                          return null;
-                        },
-                        onFieldSubmitted: (_) => _sendLink(),
-                      ),
-                      const SizedBox(height: AppSpacing.s4),
-                      ElevatedButton.icon(
-                        onPressed: isLoading ? null : _sendLink,
-                        icon: isLoading
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.secondary50,
-                                ),
-                              )
-                            : const Icon(Icons.send_outlined),
-                        label: Text(isLoading ? '전송 중…' : '이메일로 시작'),
-                      ),
-                      const SizedBox(height: AppSpacing.s6),
-                      const Row(
-                        children: [
-                          Expanded(child: Divider()),
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: AppSpacing.s3),
-                            child: Text('또는'),
-                          ),
-                          Expanded(child: Divider()),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.s6),
-                      // V1.5 재활성화: onPressed에 _signInKakao 연결.
-                      // 현재 카카오 OAuth는 Supabase GoTrue가 account_email scope를
-                      // 강제 요청하는데 카카오 개인 앱은 비즈니스 인증 없이 이 scope를
-                      // 받을 수 없어 KOE205 발생. 비즈 인증 또는 kakao_flutter_sdk
-                      // 우회(signInWithIdToken) 둘 중 하나 도입 시 활성화.
-                      OutlinedButton.icon(
-                        onPressed: null,
-                        icon: const Icon(Icons.chat_bubble_outline),
-                        label: const Text('카카오로 시작 (V1.5)'),
-                      ),
-                    ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('책귀에 오신 걸 환영합니다', style: textTheme.headlineMedium),
+              const SizedBox(height: AppSpacing.s2),
+              Text(
+                '구글 또는 카카오 계정으로 1초 만에 시작하세요.',
+                style: textTheme.bodyMedium,
+              ),
+              const SizedBox(height: AppSpacing.s8),
+              _GoogleButton(
+                enabled: Env.isGoogleConfigured && !isLoading,
+                onTap: () => handle(
+                  () => ref
+                      .read(authControllerProvider.notifier)
+                      .signInWithGoogle(),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s3),
+              _KakaoButton(
+                enabled: Env.isKakaoConfigured && !isLoading,
+                onTap: () => handle(
+                  () => ref
+                      .read(authControllerProvider.notifier)
+                      .signInWithKakao(),
+                ),
+              ),
+              if (isLoading) ...[
+                const SizedBox(height: AppSpacing.s6),
+                const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.4,
+                      color: AppColors.accent500,
+                    ),
                   ),
                 ),
+              ],
+              if (!Env.isGoogleConfigured && !Env.isKakaoConfigured) ...[
+                const SizedBox(height: AppSpacing.s6),
+                Text(
+                  '로그인 키가 설정되지 않았습니다.\n'
+                  '`flutter run --dart-define-from-file=.env.json`로 실행해 주세요.',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.primary500,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _SentNotice extends StatelessWidget {
-  const _SentNotice({required this.email, required this.onResetEmail});
+class _GoogleButton extends StatelessWidget {
+  const _GoogleButton({required this.enabled, required this.onTap});
 
-  final String email;
-  final VoidCallback onResetEmail;
+  final bool enabled;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(Icons.mark_email_read_outlined,
-            size: 48, color: AppColors.accent500),
-        const SizedBox(height: AppSpacing.s4),
-        Text('이메일을 보냈어요', style: textTheme.headlineMedium),
-        const SizedBox(height: AppSpacing.s2),
-        Text(
-          '$email로 보낸 링크를 클릭해 로그인하세요.',
-          style: textTheme.bodyMedium,
-        ),
-        const SizedBox(height: AppSpacing.s2),
-        Text(
-          '메일이 안 보이면 스팸함도 확인해주세요. 몇 분 안에 도착해요.',
-          style: textTheme.bodySmall,
-        ),
-        const SizedBox(height: AppSpacing.s6),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: onResetEmail,
-            icon: const Icon(Icons.edit_outlined),
-            label: const Text('이메일이 다른가요? 다시 입력'),
+    return SizedBox(
+      height: 52,
+      child: OutlinedButton.icon(
+        onPressed: enabled ? onTap : null,
+        icon: const Icon(Icons.account_circle_outlined, size: 22),
+        label: const Text('구글로 시작'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary800,
+          side: const BorderSide(color: AppColors.primary200),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
           ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+class _KakaoButton extends StatelessWidget {
+  const _KakaoButton({required this.enabled, required this.onTap});
+
+  final bool enabled;
+  final VoidCallback onTap;
+
+  /// 카카오 브랜드 가이드라인 — 노란색 #FEE500 + 검정 텍스트.
+  static const Color _kakaoYellow = Color(0xFFFEE500);
+  static const Color _kakaoLabel = Color(0xFF000000);
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 52,
+      child: FilledButton.icon(
+        onPressed: enabled ? onTap : null,
+        icon: const Icon(Icons.chat_bubble_rounded, size: 20),
+        label: const Text('카카오로 시작'),
+        style: FilledButton.styleFrom(
+          backgroundColor: _kakaoYellow,
+          foregroundColor: _kakaoLabel,
+          disabledBackgroundColor: _kakaoYellow.withValues(alpha: 0.4),
+          disabledForegroundColor: _kakaoLabel.withValues(alpha: 0.5),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+          ),
+        ),
+      ),
     );
   }
 }

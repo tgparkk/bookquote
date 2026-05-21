@@ -15,6 +15,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/tokens.dart';
 import '../account/account_deletion.dart';
 import '../auth/auth_controller.dart';
+import '../profile/data/profile_repository.dart';
 import '../profile/presentation/profile_settings_tiles.dart';
 import '../quote/data/quote_outbox.dart';
 import 'data/quote_export.dart';
@@ -33,13 +34,18 @@ class MeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final (:loggedIn, :email) = ref.watch(meSessionInfoProvider);
+    final displayName = ref.watch(myProfileProvider).value?.displayName;
 
     return Scaffold(
       appBar: AppBar(title: const Text('내 정보')),
       body: ListView(
         padding: const EdgeInsets.only(top: AppSpacing.s4, bottom: AppSpacing.s16),
         children: [
-          _ProfileHeader(email: email, loggedIn: loggedIn),
+          _ProfileHeader(
+            displayName: displayName,
+            email: email,
+            loggedIn: loggedIn,
+          ),
 
           if (loggedIn) ...[
             const _SectionHeader('내 데이터'),
@@ -174,14 +180,29 @@ Future<void> _openUri(BuildContext context, Uri uri) async {
 // ── 프로필 ────────────────────────────────────────────────
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.email, required this.loggedIn});
+  const _ProfileHeader({
+    required this.displayName,
+    required this.email,
+    required this.loggedIn,
+  });
+  final String? displayName;
   final String? email;
   final bool loggedIn;
 
   @override
   Widget build(BuildContext context) {
-    final trimmed = email?.trim() ?? '';
-    final initial = trimmed.isNotEmpty ? trimmed[0].toUpperCase() : '?';
+    final name = displayName?.trim() ?? '';
+    final emailStr = email?.trim() ?? '';
+    // 대표 줄은 닉네임 우선 — 카카오 OAuth 사용자는 이메일이 없어 닉네임이
+    // 유일한 식별자다. "이메일 없음"을 빈 상태처럼 보이게 두지 않는다.
+    final primary = name.isNotEmpty
+        ? name
+        : (emailStr.isNotEmpty ? emailStr : '책귀 사용자');
+    // 보조 줄: 닉네임이 대표 줄일 때만 이메일을 덧붙인다(같은 값 중복 방지).
+    final secondary =
+        (name.isNotEmpty && emailStr.isNotEmpty) ? emailStr : '로그인됨';
+    final initial =
+        loggedIn && primary.isNotEmpty ? primary[0].toUpperCase() : '?';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -196,7 +217,7 @@ class _ProfileHeader extends StatelessWidget {
             radius: 24,
             backgroundColor: AppColors.accent100,
             child: Text(
-              loggedIn ? initial : '?',
+              initial,
               style: const TextStyle(
                 fontFamily: AppFonts.ui,
                 fontWeight: FontWeight.w600,
@@ -211,7 +232,7 @@ class _ProfileHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  loggedIn ? (trimmed.isNotEmpty ? trimmed : '이메일 없음') : '로그인 정보 없음',
+                  loggedIn ? primary : '로그인 정보 없음',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.bodyLarge
@@ -219,7 +240,9 @@ class _ProfileHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  loggedIn ? '로그인됨' : '아래에서 다시 로그인할 수 있어요',
+                  loggedIn ? secondary : '아래에서 다시 로그인할 수 있어요',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.bodySmall
                       .copyWith(color: AppColors.primary400),
                 ),
