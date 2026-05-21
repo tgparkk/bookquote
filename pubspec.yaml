@@ -74,6 +74,7 @@ dev_dependencies:
   json_serializable: ^6.13.0
   mockito: ^5.4.4
   fake_async: ^1.3.1
+  flutter_launcher_icons: ^0.14.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -107,3 +108,15 @@ flutter:
           weight: 500
         - asset: assets/fonts/pretendard/Pretendard-SemiBold.otf
           weight: 600
+
+# 앱 런처 아이콘 — `dart run flutter_launcher_icons`로 생성.
+# 원본 PNG 2종은 `tool/generate_icon.py`가 만든다(펼친 책 + 글줄):
+#   icon.png            레거시 아이콘(크림 배경)
+#   icon_foreground.png 적응형 전경(투명 배경, 안전영역 내)
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#FDF6ED"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  min_sdk_android: 21
