@@ -20,7 +20,12 @@
 **OAuth 후속 To-Do**:
 - **(V1.0.x — 카카오 재노출)** Play 스토어 등록 후 카카오 **이메일 동의항목 검수 신청**(선택 동의) → 승인되면 `_kakaoLoginEnabled`를 `true`로 되돌려 카카오 버튼 재노출. 검수에 개인정보처리방침 URL + 앱스토어 URL 필요. 이메일 일치 시 기존 계정 자동 통합.
 - **(V1.1 후보)** 인앱 `linkIdentity`("로그인 수단 연결") — 내정보에서 다른 provider를 현재 계정에 수동 연결. 이메일·검수에 의존하지 않는 근본 해법.
-- **(출시 전 정리)** 테스트로 생긴 **이메일 없는 카카오 더미 유저**를 Supabase Authentication → Users에서 삭제. + 이메일 없는 유저의 회원 탈퇴·데이터 내보내기 동작 확인.
+- **(출시 전 정리)** Supabase 테스트 유저 정리 — 2026-05-21 SQL 조회 결과 `auth.users` 4명:
+  - `f1d055aa…` `sttgpark@gmail.com` (email + google) — **메인 계정, 유지**
+  - `1b210dfe…` `sttgpark2@naver.com` (email) — 테스트, 삭제
+  - `472a8312…` 이메일 없음 (kakao) — 카카오 검증 중 생긴 더미, 삭제
+  - `1c26614a…` `sttgparkk@gmail.com` (k 2개 — `sttgpark`과 다른 별도 구글 계정) — 의도 확인 후 삭제
+  - **확인 방법**: SQL Editor에서 `select u.id, u.email, i.provider from auth.users u left join auth.identities i on i.user_id = u.id` — Dashboard Users 목록 뷰는 캐시돼 신뢰 불가(빈 이메일 행 누락됨). + 이메일 없는 유저의 회원 탈퇴·데이터 내보내기 동작도 점검.
 - **(출시 블로커, 유지)** release 서명 키스토어 생성 — 현재 debug 서명. 생성 후 그 SHA-1·키해시를 Google/Kakao 콘솔에 *추가 등록*(debug 해시와 멀티 등록 가능 — 한 줄 추가).
 - Play Console 계정 **복구 완료**(2026-05-21) — 기존 `sttgpark@gmail.com`로 출시 가능.
 
