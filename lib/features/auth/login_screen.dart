@@ -1,7 +1,9 @@
-// 책귀 — 로그인 화면 (PR21 OAuth 전용)
+// 책귀 — 로그인 화면 (PR21 OAuth)
 //
-// V1 매직링크 제거 이후 진입점은 구글·카카오 두 OAuth. 환경 키가 없으면
-// 해당 버튼은 disabled로 노출돼 본인 디버그 환경에서도 즉시 원인 파악 가능.
+// V1 매직링크 제거 이후 진입점은 OAuth. V1.0은 구글 단독 출시 — 카카오는
+// 이메일 동의항목 검수(앱스토어 URL 필요 → 출시 후 가능)를 마친 뒤 V1.0.x에서
+// 재노출한다. `_kakaoLoginEnabled`만 true로 되돌리면 버튼이 다시 나온다.
+// 카카오 OAuth 코드·콘솔 설정·키는 그대로 유지된다.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/env.dart';
 import '../../core/theme/tokens.dart';
 import 'auth_controller.dart';
+
+/// V1.0 카카오 보류 게이트 — `true`로 되돌리면 카카오 버튼이 다시 노출된다.
+/// (V1.0.x: 카카오 이메일 동의항목 검수 완료 후 재활성화 예정.)
+final bool _kakaoLoginEnabled = false;
 
 class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
@@ -45,7 +51,9 @@ class LoginScreen extends ConsumerWidget {
               Text('책귀에 오신 걸 환영합니다', style: textTheme.headlineMedium),
               const SizedBox(height: AppSpacing.s2),
               Text(
-                '구글 또는 카카오 계정으로 1초 만에 시작하세요.',
+                _kakaoLoginEnabled
+                    ? '구글 또는 카카오 계정으로 1초 만에 시작하세요.'
+                    : '구글 계정으로 1초 만에 시작하세요.',
                 style: textTheme.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.s8),
@@ -57,15 +65,17 @@ class LoginScreen extends ConsumerWidget {
                       .signInWithGoogle(),
                 ),
               ),
-              const SizedBox(height: AppSpacing.s3),
-              _KakaoButton(
-                enabled: Env.isKakaoConfigured && !isLoading,
-                onTap: () => handle(
-                  () => ref
-                      .read(authControllerProvider.notifier)
-                      .signInWithKakao(),
+              if (_kakaoLoginEnabled) ...[
+                const SizedBox(height: AppSpacing.s3),
+                _KakaoButton(
+                  enabled: Env.isKakaoConfigured && !isLoading,
+                  onTap: () => handle(
+                    () => ref
+                        .read(authControllerProvider.notifier)
+                        .signInWithKakao(),
+                  ),
                 ),
-              ),
+              ],
               if (isLoading) ...[
                 const SizedBox(height: AppSpacing.s6),
                 const Center(
@@ -79,7 +89,8 @@ class LoginScreen extends ConsumerWidget {
                   ),
                 ),
               ],
-              if (!Env.isGoogleConfigured && !Env.isKakaoConfigured) ...[
+              if (!Env.isGoogleConfigured &&
+                  (!_kakaoLoginEnabled || !Env.isKakaoConfigured)) ...[
                 const SizedBox(height: AppSpacing.s6),
                 Text(
                   '로그인 키가 설정되지 않았습니다.\n'

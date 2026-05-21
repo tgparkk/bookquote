@@ -7,18 +7,18 @@
 
 ---
 
-## ▶ 다음 세션 시작점 (2026-05-21 기준 — **PR21 OAuth 완전 완료**: 콘솔 3종 + stash pop + SM F956N 실기기 검증 — 구글·카카오 둘 다 로그인 성공)
+## ▶ 다음 세션 시작점 (2026-05-21 기준 — **PR21 OAuth 완료**: 콘솔 3종 + stash pop + SM F956N 실기기 검증. **V1.0은 구글 단독 출시 — 카카오는 V1.0.x로 보류**)
 
 **PR21 OAuth 랜딩 + 카카오 계정 모델 결정 (2026-05-21)**:
 
 - **OAuth 콘솔 작업 완료** — Google Cloud Console(웹·Android·iOS 클라이언트 3종 + OAuth 동의 화면 *테스트* 모드) · Kakao Developers(네이티브 앱 키 + 플랫폼 등록 + 카카오 로그인·OpenID Connect ON + 동의항목 닉네임만) · Supabase Dashboard(Google·Kakao Provider). 키는 `.env.json`·`android/local.properties`(둘 다 gitignored)에 주입.
 - **`git stash pop`으로 PR21 코드 본선 반영** — 13파일, 충돌 0. `flutter pub get` → analyze clean → 전체 테스트 통과.
 - **실기기 검증(SM F956N)** — 구글 ✅(기존 `sttgpark@gmail.com` 계정과 이메일 일치 → 자동 통합). 카카오 ✅ — `signInWithIdToken`의 "Unacceptable audience" 오류를 **Supabase Kakao Provider의 REST API Key 칸에 네이티브 앱 키를 콤마로 추가**해 해결.
-- **🔑 카카오 계정 모델 결정 (매니저 모드)** — 카카오는 이메일 미제공 → **이메일 없는 별도 계정** 생성(구글·매직링크는 이메일 공유로 1계정 통합). **V1.0 = 현행 유지(별도 계정)** — 카카오 이메일 동의항목은 *검수* 필요, 검수 신청에 *앱스토어 URL* 요구 → 출시 전 불가(닭-달걀 구조).
-- **MeScreen 프로필 헤더 닉네임 우선 fix** — 이메일 없는 카카오 사용자에게 "이메일 없음"이 빈 상태처럼 보이던 문제 → 닉네임(`profiles.display_name`)을 대표 줄로, 이메일은 보조 줄(있을 때만). `me_screen_test.dart` 카카오(이메일 없음) 케이스 1건 신규 → 256 통과.
+- **🔑 카카오 V1.0 보류 결정 (매니저 모드 → 사용자 결정)** — 카카오는 이메일 미제공 → 이메일 없는 별도 계정 생성(구글·매직링크는 이메일 공유로 1계정 통합). 계정 통합엔 카카오 이메일 동의항목 *검수*가 필요하나 검수 신청에 *앱스토어 URL*이 요구돼 출시 전 불가(닭-달걀). **결정: V1.0은 구글 단독 출시, 카카오 버튼은 `login_screen.dart`의 `_kakaoLoginEnabled` 플래그(false)로 숨김.** 카카오 OAuth 코드·콘솔 설정·키는 그대로 유지 — V1.0.x에서 플래그만 되돌리면 재노출.
+- **MeScreen 프로필 헤더 닉네임 우선 fix** — 이메일 없는 사용자(향후 카카오 등)에게 "이메일 없음"이 빈 상태처럼 보이던 문제 → 닉네임(`profiles.display_name`)을 대표 줄로, 이메일은 보조 줄(있을 때만). `me_screen_test.dart` 케이스 1건 신규.
 
 **OAuth 후속 To-Do**:
-- **(출시 후)** 카카오 **이메일 동의항목 검수 신청**(선택 동의) — Play 스토어 등록 직후. 승인 시 코드 변경 거의 없이 신규 카카오 사용자가 이메일 일치 시 자동 통합. 검수에 개인정보처리방침 URL + 앱스토어 URL 필요.
+- **(V1.0.x — 카카오 재노출)** Play 스토어 등록 후 카카오 **이메일 동의항목 검수 신청**(선택 동의) → 승인되면 `_kakaoLoginEnabled`를 `true`로 되돌려 카카오 버튼 재노출. 검수에 개인정보처리방침 URL + 앱스토어 URL 필요. 이메일 일치 시 기존 계정 자동 통합.
 - **(V1.1 후보)** 인앱 `linkIdentity`("로그인 수단 연결") — 내정보에서 다른 provider를 현재 계정에 수동 연결. 이메일·검수에 의존하지 않는 근본 해법.
 - **(출시 전 정리)** 테스트로 생긴 **이메일 없는 카카오 더미 유저**를 Supabase Authentication → Users에서 삭제. + 이메일 없는 유저의 회원 탈퇴·데이터 내보내기 동작 확인.
 - **(출시 블로커, 유지)** release 서명 키스토어 생성 — 현재 debug 서명. 생성 후 그 SHA-1·키해시를 Google/Kakao 콘솔에 *추가 등록*(debug 해시와 멀티 등록 가능 — 한 줄 추가).
