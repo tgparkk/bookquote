@@ -20,6 +20,14 @@ val localProps = Properties().apply {
 val kakaoNativeAppKey: String =
     localProps.getProperty("kakao.nativeAppKey") ?: ""
 
+// release 서명 키 — gitignored인 key.properties가 있으면 release 키로 서명한다.
+// 없으면 debug 키로 폴백(키스토어 없는 환경에서 `flutter run --release`·CI가
+// 깨지지 않게). Play Store 업로드용 빌드는 key.properties가 반드시 있어야 한다.
+val keystorePropsFile = rootProject.file("key.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) FileInputStream(keystorePropsFile).use { load(it) }
+}
+
 android {
     namespace = "io.github.tgparkk.bookquote"
     compileSdk = flutter.compileSdkVersion
@@ -48,11 +56,24 @@ android {
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoNativeAppKey
     }
 
+    signingConfigs {
+        if (keystorePropsFile.exists()) {
+            create("release") {
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+                storeFile = keystoreProps.getProperty("storeFile")?.let { file(it) }
+                storePassword = keystoreProps.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // key.properties가 있으면 release 키로, 없으면 debug 키로 폴백 서명.
+            signingConfig = if (keystorePropsFile.exists())
+                signingConfigs.getByName("release")
+            else
+                signingConfigs.getByName("debug")
         }
     }
 }
