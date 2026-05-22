@@ -326,7 +326,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
           builder: (ctx) => AlertDialog(
             title: const Text('잠금을 해제할까요?'),
             content: const Text(
-              '본문이 평문으로 저장돼요. 북로그 서버와 운영자가 이 인용구를 볼 수 있어요. '
+              '본문이 평문으로 저장돼요. 책글귀 서버와 운영자가 이 인용구를 볼 수 있어요. '
               '다시 잠그면 새 비밀번호 없이 같은 마스터키로 보호돼요.',
             ),
             actions: [

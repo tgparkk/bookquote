@@ -62,7 +62,7 @@ class _BookquoteAppState extends ConsumerState<BookquoteApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: '북로그',
+      title: '책글귀',
       theme: AppTheme.light(),
       routerConfig: router,
     );

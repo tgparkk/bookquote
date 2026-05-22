@@ -153,7 +153,7 @@ class _FirstLockDialogState extends ConsumerState<FirstLockDialog> {
           children: [
             Text(
               '잠금 인용구는 본문이 암호화되어 저장돼요. '
-              '비밀번호는 북로그 서버가 모릅니다 — 잊으면 잠금 인용구를 영구히 못 봐요.',
+              '비밀번호는 책글귀 서버가 모릅니다 — 잊으면 잠금 인용구를 영구히 못 봐요.',
               style: textTheme.bodyMedium?.copyWith(color: AppColors.primary700),
             ),
             const SizedBox(height: AppSpacing.s2),

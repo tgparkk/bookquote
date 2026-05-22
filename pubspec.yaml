@@ -1,5 +1,5 @@
 name: bookquote
-description: "북로그 - 책 인용구를 카드로 만들어 공유하는 앱"
+description: "책글귀 - 책 인용구를 카드로 만들어 공유하는 앱"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

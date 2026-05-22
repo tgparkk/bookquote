@@ -122,7 +122,7 @@ class MeScreen extends ConsumerWidget {
             onTap: () => _openUri(
               context,
               Uri.parse(
-                'mailto:$_supportEmail?subject=${Uri.encodeComponent('북로그 문의')}',
+                'mailto:$_supportEmail?subject=${Uri.encodeComponent('책글귀 문의')}',
               ),
             ),
           ),
@@ -210,7 +210,7 @@ class _ProfileHeader extends StatelessWidget {
     // 유일한 식별자다. "이메일 없음"을 빈 상태처럼 보이게 두지 않는다.
     final primary = name.isNotEmpty
         ? name
-        : (emailStr.isNotEmpty ? emailStr : '북로그 사용자');
+        : (emailStr.isNotEmpty ? emailStr : '책글귀 사용자');
     // 보조 줄: 닉네임이 대표 줄일 때만 이메일을 덧붙인다(같은 값 중복 방지).
     final secondary =
         (name.isNotEmpty && emailStr.isNotEmpty) ? emailStr : '로그인됨';

@@ -105,7 +105,7 @@ class _CardShareSheet extends StatelessWidget {
     try {
       await shareCardImage(
         file: file,
-        subject: prefix == null ? null : '$prefix — 북로그',
+        subject: prefix == null ? null : '$prefix — 책글귀',
         text: text,
       );
       if (navigator.canPop()) navigator.pop();

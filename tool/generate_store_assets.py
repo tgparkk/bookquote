@@ -1,4 +1,4 @@
-"""북로그 Play Store 자산 생성 — 앱 아이콘(512x512) + 피처 그래픽(1024x500).
+"""책글귀 Play Store 자산 생성 — 앱 아이콘(512x512) + 피처 그래픽(1024x500).
 
 브랜드 톤(Ink-Paper-Copper): 크림 종이 배경 위 잉크 책 + 카퍼 태그라인.
 실행: python tool/generate_store_assets.py   (저장소 루트에서)
@@ -45,7 +45,7 @@ def make_feature_graphic() -> None:
     gap = 70 * ss
     wordmark_font = ImageFont.truetype(PRETENDARD_SB, 122 * ss)
     tagline_font = ImageFont.truetype(PRETENDARD_MD, 38 * ss)
-    wordmark = "북로그"
+    wordmark = "책글귀"
     tagline = "책 속 한 줄을 모으는 곳"
 
     wm_box = draw.textbbox((0, 0), wordmark, font=wordmark_font)

@@ -71,7 +71,7 @@ void main() {
       );
       expect(find.text('비밀번호를 종이에 적어두세요'), findsOneWidget);
       expect(
-        find.textContaining('비밀번호는 북로그 서버가 모릅니다'),
+        find.textContaining('비밀번호는 책글귀 서버가 모릅니다'),
         findsOneWidget,
       );
     });

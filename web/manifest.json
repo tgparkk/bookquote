@@ -1,11 +1,11 @@
 {
-    "name": "북로그",
-    "short_name": "북로그",
+    "name": "책글귀",
+    "short_name": "책글귀",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "북로그 - 책 인용구를 카드로 만들어 공유하는 앱",
+    "description": "책글귀 - 책 인용구를 카드로 만들어 공유하는 앱",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

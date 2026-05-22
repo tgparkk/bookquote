@@ -12,6 +12,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(AppBar, '로그인'), findsOneWidget);
-    expect(find.text('북로그에 오신 걸 환영합니다'), findsOneWidget);
+    expect(find.text('책글귀에 오신 걸 환영합니다'), findsOneWidget);
   });
 }
