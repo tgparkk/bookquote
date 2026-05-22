@@ -1,3 +1,8 @@
+import 'dart:ui' show PlatformDispatcher;
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -13,6 +18,18 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // 웹에서 URL이 `localhost:8080/...`처럼 보이게 (#/ 해시 전략 X).
   usePathUrlStrategy();
+  // Firebase Crashlytics — 출시 후 크래시 가시성. 웹은 Crashlytics 미지원이라
+  // 모바일에서만 초기화. debug 빌드는 수집을 꺼 대시보드 노이즈를 막는다.
+  if (!kIsWeb) {
+    await Firebase.initializeApp();
+    await FirebaseCrashlytics.instance
+        .setCrashlyticsCollectionEnabled(!kDebugMode);
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  }
   await initSupabase();
   // PR21: 카카오 SDK 초기화 — 네이티브 앱 키 없으면 건너뜀(빌드는 통과,
   // 카카오 버튼은 disabled 상태로 노출).

@@ -6,6 +6,10 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Firebase Crashlytics (PR26) — google-services가 google-services.json을 읽어
+    // Firebase 설정 리소스를 생성, crashlytics가 release 빌드 매핑 파일을 업로드.
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 // PR21: 카카오 네이티브 앱 키는 *Dart*가 아닌 *AndroidManifest의 scheme*에도

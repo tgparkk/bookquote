@@ -57,6 +57,8 @@ dependencies:
   flutter_secure_storage: ^10.2.0  # 마스터키 K 캐시 (PR16-A) — Android Keystore + iOS Keychain (^9.x는 win32 ^5와만 호환 → package_info_plus 충돌)
   google_sign_in: ^6.2.1     # 구글 OAuth (PR21) — Supabase signInWithIdToken에 토큰 전달
   kakao_flutter_sdk_user: ^1.10.0  # 카카오 OAuth (PR21) — SDK 직접 통합으로 비즈 앱 인증 우회 (KOE205 회피)
+  firebase_core: ^4.9.0
+  firebase_crashlytics: ^5.2.2
 
 dev_dependencies:
   flutter_test:
