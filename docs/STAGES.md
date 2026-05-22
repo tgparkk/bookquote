@@ -7,7 +7,46 @@
 
 ---
 
-## ▶ 다음 세션 시작점 (2026-05-21 기준 — **PR21 OAuth 완료**: 콘솔 3종 + stash pop + SM F956N 실기기 검증. **V1.0은 구글 단독 출시 — 카카오는 V1.0.x로 보류**)
+## ▶ 다음 세션 시작점 (2026-05-22 기준 — **북로그 리브랜드 + PR25 신고·차단 + PR26 Crashlytics + PR27 친구 둘러보기 완료. Play Console 앱 생성·9/11, 스토어 등록정보 입력 중**)
+
+**2026-05-22 산출 — V1.0 출시 작업 집중일**:
+
+- **북로그 리브랜드 (4a5d2c5)** — 앱 이름 "책귀" → "북로그"(book log). 플랫폼 표시명(Android `android:label`·iOS `CFBundleDisplayName`)·인앱 문구·카드 워터마크(`tokens.dart`)·약관/개인정보 HTML·웹 메타데이터 전부 변경. **불변**: 패키지 ID `io.github.tgparkk.bookquote`·Dart 패키지명 `bookquote`·딥링크 스킴(앱 정체성). 코드 주석 유지. 골든 카드 12종 워터마크 텍스트 반영 재생성.
+
+- **PR25 신고·차단 (b2839d4)** — 친구 기능 유지 결정 → Google Play UGC 정책상 신고·차단 필수. 마이그레이션 `20260522120000_reports_and_blocks.sql`: `reports`·`blocks` 테이블 + `is_blocked_with(uuid)` SECURITY DEFINER(양방향 차단 판정) → 기존 친구 RLS 5종(profiles SELECT·quotes/user_books friends·follows ×2)에 `not is_blocked_with` 추가 + `blocks` insert 트리거로 양방향 follow 삭제 + `list_blocked_profiles()` RPC(차단 목록 화면용 — 차단 상대 프로필은 RLS가 가리므로 DEFINER 우회). `lib/features/moderation/` 신규(repository·providers·report_dialog·blocked_users_screen). 친구 프로필 ⋮ 메뉴 신고/차단, 친구 인용구는 *펼친 상태에서만* 신고, 내정보 "차단 목록"(`/me/blocked`). **마이그레이션 원격 push 완료** — `npx supabase db push`로 `20260522120000` + 보류돼 있던 `20260519150000_mood_hub_snapshots` 함께 적용. 테스트 신규 10건.
+
+- **PR26 Firebase Crashlytics (06ed5fc)** — 출시·비공개 테스트 크래시 가시성(1인 개발, QA 없음). `firebase_core`·`firebase_crashlytics` + `com.google.gms.google-services`·`com.google.firebase.crashlytics` Gradle 플러그인. `main.dart` 모바일 한정 초기화 — `FlutterError.onError`·`PlatformDispatcher.onError` → Crashlytics, `setCrashlyticsCollectionEnabled(!kDebugMode)`(debug 수집 off). Firebase 프로젝트 `bookquote-aa178`(애널리틱스 미사용 — 데이터 수집·신고 항목 최소화). `android/app/google-services.json` 커밋. 크래시는 다음 앱 실행 시 업로드.
+
+- **PR27 친구 찾기 둘러보기 (585e6c0)** — 검색어를 입력해야만 사용자가 보이던 dead-end 해소. `follow_repository.listPublicProfiles`(profiles SELECT RLS 게이트, 최근 가입 순) + `discoverProfilesProvider` → 친구 찾기 화면이 검색어 비었을 때 "둘러보기" 목록 노출. 마이그레이션 불필요. 테스트 2건.
+
+- **계정 삭제 안내 페이지 (6d70aef)** — `docs/account-deletion/index.html` → GitHub Pages `https://tgparkk.github.io/bookquote/account-deletion/`. Play 데이터 보안 폼의 "계정 삭제 URL" 요건 충족.
+
+- **스토어 자산 (34b60c5, 2206d58)** — `tool/generate_store_assets.py`(아이콘 512×512 + 피처 그래픽 1024×500, 브랜드 Ink-Paper-Copper) → `tool/store/`. `tool/process_screenshots.py`(휴대폰 스크린샷을 크림 패딩으로 9:16 정규화 — 원본 968×2376=2.46:1은 Play 규칙 초과) → `tool/screenshot/store/play_01~04.png`.
+
+- **검증** — `flutter analyze` clean, 전체 **277 테스트** 통과. release APK 72.4MB(fat)·AAB 58.7MB. SM G998N 실기기 설치 + 구글 로그인·둘러보기 검증 완료.
+
+**Play Console 진행 (2026-05-22)**:
+- 앱 **생성 완료** — 이름 "북로그", 패키지 `io.github.tgparkk.bookquote`, 기본 언어 한국어.
+- 앱 설정 체크리스트 **9/11** — 개인정보처리방침·앱 액세스(검수용 더미 구글 계정)·광고·콘텐츠 등급·타겟층(13세 이상 — 13세 미만 체크 시 가족 정책 대상)·데이터 보안·정부/금융/건강. **남은 2**: 앱 카테고리·연락처 + 스토어 등록정보.
+- ⚠️ 콘텐츠 등급 함정 — "노출 공유" 질문은 *성적 노출* 의미. 책 앱은 "아니요"(예로 답하면 18세 등급).
+- ⚠️ 데이터 보안 — "암호화 전송"은 *전송*(HTTPS) 기준 → "예"(저장 평문과 별개).
+
+**🔑 빌드·OAuth 함정 (기록)**:
+- `flutter build`는 **`--dart-define-from-file=.env.json` 필수**(APK·AAB 모두). 누락 시 `SUPABASE_URL` 등 빈 값으로 빌드돼 앱 먹통 — `env.dart`는 `String.fromEnvironment` 기본값 없음.
+- release OAuth — release 키스토어 `android/app/upload-keystore.jks`(alias `upload`) SHA-1 `5E:39:BA:AC:46:32:EE:13:17:46:67:4C:38:24:21:E1:45:7F:D2:FC`. Google Cloud Console(프로젝트 `bookquote`)에 **별도 Android OAuth 클라이언트로 신규 생성**해 등록(Android 클라이언트는 SHA-1당 1개 — 기존 칸 "추가" 불가). debug SHA-1 `DB:3B:E2:77:...`는 기존 `bookquote-android` 유지. 등록 후 release 구글 로그인 동작 확인.
+- **미완**: Play 앱 서명 SHA-1 — AAB 업로드 후 Play Console *테스트 및 출시 → 설정 → 앱 무결성*에 표시. 그 SHA-1도 Android OAuth 클라이언트로 추가 등록해야 스토어 설치 테스터 로그인 가능.
+
+**▶ 다음 세션 할 일**:
+1. Play Console 마지막 2개 — 앱 카테고리·연락처(카테고리 "도서/참고자료", 이메일 `sttgpark@gmail.com`) + 스토어 등록정보(설명·아이콘·그래픽·스크린샷 업로드) → 11/11.
+2. **AAB 재빌드** — `flutter build appbundle --release --dart-define-from-file=.env.json`. PR27(둘러보기)이 직전 AAB 빌드 이후라 미반영 → 업로드 직전 1회 재빌드.
+3. AAB 업로드 → Play 앱 서명 SHA-1 확보 → Google Cloud Console 등록.
+4. 데이터 보안 폼에 "비정상 종료 로그·진단" 추가(Crashlytics 반영 — 출시 후 수정 가능).
+5. 비공개 테스트 트랙 — 테스터 12명·14일(개인 개발자 계정 프로덕션 전 의무 가능성).
+6. (정리) Supabase 테스트 유저 정리 — 아래 2026-05-21 이력 항목 참조.
+
+---
+
+## 이력: 2026-05-21 (PR21 OAuth 랜딩 + 카카오 V1.0 보류 — 콘솔 3종 + SM F956N 실기기 검증)
 
 **PR21 OAuth 랜딩 + 카카오 계정 모델 결정 (2026-05-21)**:
 
