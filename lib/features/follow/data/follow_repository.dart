@@ -282,6 +282,33 @@ class FollowRepository {
       throw FollowRepositoryException('SEARCH_FAILED', e.message);
     }
   }
+
+  /// 공개 프로필 사용자 목록 — 친구 찾기 화면의 '둘러보기'(검색어 입력 전 기본 노출).
+  ///
+  /// `profiles` SELECT RLS가 `is_library_public = true` + 미차단(PR25 `is_blocked_with`)
+  /// 으로 게이트하므로 결과는 공개 프로필만. 본인은 `neq`로 제외. 최근 가입 순.
+  /// 미로그인이면 빈 리스트.
+  Future<List<Profile>> listPublicProfiles({int limit = 50}) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return const <Profile>[];
+    try {
+      final rows = await _client
+          .from('profiles')
+          .select(
+            'id, display_name, avatar_url, public_handle, is_library_public',
+          )
+          .eq('is_library_public', true)
+          .neq('id', uid)
+          .order('created_at', ascending: false)
+          .limit(limit);
+      return (rows as List)
+          .cast<Map<String, dynamic>>()
+          .map(Profile.fromRow)
+          .toList(growable: false);
+    } on PostgrestException catch (e) {
+      throw FollowRepositoryException('LIST_FAILED', e.message);
+    }
+  }
 }
 
 final followRepositoryProvider = Provider<FollowRepository>((ref) {

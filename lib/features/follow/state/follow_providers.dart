@@ -22,6 +22,14 @@ final friendSearchProvider =
   return repo.searchByDisplayName(query);
 });
 
+/// 친구 찾기 '둘러보기' — 공개 프로필 사용자 목록(검색어 입력 전 기본 노출).
+/// 검색해야만 결과가 나오던 dead-end를 해소.
+final discoverProfilesProvider =
+    FutureProvider.autoDispose<List<Profile>>((ref) async {
+  final repo = ref.watch(followRepositoryProvider);
+  return repo.listPublicProfiles();
+});
+
 /// 내 팔로잉 카운트 (PR18-B) — 홈 친구 찾기 CTA 조건부 노출
 /// ("인용구 ≥1 + 친구 0명"의 친구 0 검사).
 final myFollowingCountProvider = FutureProvider.autoDispose<int>((ref) async {

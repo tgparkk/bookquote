@@ -4,6 +4,9 @@
 // (DECISIONS 2026-05-18 P0)로 비공개 프로필·본인 자기는 결과 0 row. 검색 결과
 // ListTile에 인라인 [팔로우]/[팔로잉] 토글. 친구 프로필 진입(`/u/:userId`)은
 // PR18-C에서 본격 — 본 화면은 팔로우 토글까지만.
+//
+// 검색어가 비어 있으면 공개 프로필 '둘러보기' 목록을 기본 노출 — 검색해야만
+// 사용자가 보이던 dead-end 해소.
 
 import 'dart:async';
 
@@ -73,7 +76,7 @@ class _FriendSearchScreenState extends ConsumerState<FriendSearchScreen> {
   }
 
   Widget _buildBody() {
-    if (_query.isEmpty) return const _EmptyHint();
+    if (_query.isEmpty) return const _DiscoverList();
     final result = ref.watch(friendSearchProvider(_query));
     return result.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -90,8 +93,50 @@ class _FriendSearchScreenState extends ConsumerState<FriendSearchScreen> {
   }
 }
 
-class _EmptyHint extends StatelessWidget {
-  const _EmptyHint();
+/// 검색어 입력 전 기본 노출 — 공개 프로필 사용자를 둘러본다.
+class _DiscoverList extends ConsumerWidget {
+  const _DiscoverList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(discoverProfilesProvider);
+    return async.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => const _ErrorView(),
+      data: (profiles) {
+        if (profiles.isEmpty) return const _DiscoverEmpty();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.s4,
+                AppSpacing.s3,
+                AppSpacing.s4,
+                AppSpacing.s2,
+              ),
+              child: Text(
+                '둘러보기',
+                style: AppTextStyles.labelMedium
+                    .copyWith(color: AppColors.primary400),
+              ),
+            ),
+            Expanded(
+              child: ListView.separated(
+                itemCount: profiles.length,
+                separatorBuilder: (_, _) => const Divider(height: 1),
+                itemBuilder: (_, i) => _ResultTile(profile: profiles[i]),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _DiscoverEmpty extends StatelessWidget {
+  const _DiscoverEmpty();
 
   @override
   Widget build(BuildContext context) {
@@ -108,12 +153,12 @@ class _EmptyHint extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.s4),
             Text(
-              '이름으로 친구를 찾아보세요',
+              '아직 둘러볼 공개 서재가 없어요',
               style: AppTextStyles.titleMedium,
             ),
             const SizedBox(height: AppSpacing.s2),
             Text(
-              '카드를 받았다면 발신자 이름을 검색해보세요.',
+              '친구 이름을 알면 위에서 검색해보세요.',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodySmall
                   .copyWith(color: AppColors.primary500),
