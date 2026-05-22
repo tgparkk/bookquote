@@ -204,5 +204,41 @@ void main() {
       );
       expect(find.text('책 보기'), findsNothing);
     });
+
+    testWidgets('readOnly=true + 펼침 + onReport → [신고] 노출 + 콜백 발화 (PR25)',
+        (tester) async {
+      var report = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: QuoteListCard(
+              quote: _quote(),
+              expanded: true,
+              readOnly: true,
+              onReport: () => report++,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('신고'), findsOneWidget);
+      await tester.tap(find.text('신고'));
+      expect(report, 1);
+    });
+
+    testWidgets('readOnly=true + 접힘 → onReport 있어도 [신고] 숨김 (PR25)',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: QuoteListCard(
+              quote: _quote(),
+              readOnly: true,
+              onReport: () {},
+            ),
+          ),
+        ),
+      );
+      expect(find.text('신고'), findsNothing);
+    });
   });
 }

@@ -174,6 +174,16 @@ void main() {
     expect(find.text('팔로워 12'), findsOneWidget);
     expect(find.text('팔로잉 5'), findsOneWidget);
   });
+
+  testWidgets('AppBar ⋮ 메뉴 → 신고하기·차단하기 노출 (PR25)', (tester) async {
+    await pump(tester, profile: _profile());
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+
+    expect(find.text('신고하기'), findsOneWidget);
+    expect(find.text('차단하기'), findsOneWidget);
+  });
 }
 
 // QuoteRepository를 Mock하지만 친구 화면이 호출하는 메서드는 1개뿐 —

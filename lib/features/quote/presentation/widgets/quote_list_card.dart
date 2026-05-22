@@ -26,6 +26,7 @@ class QuoteListCard extends StatelessWidget {
     this.onDelete,
     this.readOnly = false,
     this.onOpenBook,
+    this.onReport,
   });
 
   final Quote quote;
@@ -44,6 +45,10 @@ class QuoteListCard extends StatelessWidget {
   /// PR18-C — 친구 인용구 펼침 시 책 상세로 이동. `book_id`가 null이면 null 전달
   /// (호출자가 disabled 분기).
   final VoidCallback? onOpenBook;
+
+  /// PR25 — 친구 인용구 펼침 시 [신고] 액션. 읽기 전용(`readOnly`) 카드 전용 —
+  /// null이면 미노출(내 인용구엔 안 뜸). 접힌 카드엔 표시 안 함(목록 시인성).
+  final VoidCallback? onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -145,22 +150,44 @@ class QuoteListCard extends StatelessWidget {
                           children: [for (final m in quote.moods) _MoodBadge(m)],
                         ),
                       ),
-                    if (expanded && readOnly && onOpenBook != null) ...[
+                    if (expanded &&
+                        readOnly &&
+                        (onOpenBook != null || onReport != null)) ...[
                       const SizedBox(height: AppSpacing.s3),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          onPressed: onOpenBook,
-                          icon: const Icon(
-                            Icons.menu_book_outlined,
-                            size: 16,
-                          ),
-                          label: const Text('책 보기'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.accent700,
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ),
+                      Row(
+                        children: [
+                          if (onOpenBook != null)
+                            TextButton.icon(
+                              onPressed: onOpenBook,
+                              icon: const Icon(
+                                Icons.menu_book_outlined,
+                                size: 16,
+                              ),
+                              label: const Text('책 보기'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.accent700,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                          const Spacer(),
+                          if (onReport != null)
+                            TextButton.icon(
+                              onPressed: onReport,
+                              icon: const Icon(
+                                Icons.flag_outlined,
+                                size: 15,
+                              ),
+                              label: const Text('신고'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.primary400,
+                                visualDensity: VisualDensity.compact,
+                                textStyle: const TextStyle(
+                                  fontFamily: AppFonts.ui,
+                                  fontSize: AppFontSize.sm,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                     if (expanded &&

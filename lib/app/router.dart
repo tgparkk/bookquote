@@ -30,6 +30,7 @@ import '../features/follow/presentation/my_following_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/me/me_screen.dart';
+import '../features/moderation/presentation/blocked_users_screen.dart';
 import '../features/profile/presentation/friend_profile_screen.dart';
 import '../features/quote/quote_input_screen.dart';
 import 'auth_state_provider.dart';
@@ -134,6 +135,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                   path: 'following',
                   parentNavigatorKey: _rootNavigatorKey,
                   builder: (_, _) => const MyFollowingScreen(),
+                ),
+                GoRoute(
+                  path: 'blocked',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (_, _) => const BlockedUsersScreen(),
                 ),
               ],
             ),

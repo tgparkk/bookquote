@@ -20,6 +20,8 @@ import '../../book/domain/book.dart';
 import '../../book/presentation/widgets/book_cover.dart';
 import '../../follow/data/follow_repository.dart';
 import '../../follow/state/follow_providers.dart';
+import '../../moderation/data/moderation_repository.dart';
+import '../../moderation/presentation/report_dialog.dart';
 import '../../quote/data/quote_repository.dart';
 import '../../quote/presentation/widgets/quote_list_card.dart';
 import '../domain/profile.dart';
@@ -142,6 +144,18 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
           loading: () => const SizedBox.shrink(),
           error: (_, _) => const SizedBox.shrink(),
         ),
+        actions: [
+          // PR25 — 프로필이 로드된 경우에만 신고·차단 메뉴 노출.
+          profileAsync.maybeWhen(
+            data: (p) => p == null
+                ? const SizedBox.shrink()
+                : _ProfileOverflowMenu(
+                    userId: widget.userId,
+                    displayName: p.displayName,
+                  ),
+            orElse: () => const SizedBox.shrink(),
+          ),
+        ],
       ),
       body: profileAsync.when(
         loading: () =>
@@ -716,7 +730,7 @@ class _QuotesSliver extends StatelessWidget {
       sliver: SliverList.separated(
         itemCount: items.length + (loadingMore ? 1 : 0),
         separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.s3),
-        itemBuilder: (_, i) {
+        itemBuilder: (context, i) {
           if (i >= items.length) {
             return const Padding(
               padding: EdgeInsets.all(AppSpacing.s4),
@@ -740,6 +754,12 @@ class _QuotesSliver extends StatelessWidget {
             onOpenBook: bookId == null
                 ? null
                 : () => context.push('/book/$bookId'),
+            // PR25 — 펼친 상태에서만 [신고] 노출(접힌 목록은 그대로 깨끗).
+            onReport: () => showReportDialog(
+              context,
+              reportedQuoteId: id,
+              targetLabel: '이 인용구',
+            ),
           );
         },
       ),
@@ -1053,5 +1073,91 @@ class _NotFoundView extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ─── 신고·차단 메뉴 (PR25) ──────────────────────────────────
+
+class _ProfileOverflowMenu extends ConsumerWidget {
+  const _ProfileOverflowMenu({required this.userId, required this.displayName});
+
+  final String userId;
+  final String? displayName;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final name = (displayName == null || displayName!.isEmpty)
+        ? '이 사용자'
+        : displayName!;
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert),
+      onSelected: (v) {
+        switch (v) {
+          case 'report':
+            showReportDialog(
+              context,
+              reportedUserId: userId,
+              targetLabel: '$name님',
+            );
+          case 'block':
+            _confirmAndBlock(context, ref, name);
+        }
+      },
+      itemBuilder: (_) => const [
+        PopupMenuItem(value: 'report', child: Text('신고하기')),
+        PopupMenuItem(value: 'block', child: Text('차단하기')),
+      ],
+    );
+  }
+
+  Future<void> _confirmAndBlock(
+    BuildContext context,
+    WidgetRef ref,
+    String name,
+  ) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('$name님을 차단할까요?'),
+        content: const Text(
+          '서로의 인용구와 프로필이 더 이상 보이지 않고, 맺어진 팔로우도 해제돼요.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              '차단',
+              style: TextStyle(color: AppColors.semanticError),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(moderationRepositoryProvider).block(userId);
+      if (!context.mounted) return;
+      // 차단한 사용자는 RLS상 더 이상 조회 불가 — 화면을 닫는다.
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/');
+      }
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text('$name님을 차단했어요.')));
+    } catch (_) {
+      if (!context.mounted) return;
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(content: Text('차단하지 못했어요. 잠시 후 다시 시도해주세요.')),
+        );
+    }
   }
 }
