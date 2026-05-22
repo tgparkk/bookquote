@@ -336,7 +336,7 @@ double getQuoteLineHeight(double quoteFontSize) {
 abstract final class AppWatermark {
   /// 기본 모드: 거의 안 보임
   static const WatermarkConfig minimal = WatermarkConfig(
-    text: '책귀',
+    text: '북로그',
     fontSize: AppFontSize.xxs,   // 9px
     opacity: 0.30,
     position: WatermarkPosition.bottomRight,
@@ -346,7 +346,7 @@ abstract final class AppWatermark {
 
   /// 강조 모드 (사용자 토글 ON)
   static const WatermarkConfig branded = WatermarkConfig(
-    text: '책귀',
+    text: '북로그',
     fontSize: AppFontSize.xs,    // 11px
     opacity: 0.70,
     position: WatermarkPosition.bottomCenter,

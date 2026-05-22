@@ -131,7 +131,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final feed = ref.watch(quoteFeedProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('책귀'),
+        title: const Text('북로그'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search_rounded),

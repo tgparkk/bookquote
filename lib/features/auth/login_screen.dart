@@ -48,7 +48,7 @@ class LoginScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('책귀에 오신 걸 환영합니다', style: textTheme.headlineMedium),
+              Text('북로그에 오신 걸 환영합니다', style: textTheme.headlineMedium),
               const SizedBox(height: AppSpacing.s2),
               Text(
                 _kakaoLoginEnabled

@@ -25,7 +25,7 @@ void main() {
   testWidgets('구글 버튼이 노출되고, 카카오 버튼은 V1.0에서 숨겨진다', (tester) async {
     await pumpLogin(tester);
 
-    expect(find.text('책귀에 오신 걸 환영합니다'), findsOneWidget);
+    expect(find.text('북로그에 오신 걸 환영합니다'), findsOneWidget);
     expect(find.widgetWithText(OutlinedButton, '구글로 시작'), findsOneWidget);
     // 카카오는 V1.0.x로 보류 — 이메일 동의항목 검수 완료 후 재노출.
     expect(find.widgetWithText(FilledButton, '카카오로 시작'), findsNothing);

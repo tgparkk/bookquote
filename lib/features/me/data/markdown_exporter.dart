@@ -16,7 +16,7 @@ String buildQuotesMarkdown(
 }) {
   final when = exportedAt ?? DateTime.now();
   final buf = StringBuffer()
-    ..writeln('# 책귀 — 내 인용구')
+    ..writeln('# 북로그 — 내 인용구')
     ..writeln()
     ..writeln('> ${entries.length}개 · ${_fmtDate(when)} 내보냄')
     ..writeln();

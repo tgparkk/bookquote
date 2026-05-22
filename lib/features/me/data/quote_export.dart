@@ -53,7 +53,7 @@ Future<QuoteExportResult> exportMyQuotesAsMarkdown({
   }
 
   final markdown = buildQuotesMarkdown(entries);
-  final subject = '책귀 인용구 ${entries.length}개';
+  final subject = '북로그 인용구 ${entries.length}개';
   try {
     final dir = await getTemporaryDirectory();
     final ts = DateTime.now().millisecondsSinceEpoch;
@@ -162,7 +162,7 @@ class _SovereigntyHintSheet extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.s2),
             Text(
-              '책귀는 언제든 비워두고 떠날 수 있어요.\n'
+              '북로그는 언제든 비워두고 떠날 수 있어요.\n'
               '내 데이터는 항상 내가 가져갈 수 있도록 Markdown으로 받았어요.',
               textAlign: TextAlign.center,
               style: textTheme.bodyMedium

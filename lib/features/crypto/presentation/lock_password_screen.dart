@@ -205,7 +205,7 @@ class LockPasswordBody extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.s2),
               Text(
-                '비밀번호는 책귀 서버가 모릅니다. 잊으면 잠금 인용구를 영구히 못 봐요.',
+                '비밀번호는 북로그 서버가 모릅니다. 잊으면 잠금 인용구를 영구히 못 봐요.',
                 style: textTheme.bodySmall?.copyWith(color: AppColors.primary700),
               ),
             ],

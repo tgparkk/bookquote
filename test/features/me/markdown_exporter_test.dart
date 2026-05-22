@@ -34,7 +34,7 @@ const _book = Book(
 void main() {
   test('빈 목록 — 헤더 + "없어요" 안내', () {
     final md = buildQuotesMarkdown(const [], exportedAt: DateTime(2026, 5, 13));
-    expect(md, contains('# 책귀 — 내 인용구'));
+    expect(md, contains('# 북로그 — 내 인용구'));
     expect(md, contains('> 0개 · 2026-05-13 내보냄'));
     expect(md, contains('아직 모은 인용구가 없어요.'));
   });

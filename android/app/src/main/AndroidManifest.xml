@@ -7,7 +7,7 @@
          보장이 무력화. user data는 Supabase가 source of truth이므로 백업 차단해도
          새 폰 = 다시 로그인이면 복구됨. DECISIONS 2026-05-17 E2EE 항목. -->
     <application
-        android:label="책귀"
+        android:label="북로그"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
