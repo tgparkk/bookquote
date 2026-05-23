@@ -22,8 +22,9 @@ class Profile {
 
   final String id;
 
-  /// 가입 시 이메일 local-part로 자동 채워짐. 본명 노출 위험이 있어 PR18-B에서
-  /// Me에 "공개 닉네임 편집" 다이얼로그 + email local-part 패턴 감지 도입.
+  /// 가입 시 OAuth 메타 nickname이 있으면 그 값, 없으면 트리거의
+  /// `generate_random_display_name()`이 "느긋한 수달 4283" 형식으로 생성.
+  /// unique constraint — 사용자가 Me에서 편집할 때 충돌 시 NICKNAME_TAKEN.
   final String? displayName;
 
   final String? avatarUrl;

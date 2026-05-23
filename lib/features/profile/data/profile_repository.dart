@@ -83,6 +83,13 @@ class ProfileRepository {
     try {
       await _client.from(_table).update(patch).eq('id', uid);
     } on PostgrestException catch (e) {
+      // 23505 = unique_violation. display_name unique constraint 충돌.
+      if (e.code == '23505') {
+        throw ProfileRepositoryException(
+          'NICKNAME_TAKEN',
+          '이미 사용 중인 닉네임이에요. 다른 닉네임을 입력해주세요.',
+        );
+      }
       throw ProfileRepositoryException('UPDATE_FAILED', e.message);
     }
   }

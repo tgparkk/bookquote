@@ -162,6 +162,12 @@ class DisplayNameTile extends ConsumerWidget {
             const SnackBar(content: Text('닉네임을 변경했어요.')),
           );
       }
+    } on ProfileRepositoryException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(content: Text(e.message)));
+      }
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
