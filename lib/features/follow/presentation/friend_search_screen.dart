@@ -244,6 +244,11 @@ class _ResultTileState extends ConsumerState<_ResultTile> {
         await repo.follow(widget.profile.id);
       }
       ref.invalidate(isFollowingProvider(widget.profile.id));
+      // me_screen "내 친구 N명" / `/me/following` 목록 즉시 갱신.
+      // me 화면이 마운트된 채 push → 토글 → pop 흐름에선 autoDispose가 걸리지
+      // 않아 stale 카운트가 남는다(2026-05-23 버그).
+      ref.invalidate(myFollowingCountProvider);
+      ref.invalidate(myFollowingProvider);
     } on FollowRepositoryException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)

@@ -446,6 +446,11 @@ class _FollowButtonState extends ConsumerState<_FollowButton> {
       }
       ref.invalidate(isFollowingProvider(widget.userId));
       ref.invalidate(friendFollowCountsProvider(widget.userId));
+      // me_screen "내 친구 N명" / `/me/following` 목록 즉시 갱신.
+      // me 화면이 마운트된 채 push → 토글 → pop 흐름에선 autoDispose가 걸리지
+      // 않아 stale 카운트가 남는다(2026-05-23 버그).
+      ref.invalidate(myFollowingCountProvider);
+      ref.invalidate(myFollowingProvider);
       // 팔로우 토글로 친구 책·인용구 RLS 통과 여부가 바뀜 → 컨텐츠 즉시 invalidate.
       ref.invalidate(friendBooksProvider(widget.userId));
       // (인용구는 screen state 기반이라 다음 reload 때 갱신)
