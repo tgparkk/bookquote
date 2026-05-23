@@ -22,8 +22,8 @@ class Profile {
 
   final String id;
 
-  /// 가입 시 OAuth 메타 nickname이 있으면 그 값, 없으면 트리거의
-  /// `generate_random_display_name()`이 "느긋한 수달 4283" 형식으로 생성.
+  /// 가입 시 트리거의 `generate_random_display_name()`이 "느긋한 수달 4283"
+  /// 형식으로 생성 — OAuth name(본명·풀네임)은 신뢰하지 않음(2026-05-23 결정).
   /// unique constraint — 사용자가 Me에서 편집할 때 충돌 시 NICKNAME_TAKEN.
   final String? displayName;
 
