@@ -115,8 +115,8 @@ class MonoCard extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: AppFonts.ui,
                       fontWeight: FontWeight.w400,
-                      fontSize: 27,
-                      letterSpacing: 27 * AppLetterSpacing.wider,
+                      fontSize: 36,
+                      letterSpacing: 36 * AppLetterSpacing.wider,
                       color: AppColors.primary300,
                     ),
                     maxLines: 1,
@@ -129,8 +129,8 @@ class MonoCard extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: AppFonts.ui,
                       fontWeight: FontWeight.w400,
-                      fontSize: AppFontSize.lg,
-                      letterSpacing: AppFontSize.lg * AppLetterSpacing.wider,
+                      fontSize: 36,
+                      letterSpacing: 36 * AppLetterSpacing.wider,
                       color: AppColors.primary400,
                     ),
                     maxLines: 1,

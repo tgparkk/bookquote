@@ -211,7 +211,7 @@ class _BookInfo extends StatelessWidget {
             style: TextStyle(
               fontFamily: AppFonts.quote,
               fontWeight: FontWeight.w500,
-              fontSize: 27,
+              fontSize: 36,
               color: palette.subtextOnBackground,
             ),
             maxLines: 2,
@@ -224,7 +224,7 @@ class _BookInfo extends StatelessWidget {
             style: TextStyle(
               fontFamily: AppFonts.ui,
               fontWeight: FontWeight.w400,
-              fontSize: AppFontSize.lg,
+              fontSize: 36,
               color: palette.subtextOnBackground,
             ),
             maxLines: 1,

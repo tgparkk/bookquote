@@ -240,7 +240,7 @@ class _TextPanel extends StatelessWidget {
               style: TextStyle(
                 fontFamily: AppFonts.quote,
                 fontWeight: FontWeight.w500,
-                fontSize: 27,
+                fontSize: 36,
                 color: titleColor,
               ),
               maxLines: 2,
@@ -253,7 +253,7 @@ class _TextPanel extends StatelessWidget {
               style: TextStyle(
                 fontFamily: AppFonts.ui,
                 fontWeight: FontWeight.w400,
-                fontSize: AppFontSize.lg,
+                fontSize: 36,
                 color: authorColor,
               ),
               maxLines: 1,

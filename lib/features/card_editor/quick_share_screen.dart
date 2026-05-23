@@ -15,6 +15,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/auth_state_provider.dart';
 import '../../core/theme/tokens.dart';
 import '../crypto/presentation/lock_dialogs.dart';
+import '../profile/data/profile_repository.dart';
 import 'data/card_renderer.dart';
 import 'data/card_repository.dart';
 import 'data/color_utils.dart';
@@ -323,6 +324,8 @@ class _PreviewBox extends ConsumerWidget {
     )));
     final rawPalette = paletteAsync.value ?? QuoteCard.fallbackFor(template);
     final palette = applyPaletteSlot(rawPalette, paletteSlotIndex);
+    final displayName = ref.watch(myProfileProvider).value?.displayName;
+    final watermarkConfig = AppWatermark.forUser(displayName);
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.md),
@@ -341,6 +344,7 @@ class _PreviewBox extends ConsumerWidget {
                 data: data,
                 palette: palette,
                 ratio: ratio,
+                watermarkConfig: watermarkConfig,
                 watermarkEnabled: watermarkEnabled,
                 fontStep: fontStep,
               ),

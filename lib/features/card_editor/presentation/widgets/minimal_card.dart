@@ -146,7 +146,7 @@ class _BookRow extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: AppFonts.quote,
                     fontWeight: FontWeight.w500,
-                    fontSize: 27,
+                    fontSize: 36,
                     color: palette.darkVibrant,
                   ),
                   maxLines: 1,
@@ -159,7 +159,7 @@ class _BookRow extends StatelessWidget {
                   style: const TextStyle(
                     fontFamily: AppFonts.ui,
                     fontWeight: FontWeight.w400,
-                    fontSize: AppFontSize.lg,
+                    fontSize: 36,
                     color: AppColors.primary500,
                   ),
                   maxLines: 1,
@@ -173,7 +173,7 @@ class _BookRow extends StatelessWidget {
                   style: const TextStyle(
                     fontFamily: AppFonts.ui,
                     fontWeight: FontWeight.w400,
-                    fontSize: 20,
+                    fontSize: 36,
                     color: AppColors.primary400,
                   ),
                   maxLines: 1,

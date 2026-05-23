@@ -353,6 +353,23 @@ abstract final class AppWatermark {
     fontFamily: AppFonts.ui,
     showIcon: true,
   );
+
+  /// 사용자 닉네임 기반 워터마크 — 카드 공유 시 받는 사람이 보낸 사람의 닉네임을
+  /// 식별할 수 있게 카드 모서리에 `@닉네임` 표기. [minimal]과 동일 폰트·크기·
+  /// 위치·opacity를 사용해 카드 디자인을 해치지 않는다.
+  /// displayName이 null/공백인 경우(미로그인 미리보기 등)는 [minimal](앱 브랜드).
+  static WatermarkConfig forUser(String? displayName) {
+    final name = displayName?.trim() ?? '';
+    if (name.isEmpty) return minimal;
+    return WatermarkConfig(
+      text: '@$name',
+      fontSize: 36,
+      opacity: 0.30,
+      position: WatermarkPosition.bottomRight,
+      fontFamily: AppFonts.ui,
+      showIcon: false,
+    );
+  }
 }
 
 enum WatermarkPosition { bottomRight, bottomCenter }
