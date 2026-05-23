@@ -145,8 +145,7 @@ class _BookInfo extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: AppFonts.ui,
                   fontWeight: FontWeight.w400,
-                  // xs(11)→base(15) — 다른 템플릿 제목 스케일과 정합.
-                  fontSize: AppFontSize.base,
+                  fontSize: 27,
                   color: palette.subtextOnBackground,
                 ),
                 maxLines: 1,
@@ -159,8 +158,7 @@ class _BookInfo extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: AppFonts.ui,
                   fontWeight: FontWeight.w400,
-                  // xs(11)→sm(13) — 다른 템플릿 저자 스케일과 정합.
-                  fontSize: AppFontSize.sm,
+                  fontSize: AppFontSize.lg,
                   color: palette.subtextOnBackground,
                 ),
                 maxLines: 1,
