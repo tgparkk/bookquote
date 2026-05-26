@@ -11,9 +11,9 @@
 // outbox 큐잉은 [QuoteOutbox]가 enqueue 직전에 미리 암호화한 형태로 SharedPreferences에
 // 넣고 flush 시 [insertPrivatePayload]로 직접 INSERT — 평문이 prefs에 일절 머물지 않음.
 
-import 'dart:typed_data';
-
 import 'package:cryptography/cryptography.dart' show SecretKey;
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -163,7 +163,8 @@ class QuoteRepository {
 
   /// 책에 한 줄을 적었다는 건 그 책을 (적어도 일부) 읽었다는 뜻 — `setMyRating`·
   /// `setReadingDate`와 같은 auto-add 패턴. 인용구 저장 본 동작을 깨면 안 되므로
-  /// 실패는 silent (RLS·네트워크 잡음으로 인한 부분 실패는 다음 인용구·별점에서 회복).
+  /// 실패해도 throw 하지 않지만, 원인 파악을 위해 Crashlytics에는 기록한다.
+  /// 이미 서재에 있는 책(unique violation 23505)은 정상 케이스라 무시.
   Future<void> _ensureBookInLibrary(String uid, String? bookId) async {
     if (bookId == null) return;
     try {
@@ -171,7 +172,26 @@ class QuoteRepository {
         {'user_id': uid, 'book_id': bookId},
         onConflict: 'user_id,book_id',
       );
-    } catch (_) {/* best-effort */}
+    } on PostgrestException catch (e, st) {
+      if (e.code == '23505') return; // 이미 서재에 있음
+      if (kDebugMode) {
+        debugPrint('[_ensureBookInLibrary] PostgrestException ${e.code}: ${e.message}');
+      }
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        st,
+        reason: '_ensureBookInLibrary postgrest (bookId=$bookId)',
+      );
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[_ensureBookInLibrary] $e');
+      }
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        st,
+        reason: '_ensureBookInLibrary unknown (bookId=$bookId)',
+      );
+    }
   }
 
   /// 아웃박스에서 이미 암호화돼 보존된 잠금 인용구를 그대로 INSERT — 키가 enqueue
