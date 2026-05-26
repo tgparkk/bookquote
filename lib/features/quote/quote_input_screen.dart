@@ -20,6 +20,7 @@ import '../book/presentation/book_search_sheet.dart';
 import '../book/presentation/widgets/book_cover.dart';
 import '../crypto/presentation/lock_dialogs.dart';
 import '../crypto/presentation/lock_toggle_row.dart';
+import '../me/state/me_providers.dart';
 import 'data/quote_draft.dart';
 import 'data/quote_repository.dart';
 import 'domain/quote.dart';
@@ -438,7 +439,8 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
         ..invalidate(quoteFeedProvider)
         ..invalidate(quoteByIdProvider(widget.quoteId!))
         ..invalidate(moodCountsProvider) // PR15-B 무드 변경 가능 → 카운트 갱신
-        ..invalidate(bookQuotesProvider); // 책 상세 미니리스트 stale 방지(잠금 해제 등)
+        ..invalidate(bookQuotesProvider) // 책 상세 미니리스트 stale 방지(잠금 해제 등)
+        ..invalidate(myBookCountProvider); // 책 연결 변경 가능 → 서재 권수 갱신
       messenger
         ..clearSnackBars()
         ..showSnackBar(const SnackBar(content: Text('수정 내용을 저장했어요.')));
@@ -476,7 +478,9 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
     await _clearDraft();
     ref
       ..invalidate(quoteFeedProvider) // 홈 피드에 새 인용구 반영
-      ..invalidate(moodCountsProvider); // 홈 RecallCard 카운트 갱신 (PR15-B)
+      ..invalidate(moodCountsProvider) // 홈 RecallCard 카운트 갱신 (PR15-B)
+      ..invalidate(myQuoteCountProvider) // 내 정보 "인용구 N개" 갱신
+      ..invalidate(myBookCountProvider); // 내 정보 "서재 N권" 갱신 (createQuote 가 자동 등록)
     if (!mounted) return;
 
     if (created == null) {

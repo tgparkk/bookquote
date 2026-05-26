@@ -83,6 +83,7 @@ class QuoteRepository {
   final QuoteCipher? _cipher;
 
   static const _table = 'quotes';
+  static const _userBooksTable = 'user_books';
 
   String _requireUid() {
     final uid = _client.auth.currentUser?.id;
@@ -150,6 +151,7 @@ class QuoteRepository {
     }
     try {
       final row = await _client.from(_table).insert(payload).select().single();
+      await _ensureBookInLibrary(uid, input.bookId);
       return _decryptIfPrivate(Map<String, dynamic>.from(row));
     } on PostgrestException catch (e) {
       if (e.code == '23503') {
@@ -157,6 +159,19 @@ class QuoteRepository {
       }
       throw QuoteRepositoryException('CREATE_FAILED', e.message);
     }
+  }
+
+  /// 책에 한 줄을 적었다는 건 그 책을 (적어도 일부) 읽었다는 뜻 — `setMyRating`·
+  /// `setReadingDate`와 같은 auto-add 패턴. 인용구 저장 본 동작을 깨면 안 되므로
+  /// 실패는 silent (RLS·네트워크 잡음으로 인한 부분 실패는 다음 인용구·별점에서 회복).
+  Future<void> _ensureBookInLibrary(String uid, String? bookId) async {
+    if (bookId == null) return;
+    try {
+      await _client.from(_userBooksTable).upsert(
+        {'user_id': uid, 'book_id': bookId},
+        onConflict: 'user_id,book_id',
+      );
+    } catch (_) {/* best-effort */}
   }
 
   /// 아웃박스에서 이미 암호화돼 보존된 잠금 인용구를 그대로 INSERT — 키가 enqueue
@@ -187,6 +202,7 @@ class QuoteRepository {
     };
     try {
       final row = await _client.from(_table).insert(payload).select().single();
+      await _ensureBookInLibrary(uid, bookId);
       return _decryptIfPrivate(Map<String, dynamic>.from(row));
     } on PostgrestException catch (e) {
       if (e.code == '23503') {
