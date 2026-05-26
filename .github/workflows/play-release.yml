@@ -1,0 +1,111 @@
+name: Play Console — internal upload
+
+# 수동 실행 전용. Actions 탭 → "Play Console — internal upload" → Run workflow.
+# 첫 업로드는 Play Console에서 직접 한 번 해야 API 자동화가 풀린다(Google 정책).
+#
+# Required Secrets (Settings → Secrets and variables → Actions):
+#   ENV_JSON_BASE64            — .env.json 전체를 base64로
+#   UPLOAD_KEYSTORE_BASE64     — android/app/upload-keystore.jks 를 base64로
+#   KEYSTORE_STORE_PASSWORD    — key.properties 의 storePassword
+#   KEYSTORE_KEY_PASSWORD      — key.properties 의 keyPassword
+#   KEYSTORE_KEY_ALIAS         — key.properties 의 keyAlias (예: upload)
+#   KAKAO_NATIVE_APP_KEY       — local.properties 의 kakao.nativeAppKey
+#   PLAY_SERVICE_ACCOUNT_JSON  — Play Console Service Account JSON 통째로
+#
+# 셋업 가이드: docs/ops/play-release-setup.md
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: '릴리스 노트 (한국어) — Play Console 변경사항에 그대로 표시됨'
+        required: false
+        type: string
+        default: '내부 테스트 빌드.'
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Decode .env.json
+        env:
+          ENV_JSON_BASE64: ${{ secrets.ENV_JSON_BASE64 }}
+        run: |
+          echo "$ENV_JSON_BASE64" | base64 -d > .env.json
+          test -s .env.json
+
+      - name: Decode upload-keystore.jks
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          echo "$UPLOAD_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+          test -s android/app/upload-keystore.jks
+
+      - name: Write android/key.properties
+        env:
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
+        run: |
+          cat > android/key.properties <<EOF
+          storePassword=${STORE_PASSWORD}
+          keyPassword=${KEY_PASSWORD}
+          keyAlias=${KEY_ALIAS}
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Write android/local.properties (kakao key)
+        env:
+          KAKAO_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
+        run: |
+          echo "kakao.nativeAppKey=${KAKAO_KEY}" > android/local.properties
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: flutter test
+        run: flutter test
+
+      - name: Build app bundle (release)
+        run: flutter build appbundle --release --dart-define-from-file=.env.json
+
+      - name: Write release notes (ko-KR)
+        env:
+          NOTES: ${{ inputs.release_notes }}
+        run: |
+          mkdir -p distribution/whatsnew
+          # Play Console "변경사항" 한도: 500자. 넘으면 action이 알아서 자름.
+          printf '%s' "$NOTES" > distribution/whatsnew/whatsnew-ko-KR
+
+      - name: Upload to Play Console (internal)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: io.github.tgparkk.bookquote
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
+          whatsNewDirectory: distribution/whatsnew
+
+      - name: Summary
+        run: |
+          echo "## ✅ Internal upload complete" >> $GITHUB_STEP_SUMMARY
+          echo "- packageName: io.github.tgparkk.bookquote" >> $GITHUB_STEP_SUMMARY
+          echo "- track: internal" >> $GITHUB_STEP_SUMMARY
+          echo "- AAB: build/app/outputs/bundle/release/app-release.aab" >> $GITHUB_STEP_SUMMARY
