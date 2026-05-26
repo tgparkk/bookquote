@@ -49,7 +49,7 @@ class MoodHubGrid extends StatelessWidget {
         crossAxisCount: 2,
         mainAxisSpacing: AppSpacing.s3,
         crossAxisSpacing: AppSpacing.s3,
-        childAspectRatio: 0.95,
+        childAspectRatio: 1.05,
       ),
       itemCount: snapshots.length,
       itemBuilder: (_, i) {
@@ -100,15 +100,16 @@ class _MoodCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Icon(icon, size: 20, color: c.dark),
+                    Icon(icon, size: 18, color: c.dark),
                     const SizedBox(width: AppSpacing.s2),
                     Expanded(
                       child: Text(
                         snapshot.mood.label,
                         style: TextStyle(
                           fontFamily: AppFonts.ui,
-                          fontSize: AppFontSize.md,
+                          fontSize: AppFontSize.base,
                           fontWeight: FontWeight.w700,
                           color: c.dark,
                         ),
@@ -116,25 +117,30 @@ class _MoodCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Text(
-                      '${snapshot.count}',
-                      style: TextStyle(
-                        fontFamily: AppFonts.ui,
-                        fontSize: AppFontSize.sm,
-                        fontWeight: FontWeight.w600,
-                        color: c.dark.withValues(alpha: 0.75),
+                    // 카운트는 라벨과 시각 weight가 비슷해 스캔이 불편 → pill 뱃지로
+                    // 분리. 반투명 배경으로 라벨 위계를 살린다.
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.s2,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: c.dark.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadius.full),
+                      ),
+                      child: Text(
+                        '${snapshot.count}',
+                        style: TextStyle(
+                          fontFamily: AppFonts.ui,
+                          fontSize: AppFontSize.xs,
+                          fontWeight: FontWeight.w600,
+                          color: c.dark.withValues(alpha: 0.80),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.s2),
-                  child: Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: c.dark.withValues(alpha: 0.15),
-                  ),
-                ),
+                const SizedBox(height: AppSpacing.s2),
                 Expanded(
                   child: Text(
                     hasSample ? snapshot.sampleText! : '잠긴 인용구만 있어요',
@@ -143,11 +149,11 @@ class _MoodCard extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: AppFonts.quote,
                       fontSize: AppFontSize.sm,
-                      height: 1.45,
+                      height: 1.55,
                       fontStyle: hasSample ? FontStyle.normal : FontStyle.italic,
                       color: hasSample
-                          ? c.dark.withValues(alpha: 0.88)
-                          : c.dark.withValues(alpha: 0.55),
+                          ? c.dark.withValues(alpha: 0.82)
+                          : c.dark.withValues(alpha: 0.50),
                     ),
                   ),
                 ),

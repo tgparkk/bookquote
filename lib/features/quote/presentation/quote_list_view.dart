@@ -270,12 +270,24 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
                     onMoodTap: _selectMood,
                   ),
                 )
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    await _loadCounts();
-                    await _reload();
-                  },
-                  child: _body(context),
+              : Column(
+                  children: [
+                    // 단면 모드 → hub 복귀 affordance. 무드 종류 ≥3일 때만 의미가
+                    // 있어 노출. "전체" 칩이 hub 복귀임을 사용자가 명시적으로 인지.
+                    if (_mood != null &&
+                        _snapshots != null &&
+                        _snapshots!.length >= 3)
+                      _HubBreadcrumb(onTap: () => _selectMood(null)),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: () async {
+                          await _loadCounts();
+                          await _reload();
+                        },
+                        child: _body(context),
+                      ),
+                    ),
+                  ],
                 ),
         ),
       ],
@@ -308,31 +320,60 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
     }
     if (_items.isEmpty) {
       return ListView(
-        padding: const EdgeInsets.all(AppSpacing.s6),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.s6, AppSpacing.s8, AppSpacing.s6, AppSpacing.s8),
         children: [
-          SizedBox(height: MediaQuery.sizeOf(context).height * 0.16),
-          Icon(Icons.format_quote, size: 44, color: AppColors.primary300),
-          const SizedBox(height: AppSpacing.s4),
-          Text(
-            _mood == null ? '아직 인용구가 없어요' : '이 무드의 인용구가 아직 없어요',
-            textAlign: TextAlign.center,
-            style: textTheme.headlineSmall,
-          ),
-          const SizedBox(height: AppSpacing.s4),
-          Center(
-            child: _mood == null
-                ? ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent500,
-                      foregroundColor: AppColors.secondary50,
-                    ),
-                    onPressed: () => context.push('/quote/new'),
-                    child: const Text('＋ 인용구 추가'),
-                  )
-                : TextButton(
-                    onPressed: () => _selectMood(null),
-                    child: const Text('전체 보기'),
+          SizedBox(height: MediaQuery.sizeOf(context).height * 0.06),
+          // 홈 빈상태와 카피·아이콘 똑같이 차가운 빈 화면이 되지 않도록 따뜻한
+          // 안내 카드로 감싼다. [인용구] 탭만의 가치(무드별 다시 보기)도 같이 예고.
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.s6),
+            decoration: BoxDecoration(
+              color: AppColors.secondary300,
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.format_quote, size: 40, color: AppColors.accent500),
+                const SizedBox(height: AppSpacing.s3),
+                Text(
+                  _mood == null
+                      ? '첫 인용구를 기다리고 있어요'
+                      : '이 무드의 인용구가 아직 없어요',
+                  textAlign: TextAlign.center,
+                  style: textTheme.titleMedium?.copyWith(
+                    color: AppColors.primary800,
+                    fontWeight: FontWeight.w700,
                   ),
+                ),
+                if (_mood == null) ...[
+                  const SizedBox(height: AppSpacing.s3),
+                  Text(
+                    '책을 읽다가 마음에 닿는 문장을 만나면 저장해보세요.\n'
+                    '무드를 3가지 이상 쌓으면 무드별로 모아볼 수 있어요.',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: AppColors.primary500,
+                      height: 1.6,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.s4),
+                _mood == null
+                    ? ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accent500,
+                          foregroundColor: AppColors.secondary50,
+                        ),
+                        onPressed: () => context.push('/quote/new'),
+                        child: const Text('＋ 첫 인용구 저장하기'),
+                      )
+                    : TextButton(
+                        onPressed: () => _selectMood(null),
+                        child: const Text('전체 보기'),
+                      ),
+              ],
+            ),
           ),
         ],
       );
@@ -341,7 +382,7 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
       controller: _scrollController,
       padding: const EdgeInsets.all(AppSpacing.s4),
       itemCount: _items.length,
-      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.s3),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.s4),
       itemBuilder: (context, i) {
         final e = _items[i];
         return QuoteListCard(
@@ -356,6 +397,48 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
           onDelete: () => _confirmDelete(e),
         );
       },
+    );
+  }
+}
+
+class _HubBreadcrumb extends StatelessWidget {
+  const _HubBreadcrumb({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.s4,
+            AppSpacing.s2,
+            AppSpacing.s4,
+            AppSpacing.s2,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.arrow_back_rounded,
+                size: 16,
+                color: AppColors.accent700,
+              ),
+              const SizedBox(width: AppSpacing.s2),
+              Text(
+                '무드 모아보기',
+                style: TextStyle(
+                  fontFamily: AppFonts.ui,
+                  fontSize: AppFontSize.sm,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.accent700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

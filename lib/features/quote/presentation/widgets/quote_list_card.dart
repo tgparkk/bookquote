@@ -70,9 +70,15 @@ class QuoteListCard extends StatelessWidget {
 
     return Card(
       margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: const BorderSide(color: AppColors.primary100, width: 1),
+      ),
+      color: AppColors.secondary100,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.s4),
           child: Row(
