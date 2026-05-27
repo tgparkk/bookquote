@@ -15,6 +15,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/auth_state_provider.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/tokens.dart';
+import '../book_review/presentation/book_review_section.dart';
 import '../follow/state/follow_providers.dart';
 import '../profile/domain/profile.dart';
 import '../profile/state/friend_providers.dart';
@@ -169,6 +170,12 @@ class _BookBody extends ConsumerWidget {
         const SizedBox(height: AppSpacing.s8),
         // "이 책에서 모은 구절"
         _BookQuotesSection(bookId: book.id),
+        // "내 후기" — 로그인한 경우만. 인용구(책 문장 옮김)와 후기(본인 감상)는
+        // 별도 도메인이라 같은 화면 안에서 시각적으로 분리.
+        if (loggedIn) ...[
+          const SizedBox(height: AppSpacing.s8),
+          BookReviewSection(bookId: book.id),
+        ],
         // 설명 — 점진적 공개
         if (description != null && description.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.s8),
