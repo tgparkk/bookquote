@@ -293,7 +293,9 @@ as int,
 /// @nodoc
 mixin _$AladinBookDto {
 
- String get isbn13; String? get isbn10; String get title; String? get author; String? get publisher; String? get pubDate; String? get coverUrl; String? get description; String? get categoryName; String? get itemId;
+ String get isbn13; String? get isbn10; String get title; String? get author; String? get publisher; String? get pubDate; String? get coverUrl; String? get description; String? get categoryName; String? get itemId;// Google Books API에서 ISBN13으로 조회해 Edge Function이 머지한 페이지 수.
+// 알라딘은 page_count를 주지 않으므로 항상 Google Books 출처. 미수집은 null.
+ int? get pageCount;
 /// Create a copy of AladinBookDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -306,16 +308,16 @@ $AladinBookDtoCopyWith<AladinBookDto> get copyWith => _$AladinBookDtoCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AladinBookDto&&(identical(other.isbn13, isbn13) || other.isbn13 == isbn13)&&(identical(other.isbn10, isbn10) || other.isbn10 == isbn10)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.pubDate, pubDate) || other.pubDate == pubDate)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl)&&(identical(other.description, description) || other.description == description)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.itemId, itemId) || other.itemId == itemId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AladinBookDto&&(identical(other.isbn13, isbn13) || other.isbn13 == isbn13)&&(identical(other.isbn10, isbn10) || other.isbn10 == isbn10)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.pubDate, pubDate) || other.pubDate == pubDate)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl)&&(identical(other.description, description) || other.description == description)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.itemId, itemId) || other.itemId == itemId)&&(identical(other.pageCount, pageCount) || other.pageCount == pageCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,isbn13,isbn10,title,author,publisher,pubDate,coverUrl,description,categoryName,itemId);
+int get hashCode => Object.hash(runtimeType,isbn13,isbn10,title,author,publisher,pubDate,coverUrl,description,categoryName,itemId,pageCount);
 
 @override
 String toString() {
-  return 'AladinBookDto(isbn13: $isbn13, isbn10: $isbn10, title: $title, author: $author, publisher: $publisher, pubDate: $pubDate, coverUrl: $coverUrl, description: $description, categoryName: $categoryName, itemId: $itemId)';
+  return 'AladinBookDto(isbn13: $isbn13, isbn10: $isbn10, title: $title, author: $author, publisher: $publisher, pubDate: $pubDate, coverUrl: $coverUrl, description: $description, categoryName: $categoryName, itemId: $itemId, pageCount: $pageCount)';
 }
 
 
@@ -326,7 +328,7 @@ abstract mixin class $AladinBookDtoCopyWith<$Res>  {
   factory $AladinBookDtoCopyWith(AladinBookDto value, $Res Function(AladinBookDto) _then) = _$AladinBookDtoCopyWithImpl;
 @useResult
 $Res call({
- String isbn13, String? isbn10, String title, String? author, String? publisher, String? pubDate, String? coverUrl, String? description, String? categoryName, String? itemId
+ String isbn13, String? isbn10, String title, String? author, String? publisher, String? pubDate, String? coverUrl, String? description, String? categoryName, String? itemId, int? pageCount
 });
 
 
@@ -343,7 +345,7 @@ class _$AladinBookDtoCopyWithImpl<$Res>
 
 /// Create a copy of AladinBookDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? isbn13 = null,Object? isbn10 = freezed,Object? title = null,Object? author = freezed,Object? publisher = freezed,Object? pubDate = freezed,Object? coverUrl = freezed,Object? description = freezed,Object? categoryName = freezed,Object? itemId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? isbn13 = null,Object? isbn10 = freezed,Object? title = null,Object? author = freezed,Object? publisher = freezed,Object? pubDate = freezed,Object? coverUrl = freezed,Object? description = freezed,Object? categoryName = freezed,Object? itemId = freezed,Object? pageCount = freezed,}) {
   return _then(_self.copyWith(
 isbn13: null == isbn13 ? _self.isbn13 : isbn13 // ignore: cast_nullable_to_non_nullable
 as String,isbn10: freezed == isbn10 ? _self.isbn10 : isbn10 // ignore: cast_nullable_to_non_nullable
@@ -355,7 +357,8 @@ as String?,coverUrl: freezed == coverUrl ? _self.coverUrl : coverUrl // ignore: 
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,categoryName: freezed == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
 as String?,itemId: freezed == itemId ? _self.itemId : itemId // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,pageCount: freezed == pageCount ? _self.pageCount : pageCount // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 
@@ -440,10 +443,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String isbn13,  String? isbn10,  String title,  String? author,  String? publisher,  String? pubDate,  String? coverUrl,  String? description,  String? categoryName,  String? itemId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String isbn13,  String? isbn10,  String title,  String? author,  String? publisher,  String? pubDate,  String? coverUrl,  String? description,  String? categoryName,  String? itemId,  int? pageCount)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AladinBookDto() when $default != null:
-return $default(_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publisher,_that.pubDate,_that.coverUrl,_that.description,_that.categoryName,_that.itemId);case _:
+return $default(_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publisher,_that.pubDate,_that.coverUrl,_that.description,_that.categoryName,_that.itemId,_that.pageCount);case _:
   return orElse();
 
 }
@@ -461,10 +464,10 @@ return $default(_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publish
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String isbn13,  String? isbn10,  String title,  String? author,  String? publisher,  String? pubDate,  String? coverUrl,  String? description,  String? categoryName,  String? itemId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String isbn13,  String? isbn10,  String title,  String? author,  String? publisher,  String? pubDate,  String? coverUrl,  String? description,  String? categoryName,  String? itemId,  int? pageCount)  $default,) {final _that = this;
 switch (_that) {
 case _AladinBookDto():
-return $default(_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publisher,_that.pubDate,_that.coverUrl,_that.description,_that.categoryName,_that.itemId);case _:
+return $default(_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publisher,_that.pubDate,_that.coverUrl,_that.description,_that.categoryName,_that.itemId,_that.pageCount);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -481,10 +484,10 @@ return $default(_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publish
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String isbn13,  String? isbn10,  String title,  String? author,  String? publisher,  String? pubDate,  String? coverUrl,  String? description,  String? categoryName,  String? itemId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String isbn13,  String? isbn10,  String title,  String? author,  String? publisher,  String? pubDate,  String? coverUrl,  String? description,  String? categoryName,  String? itemId,  int? pageCount)?  $default,) {final _that = this;
 switch (_that) {
 case _AladinBookDto() when $default != null:
-return $default(_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publisher,_that.pubDate,_that.coverUrl,_that.description,_that.categoryName,_that.itemId);case _:
+return $default(_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publisher,_that.pubDate,_that.coverUrl,_that.description,_that.categoryName,_that.itemId,_that.pageCount);case _:
   return null;
 
 }
@@ -496,7 +499,7 @@ return $default(_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publish
 @JsonSerializable()
 
 class _AladinBookDto implements AladinBookDto {
-  const _AladinBookDto({required this.isbn13, this.isbn10, required this.title, this.author, this.publisher, this.pubDate, this.coverUrl, this.description, this.categoryName, this.itemId});
+  const _AladinBookDto({required this.isbn13, this.isbn10, required this.title, this.author, this.publisher, this.pubDate, this.coverUrl, this.description, this.categoryName, this.itemId, this.pageCount});
   factory _AladinBookDto.fromJson(Map<String, dynamic> json) => _$AladinBookDtoFromJson(json);
 
 @override final  String isbn13;
@@ -509,6 +512,9 @@ class _AladinBookDto implements AladinBookDto {
 @override final  String? description;
 @override final  String? categoryName;
 @override final  String? itemId;
+// Google Books API에서 ISBN13으로 조회해 Edge Function이 머지한 페이지 수.
+// 알라딘은 page_count를 주지 않으므로 항상 Google Books 출처. 미수집은 null.
+@override final  int? pageCount;
 
 /// Create a copy of AladinBookDto
 /// with the given fields replaced by the non-null parameter values.
@@ -523,16 +529,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AladinBookDto&&(identical(other.isbn13, isbn13) || other.isbn13 == isbn13)&&(identical(other.isbn10, isbn10) || other.isbn10 == isbn10)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.pubDate, pubDate) || other.pubDate == pubDate)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl)&&(identical(other.description, description) || other.description == description)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.itemId, itemId) || other.itemId == itemId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AladinBookDto&&(identical(other.isbn13, isbn13) || other.isbn13 == isbn13)&&(identical(other.isbn10, isbn10) || other.isbn10 == isbn10)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.pubDate, pubDate) || other.pubDate == pubDate)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl)&&(identical(other.description, description) || other.description == description)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.itemId, itemId) || other.itemId == itemId)&&(identical(other.pageCount, pageCount) || other.pageCount == pageCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,isbn13,isbn10,title,author,publisher,pubDate,coverUrl,description,categoryName,itemId);
+int get hashCode => Object.hash(runtimeType,isbn13,isbn10,title,author,publisher,pubDate,coverUrl,description,categoryName,itemId,pageCount);
 
 @override
 String toString() {
-  return 'AladinBookDto(isbn13: $isbn13, isbn10: $isbn10, title: $title, author: $author, publisher: $publisher, pubDate: $pubDate, coverUrl: $coverUrl, description: $description, categoryName: $categoryName, itemId: $itemId)';
+  return 'AladinBookDto(isbn13: $isbn13, isbn10: $isbn10, title: $title, author: $author, publisher: $publisher, pubDate: $pubDate, coverUrl: $coverUrl, description: $description, categoryName: $categoryName, itemId: $itemId, pageCount: $pageCount)';
 }
 
 
@@ -543,7 +549,7 @@ abstract mixin class _$AladinBookDtoCopyWith<$Res> implements $AladinBookDtoCopy
   factory _$AladinBookDtoCopyWith(_AladinBookDto value, $Res Function(_AladinBookDto) _then) = __$AladinBookDtoCopyWithImpl;
 @override @useResult
 $Res call({
- String isbn13, String? isbn10, String title, String? author, String? publisher, String? pubDate, String? coverUrl, String? description, String? categoryName, String? itemId
+ String isbn13, String? isbn10, String title, String? author, String? publisher, String? pubDate, String? coverUrl, String? description, String? categoryName, String? itemId, int? pageCount
 });
 
 
@@ -560,7 +566,7 @@ class __$AladinBookDtoCopyWithImpl<$Res>
 
 /// Create a copy of AladinBookDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? isbn13 = null,Object? isbn10 = freezed,Object? title = null,Object? author = freezed,Object? publisher = freezed,Object? pubDate = freezed,Object? coverUrl = freezed,Object? description = freezed,Object? categoryName = freezed,Object? itemId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? isbn13 = null,Object? isbn10 = freezed,Object? title = null,Object? author = freezed,Object? publisher = freezed,Object? pubDate = freezed,Object? coverUrl = freezed,Object? description = freezed,Object? categoryName = freezed,Object? itemId = freezed,Object? pageCount = freezed,}) {
   return _then(_AladinBookDto(
 isbn13: null == isbn13 ? _self.isbn13 : isbn13 // ignore: cast_nullable_to_non_nullable
 as String,isbn10: freezed == isbn10 ? _self.isbn10 : isbn10 // ignore: cast_nullable_to_non_nullable
@@ -572,7 +578,8 @@ as String?,coverUrl: freezed == coverUrl ? _self.coverUrl : coverUrl // ignore: 
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,categoryName: freezed == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
 as String?,itemId: freezed == itemId ? _self.itemId : itemId // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,pageCount: freezed == pageCount ? _self.pageCount : pageCount // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 

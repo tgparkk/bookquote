@@ -1,6 +1,7 @@
-// 서재 화면 — "책 ↔ 인용구" 세그먼트.
+// 서재 화면 — "책 ↔ 인용구 ↔ 캘린더" 세그먼트.
 //
 // 책 탭: 내가 담은 책 목록 (탭 → 책 상세, FAB → 책 검색 시트 → addToLibrary).
+//        view 모드 4종 — 리스트/그리드/스택/책장. 모드는 SharedPreferences에 영속화.
 // 인용구 탭: 내가 모은 인용구를 무드별로 — `QuoteListView` (차별화 ④).
 // `?tab=quotes&mood=<name>` 쿼리로 진입 시 초기 탭·무드 필터 설정.
 // 설계: docs/design/screens/library.md · quote-list.md
@@ -13,12 +14,16 @@ import '../../core/theme/tokens.dart';
 import '../book/data/book_repository.dart';
 import '../book/domain/book.dart';
 import '../book/presentation/book_search_sheet.dart';
-import '../book/presentation/widgets/book_cover.dart';
 import '../book/state/book_providers.dart';
 import '../quote/domain/quote_mood.dart';
 import '../quote/presentation/quote_list_view.dart';
 import '../quote/presentation/quote_search_delegate.dart';
+import 'presentation/book_views/book_grid_view.dart';
+import 'presentation/book_views/book_list_view.dart';
+import 'presentation/book_views/book_shelf_view.dart';
+import 'presentation/book_views/book_stack_view.dart';
 import 'presentation/calendar_segment.dart';
+import 'state/library_view_mode.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
@@ -115,13 +120,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 }
 
-class _SegmentHeader extends StatelessWidget {
+class _SegmentHeader extends ConsumerWidget {
   const _SegmentHeader({required this.tab, required this.onChanged});
   final int tab;
   final ValueChanged<int> onChanged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // view 모드 토글은 [책] 탭에서만 의미가 있어 그때만 노출.
+    final showViewToggle = tab == 0;
+    final asyncMode = ref.watch(libraryViewModeProvider);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.s4,
@@ -129,17 +137,76 @@ class _SegmentHeader extends StatelessWidget {
         AppSpacing.s4,
         AppSpacing.s2,
       ),
-      child: SegmentedButton<int>(
-        segments: const [
-          ButtonSegment(value: 0, label: Text('책')),
-          ButtonSegment(value: 1, label: Text('인용구')),
-          ButtonSegment(value: 2, label: Text('캘린더')),
+      child: Row(
+        children: [
+          Expanded(
+            child: SegmentedButton<int>(
+              segments: const [
+                ButtonSegment(value: 0, label: Text('책')),
+                ButtonSegment(value: 1, label: Text('인용구')),
+                ButtonSegment(value: 2, label: Text('캘린더')),
+              ],
+              selected: {tab},
+              showSelectedIcon: false,
+              onSelectionChanged: (s) => onChanged(s.first),
+            ),
+          ),
+          if (showViewToggle) ...[
+            const SizedBox(width: AppSpacing.s2),
+            IconButton(
+              tooltip: '보기 방식 변경',
+              icon: Icon(
+                asyncMode.value?.icon ?? Icons.view_list_outlined,
+              ),
+              onPressed: () => _pickViewMode(context, ref),
+            ),
+          ],
         ],
-        selected: {tab},
-        showSelectedIcon: false,
-        onSelectionChanged: (s) => onChanged(s.first),
       ),
     );
+  }
+
+  Future<void> _pickViewMode(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(libraryViewModeProvider).value ?? LibraryViewMode.list;
+    final picked = await showModalBottomSheet<LibraryViewMode>(
+      context: context,
+      backgroundColor: AppColors.secondary100,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: AppSpacing.s4),
+            Text(
+              '보기 방식',
+              style: TextStyle(
+                fontFamily: AppFonts.ui,
+                fontSize: AppFontSize.md,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary900,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s2),
+            for (final m in LibraryViewMode.values)
+              ListTile(
+                leading: Icon(m.icon),
+                title: Text(m.label),
+                subtitle: Text(m.description),
+                trailing: m == current
+                    ? Icon(Icons.check, color: AppColors.accent700)
+                    : null,
+                onTap: () => Navigator.of(ctx).pop(m),
+              ),
+            const SizedBox(height: AppSpacing.s2),
+          ],
+        ),
+      ),
+    );
+    if (picked != null && picked != current) {
+      await ref.read(libraryViewModeProvider.notifier).set(picked);
+    }
   }
 }
 
@@ -151,11 +218,21 @@ class _BookTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncLibrary = ref.watch(myLibraryProvider);
+    final asyncMode = ref.watch(libraryViewModeProvider);
+    final mode = asyncMode.value ?? LibraryViewMode.list;
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(myLibraryProvider),
       child: asyncLibrary.when(
-        data: (books) =>
-            books.isEmpty ? const _EmptyView() : _BookList(books: books),
+        data: (books) {
+          if (books.isEmpty) return const _EmptyView();
+          final sorted = _sortForMode(books, mode);
+          return switch (mode) {
+            LibraryViewMode.list => BookListView(books: sorted),
+            LibraryViewMode.grid => BookGridView(books: sorted),
+            LibraryViewMode.stack => BookStackView(books: sorted),
+            LibraryViewMode.shelf => BookShelfView(books: sorted),
+          };
+        },
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.accent500),
         ),
@@ -165,68 +242,21 @@ class _BookTab extends ConsumerWidget {
   }
 }
 
-class _BookList extends StatelessWidget {
-  const _BookList({required this.books});
-  final List<Book> books;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.s4,
-        AppSpacing.s4,
-        AppSpacing.s4,
-        AppSpacing.s16,
-      ),
-      itemCount: books.length,
-      separatorBuilder: (_, _) => const Divider(height: AppSpacing.s8),
-      itemBuilder: (context, i) => _BookRow(book: books[i]),
-    );
-  }
-}
-
-class _BookRow extends StatelessWidget {
-  const _BookRow({required this.book});
-  final Book book;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final meta = [
-      if (book.publisher?.isNotEmpty ?? false) book.publisher!,
-      if (book.pubDate?.isNotEmpty ?? false) book.pubDate!,
-    ].join(' · ');
-
-    return InkWell(
-      onTap: () => context.push('/book/${book.id}'),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s2),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            BookCover(url: book.coverUrl, title: book.title),
-            const SizedBox(width: AppSpacing.s4),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    book.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: AppSpacing.s1),
-                  if (book.author?.isNotEmpty ?? false)
-                    Text(book.author!, style: textTheme.bodySmall),
-                  if (meta.isNotEmpty) Text(meta, style: textTheme.labelSmall),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+/// view 모드별 정렬. myLibraryProvider는 added_at desc로 반환 — 그 외 모드는
+/// 클라이언트에서 재정렬(서재 50권 미만 가정, repo 변경 없이 V1 스코프 유지).
+List<Book> _sortForMode(List<Book> books, LibraryViewMode mode) {
+  switch (mode) {
+    case LibraryViewMode.list:
+    case LibraryViewMode.grid:
+      return books; // added_at desc (repo가 이미 반환)
+    case LibraryViewMode.stack:
+      // 먼저 담은 책이 아래에 깔리는 메타포 — added_at asc.
+      return books.reversed.toList(growable: false);
+    case LibraryViewMode.shelf:
+      // 실제 책장 — 제목 가나다순.
+      final sorted = [...books];
+      sorted.sort((a, b) => a.title.compareTo(b.title));
+      return sorted;
   }
 }
 

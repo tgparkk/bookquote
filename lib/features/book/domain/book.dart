@@ -22,6 +22,7 @@ abstract class Book with _$Book {
     @JsonKey(name: 'category_name') String? categoryName,
     @Default('aladin') String source,
     @JsonKey(name: 'source_id') String? sourceId,
+    @JsonKey(name: 'page_count') int? pageCount,
     @JsonKey(name: 'created_at') DateTime? createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
   }) = _Book;

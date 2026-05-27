@@ -9,6 +9,8 @@
 // 외부 호출은 모두 `supabase.functions.invoke` / `supabase.from(...)`. JWT는 SDK가
 // 자동 첨부.
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -36,6 +38,7 @@ class BookRepository {
   final SupabaseClient _client;
 
   static const _searchFn = 'aladin-search';
+  static const _enrichPageCountFn = 'enrich-book-page-count';
   static const _booksTable = 'books';
   static const _userBooksTable = 'user_books';
 
@@ -72,14 +75,51 @@ class BookRepository {
       if (dto.categoryName != null) 'category_name': dto.categoryName,
       'source': 'aladin',
       if (dto.itemId != null) 'source_id': dto.itemId,
+      if (dto.pageCount != null) 'page_count': dto.pageCount,
     };
     try {
       final row = await _client.rpc('upsert_book', params: {'book': payload});
       // RPC가 row 단건 또는 List 반환 — supabase_flutter는 보통 Map 반환
       final map = row is List ? row.first as Map<String, dynamic> : row as Map<String, dynamic>;
-      return Book.fromJson(map);
+      final book = Book.fromJson(map);
+      // page_count가 비어 있으면 서버에서 Google Books로 비동기 보강. 응답
+      // 안 기다림 — 미수집 책은 stack/shelf view의 "두께 미수집" 섹션이 명시적으로
+      // 노출하고 사용자가 수동 입력 가능(BottomSheet).
+      _fireEnrichPageCount(book);
+      return book;
     } on PostgrestException catch (e) {
       throw BookRepositoryException('UPSERT_FAILED', e.message);
+    }
+  }
+
+  /// 서버측 Edge Function을 호출해 Google Books에서 페이지 수를 받아 채운다.
+  /// fire-and-forget — 호출 결과는 무시하며 다음 서재 로드 시 자연 반영.
+  /// 외부 API 미수집은 정상 운영 시나리오라 에러로 취급하지 않음.
+  void _fireEnrichPageCount(Book book) {
+    if (book.pageCount != null) return;
+    unawaited(
+      _client.functions
+          .invoke(_enrichPageCountFn, body: {
+            'bookId': book.id,
+            'isbn13': book.isbn13,
+          })
+          .then((_) {}, onError: (_) {}),
+    );
+  }
+
+  /// 사용자가 BottomSheet에서 직접 입력한 페이지 수를 books 카탈로그에 반영.
+  /// 1 이상이어야 하며 10,000 미만(DB CHECK 동일).
+  Future<void> setBookPageCount(String bookId, int pageCount) async {
+    if (pageCount < 1 || pageCount >= 10000) {
+      throw BookRepositoryException('VAL_PAGE_COUNT', '쪽수는 1~9999 사이여야 해요.');
+    }
+    try {
+      await _client
+          .from(_booksTable)
+          .update({'page_count': pageCount})
+          .eq('id', bookId);
+    } on PostgrestException catch (e) {
+      throw BookRepositoryException('SET_PAGE_COUNT_FAILED', e.message);
     }
   }
 

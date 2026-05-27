@@ -34,6 +34,9 @@ abstract class AladinBookDto with _$AladinBookDto {
     String? description,
     String? categoryName,
     String? itemId,
+    // Google Books API에서 ISBN13으로 조회해 Edge Function이 머지한 페이지 수.
+    // 알라딘은 page_count를 주지 않으므로 항상 Google Books 출처. 미수집은 null.
+    int? pageCount,
   }) = _AladinBookDto;
 
   factory AladinBookDto.fromJson(Map<String, dynamic> json) =>

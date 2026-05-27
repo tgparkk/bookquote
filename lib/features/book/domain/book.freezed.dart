@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Book {
 
- String get id; String get isbn13; String? get isbn10; String get title; String? get author; String? get publisher;@JsonKey(name: 'pub_date') String? get pubDate;@JsonKey(name: 'cover_url') String? get coverUrl; String? get description;@JsonKey(name: 'category_name') String? get categoryName; String get source;@JsonKey(name: 'source_id') String? get sourceId;@JsonKey(name: 'created_at') DateTime? get createdAt;@JsonKey(name: 'updated_at') DateTime? get updatedAt;
+ String get id; String get isbn13; String? get isbn10; String get title; String? get author; String? get publisher;@JsonKey(name: 'pub_date') String? get pubDate;@JsonKey(name: 'cover_url') String? get coverUrl; String? get description;@JsonKey(name: 'category_name') String? get categoryName; String get source;@JsonKey(name: 'source_id') String? get sourceId;@JsonKey(name: 'page_count') int? get pageCount;@JsonKey(name: 'created_at') DateTime? get createdAt;@JsonKey(name: 'updated_at') DateTime? get updatedAt;
 /// Create a copy of Book
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $BookCopyWith<Book> get copyWith => _$BookCopyWithImpl<Book>(this as Book, _$ide
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Book&&(identical(other.id, id) || other.id == id)&&(identical(other.isbn13, isbn13) || other.isbn13 == isbn13)&&(identical(other.isbn10, isbn10) || other.isbn10 == isbn10)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.pubDate, pubDate) || other.pubDate == pubDate)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl)&&(identical(other.description, description) || other.description == description)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.source, source) || other.source == source)&&(identical(other.sourceId, sourceId) || other.sourceId == sourceId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Book&&(identical(other.id, id) || other.id == id)&&(identical(other.isbn13, isbn13) || other.isbn13 == isbn13)&&(identical(other.isbn10, isbn10) || other.isbn10 == isbn10)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.pubDate, pubDate) || other.pubDate == pubDate)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl)&&(identical(other.description, description) || other.description == description)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.source, source) || other.source == source)&&(identical(other.sourceId, sourceId) || other.sourceId == sourceId)&&(identical(other.pageCount, pageCount) || other.pageCount == pageCount)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,isbn13,isbn10,title,author,publisher,pubDate,coverUrl,description,categoryName,source,sourceId,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,isbn13,isbn10,title,author,publisher,pubDate,coverUrl,description,categoryName,source,sourceId,pageCount,createdAt,updatedAt);
 
 @override
 String toString() {
-  return 'Book(id: $id, isbn13: $isbn13, isbn10: $isbn10, title: $title, author: $author, publisher: $publisher, pubDate: $pubDate, coverUrl: $coverUrl, description: $description, categoryName: $categoryName, source: $source, sourceId: $sourceId, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'Book(id: $id, isbn13: $isbn13, isbn10: $isbn10, title: $title, author: $author, publisher: $publisher, pubDate: $pubDate, coverUrl: $coverUrl, description: $description, categoryName: $categoryName, source: $source, sourceId: $sourceId, pageCount: $pageCount, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $BookCopyWith<$Res>  {
   factory $BookCopyWith(Book value, $Res Function(Book) _then) = _$BookCopyWithImpl;
 @useResult
 $Res call({
- String id, String isbn13, String? isbn10, String title, String? author, String? publisher,@JsonKey(name: 'pub_date') String? pubDate,@JsonKey(name: 'cover_url') String? coverUrl, String? description,@JsonKey(name: 'category_name') String? categoryName, String source,@JsonKey(name: 'source_id') String? sourceId,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime? updatedAt
+ String id, String isbn13, String? isbn10, String title, String? author, String? publisher,@JsonKey(name: 'pub_date') String? pubDate,@JsonKey(name: 'cover_url') String? coverUrl, String? description,@JsonKey(name: 'category_name') String? categoryName, String source,@JsonKey(name: 'source_id') String? sourceId,@JsonKey(name: 'page_count') int? pageCount,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime? updatedAt
 });
 
 
@@ -65,7 +65,7 @@ class _$BookCopyWithImpl<$Res>
 
 /// Create a copy of Book
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? isbn13 = null,Object? isbn10 = freezed,Object? title = null,Object? author = freezed,Object? publisher = freezed,Object? pubDate = freezed,Object? coverUrl = freezed,Object? description = freezed,Object? categoryName = freezed,Object? source = null,Object? sourceId = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? isbn13 = null,Object? isbn10 = freezed,Object? title = null,Object? author = freezed,Object? publisher = freezed,Object? pubDate = freezed,Object? coverUrl = freezed,Object? description = freezed,Object? categoryName = freezed,Object? source = null,Object? sourceId = freezed,Object? pageCount = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,isbn13: null == isbn13 ? _self.isbn13 : isbn13 // ignore: cast_nullable_to_non_nullable
@@ -79,7 +79,8 @@ as String?,description: freezed == description ? _self.description : description
 as String?,categoryName: freezed == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
 as String?,source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as String,sourceId: freezed == sourceId ? _self.sourceId : sourceId // ignore: cast_nullable_to_non_nullable
-as String?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as String?,pageCount: freezed == pageCount ? _self.pageCount : pageCount // ignore: cast_nullable_to_non_nullable
+as int?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
@@ -166,10 +167,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String isbn13,  String? isbn10,  String title,  String? author,  String? publisher, @JsonKey(name: 'pub_date')  String? pubDate, @JsonKey(name: 'cover_url')  String? coverUrl,  String? description, @JsonKey(name: 'category_name')  String? categoryName,  String source, @JsonKey(name: 'source_id')  String? sourceId, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String isbn13,  String? isbn10,  String title,  String? author,  String? publisher, @JsonKey(name: 'pub_date')  String? pubDate, @JsonKey(name: 'cover_url')  String? coverUrl,  String? description, @JsonKey(name: 'category_name')  String? categoryName,  String source, @JsonKey(name: 'source_id')  String? sourceId, @JsonKey(name: 'page_count')  int? pageCount, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Book() when $default != null:
-return $default(_that.id,_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publisher,_that.pubDate,_that.coverUrl,_that.description,_that.categoryName,_that.source,_that.sourceId,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publisher,_that.pubDate,_that.coverUrl,_that.description,_that.categoryName,_that.source,_that.sourceId,_that.pageCount,_that.createdAt,_that.updatedAt);case _:
   return orElse();
 
 }
@@ -187,10 +188,10 @@ return $default(_that.id,_that.isbn13,_that.isbn10,_that.title,_that.author,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String isbn13,  String? isbn10,  String title,  String? author,  String? publisher, @JsonKey(name: 'pub_date')  String? pubDate, @JsonKey(name: 'cover_url')  String? coverUrl,  String? description, @JsonKey(name: 'category_name')  String? categoryName,  String source, @JsonKey(name: 'source_id')  String? sourceId, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String isbn13,  String? isbn10,  String title,  String? author,  String? publisher, @JsonKey(name: 'pub_date')  String? pubDate, @JsonKey(name: 'cover_url')  String? coverUrl,  String? description, @JsonKey(name: 'category_name')  String? categoryName,  String source, @JsonKey(name: 'source_id')  String? sourceId, @JsonKey(name: 'page_count')  int? pageCount, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _Book():
-return $default(_that.id,_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publisher,_that.pubDate,_that.coverUrl,_that.description,_that.categoryName,_that.source,_that.sourceId,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publisher,_that.pubDate,_that.coverUrl,_that.description,_that.categoryName,_that.source,_that.sourceId,_that.pageCount,_that.createdAt,_that.updatedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -207,10 +208,10 @@ return $default(_that.id,_that.isbn13,_that.isbn10,_that.title,_that.author,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String isbn13,  String? isbn10,  String title,  String? author,  String? publisher, @JsonKey(name: 'pub_date')  String? pubDate, @JsonKey(name: 'cover_url')  String? coverUrl,  String? description, @JsonKey(name: 'category_name')  String? categoryName,  String source, @JsonKey(name: 'source_id')  String? sourceId, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String isbn13,  String? isbn10,  String title,  String? author,  String? publisher, @JsonKey(name: 'pub_date')  String? pubDate, @JsonKey(name: 'cover_url')  String? coverUrl,  String? description, @JsonKey(name: 'category_name')  String? categoryName,  String source, @JsonKey(name: 'source_id')  String? sourceId, @JsonKey(name: 'page_count')  int? pageCount, @JsonKey(name: 'created_at')  DateTime? createdAt, @JsonKey(name: 'updated_at')  DateTime? updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Book() when $default != null:
-return $default(_that.id,_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publisher,_that.pubDate,_that.coverUrl,_that.description,_that.categoryName,_that.source,_that.sourceId,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.isbn13,_that.isbn10,_that.title,_that.author,_that.publisher,_that.pubDate,_that.coverUrl,_that.description,_that.categoryName,_that.source,_that.sourceId,_that.pageCount,_that.createdAt,_that.updatedAt);case _:
   return null;
 
 }
@@ -222,7 +223,7 @@ return $default(_that.id,_that.isbn13,_that.isbn10,_that.title,_that.author,_tha
 @JsonSerializable()
 
 class _Book implements Book {
-  const _Book({required this.id, required this.isbn13, this.isbn10, required this.title, this.author, this.publisher, @JsonKey(name: 'pub_date') this.pubDate, @JsonKey(name: 'cover_url') this.coverUrl, this.description, @JsonKey(name: 'category_name') this.categoryName, this.source = 'aladin', @JsonKey(name: 'source_id') this.sourceId, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'updated_at') this.updatedAt});
+  const _Book({required this.id, required this.isbn13, this.isbn10, required this.title, this.author, this.publisher, @JsonKey(name: 'pub_date') this.pubDate, @JsonKey(name: 'cover_url') this.coverUrl, this.description, @JsonKey(name: 'category_name') this.categoryName, this.source = 'aladin', @JsonKey(name: 'source_id') this.sourceId, @JsonKey(name: 'page_count') this.pageCount, @JsonKey(name: 'created_at') this.createdAt, @JsonKey(name: 'updated_at') this.updatedAt});
   factory _Book.fromJson(Map<String, dynamic> json) => _$BookFromJson(json);
 
 @override final  String id;
@@ -237,6 +238,7 @@ class _Book implements Book {
 @override@JsonKey(name: 'category_name') final  String? categoryName;
 @override@JsonKey() final  String source;
 @override@JsonKey(name: 'source_id') final  String? sourceId;
+@override@JsonKey(name: 'page_count') final  int? pageCount;
 @override@JsonKey(name: 'created_at') final  DateTime? createdAt;
 @override@JsonKey(name: 'updated_at') final  DateTime? updatedAt;
 
@@ -253,16 +255,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Book&&(identical(other.id, id) || other.id == id)&&(identical(other.isbn13, isbn13) || other.isbn13 == isbn13)&&(identical(other.isbn10, isbn10) || other.isbn10 == isbn10)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.pubDate, pubDate) || other.pubDate == pubDate)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl)&&(identical(other.description, description) || other.description == description)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.source, source) || other.source == source)&&(identical(other.sourceId, sourceId) || other.sourceId == sourceId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Book&&(identical(other.id, id) || other.id == id)&&(identical(other.isbn13, isbn13) || other.isbn13 == isbn13)&&(identical(other.isbn10, isbn10) || other.isbn10 == isbn10)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.pubDate, pubDate) || other.pubDate == pubDate)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl)&&(identical(other.description, description) || other.description == description)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.source, source) || other.source == source)&&(identical(other.sourceId, sourceId) || other.sourceId == sourceId)&&(identical(other.pageCount, pageCount) || other.pageCount == pageCount)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,isbn13,isbn10,title,author,publisher,pubDate,coverUrl,description,categoryName,source,sourceId,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,isbn13,isbn10,title,author,publisher,pubDate,coverUrl,description,categoryName,source,sourceId,pageCount,createdAt,updatedAt);
 
 @override
 String toString() {
-  return 'Book(id: $id, isbn13: $isbn13, isbn10: $isbn10, title: $title, author: $author, publisher: $publisher, pubDate: $pubDate, coverUrl: $coverUrl, description: $description, categoryName: $categoryName, source: $source, sourceId: $sourceId, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'Book(id: $id, isbn13: $isbn13, isbn10: $isbn10, title: $title, author: $author, publisher: $publisher, pubDate: $pubDate, coverUrl: $coverUrl, description: $description, categoryName: $categoryName, source: $source, sourceId: $sourceId, pageCount: $pageCount, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -273,7 +275,7 @@ abstract mixin class _$BookCopyWith<$Res> implements $BookCopyWith<$Res> {
   factory _$BookCopyWith(_Book value, $Res Function(_Book) _then) = __$BookCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String isbn13, String? isbn10, String title, String? author, String? publisher,@JsonKey(name: 'pub_date') String? pubDate,@JsonKey(name: 'cover_url') String? coverUrl, String? description,@JsonKey(name: 'category_name') String? categoryName, String source,@JsonKey(name: 'source_id') String? sourceId,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime? updatedAt
+ String id, String isbn13, String? isbn10, String title, String? author, String? publisher,@JsonKey(name: 'pub_date') String? pubDate,@JsonKey(name: 'cover_url') String? coverUrl, String? description,@JsonKey(name: 'category_name') String? categoryName, String source,@JsonKey(name: 'source_id') String? sourceId,@JsonKey(name: 'page_count') int? pageCount,@JsonKey(name: 'created_at') DateTime? createdAt,@JsonKey(name: 'updated_at') DateTime? updatedAt
 });
 
 
@@ -290,7 +292,7 @@ class __$BookCopyWithImpl<$Res>
 
 /// Create a copy of Book
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? isbn13 = null,Object? isbn10 = freezed,Object? title = null,Object? author = freezed,Object? publisher = freezed,Object? pubDate = freezed,Object? coverUrl = freezed,Object? description = freezed,Object? categoryName = freezed,Object? source = null,Object? sourceId = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? isbn13 = null,Object? isbn10 = freezed,Object? title = null,Object? author = freezed,Object? publisher = freezed,Object? pubDate = freezed,Object? coverUrl = freezed,Object? description = freezed,Object? categoryName = freezed,Object? source = null,Object? sourceId = freezed,Object? pageCount = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,}) {
   return _then(_Book(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,isbn13: null == isbn13 ? _self.isbn13 : isbn13 // ignore: cast_nullable_to_non_nullable
@@ -304,7 +306,8 @@ as String?,description: freezed == description ? _self.description : description
 as String?,categoryName: freezed == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
 as String?,source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as String,sourceId: freezed == sourceId ? _self.sourceId : sourceId // ignore: cast_nullable_to_non_nullable
-as String?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as String?,pageCount: freezed == pageCount ? _self.pageCount : pageCount // ignore: cast_nullable_to_non_nullable
+as int?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));

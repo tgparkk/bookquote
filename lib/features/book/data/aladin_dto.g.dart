@@ -38,6 +38,7 @@ _AladinBookDto _$AladinBookDtoFromJson(Map<String, dynamic> json) =>
       description: json['description'] as String?,
       categoryName: json['categoryName'] as String?,
       itemId: json['itemId'] as String?,
+      pageCount: (json['pageCount'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$AladinBookDtoToJson(_AladinBookDto instance) =>
@@ -52,6 +53,7 @@ Map<String, dynamic> _$AladinBookDtoToJson(_AladinBookDto instance) =>
       'description': instance.description,
       'categoryName': instance.categoryName,
       'itemId': instance.itemId,
+      'pageCount': instance.pageCount,
     };
 
 _EdgeError _$EdgeErrorFromJson(Map<String, dynamic> json) => _EdgeError(

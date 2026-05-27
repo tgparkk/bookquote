@@ -19,6 +19,7 @@ _Book _$BookFromJson(Map<String, dynamic> json) => _Book(
   categoryName: json['category_name'] as String?,
   source: json['source'] as String? ?? 'aladin',
   sourceId: json['source_id'] as String?,
+  pageCount: (json['page_count'] as num?)?.toInt(),
   createdAt: json['created_at'] == null
       ? null
       : DateTime.parse(json['created_at'] as String),
@@ -40,6 +41,7 @@ Map<String, dynamic> _$BookToJson(_Book instance) => <String, dynamic>{
   'category_name': instance.categoryName,
   'source': instance.source,
   'source_id': instance.sourceId,
+  'page_count': instance.pageCount,
   'created_at': instance.createdAt?.toIso8601String(),
   'updated_at': instance.updatedAt?.toIso8601String(),
 };
