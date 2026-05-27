@@ -265,9 +265,19 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
           child: _hubMode
               ? RefreshIndicator(
                   onRefresh: _resolveEntryMode,
-                  child: MoodHubGrid(
-                    snapshots: _snapshots!,
-                    onMoodTap: _selectMood,
+                  child: Column(
+                    children: [
+                      // hub 모드 진입 시 "무엇을 모은 묶음들인지" 첫 진입 신호.
+                      // 필터 칩이 hub 모드에선 숨겨져 상단이 비어 보이는 문제도
+                      // 함께 해소(PR29). 카운트는 사용자에게 *수집 진척* 신호.
+                      _MoodHubHeader(snapshots: _snapshots!),
+                      Expanded(
+                        child: MoodHubGrid(
+                          snapshots: _snapshots!,
+                          onMoodTap: _selectMood,
+                        ),
+                      ),
+                    ],
                   ),
                 )
               : Column(
@@ -397,6 +407,64 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
           onDelete: () => _confirmDelete(e),
         );
       },
+    );
+  }
+}
+
+class _MoodHubHeader extends StatelessWidget {
+  const _MoodHubHeader({required this.snapshots});
+  final List<MoodHubSnapshot> snapshots;
+
+  @override
+  Widget build(BuildContext context) {
+    final moodCount = snapshots.length;
+    final totalQuotes =
+        snapshots.fold<int>(0, (sum, s) => sum + s.count);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.s4,
+        AppSpacing.s3,
+        AppSpacing.s4,
+        AppSpacing.s2,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.collections_bookmark_outlined,
+            size: 16,
+            color: AppColors.accent700,
+          ),
+          const SizedBox(width: AppSpacing.s2),
+          Expanded(
+            child: RichText(
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              text: TextSpan(
+                style: TextStyle(
+                  fontFamily: AppFonts.ui,
+                  fontSize: AppFontSize.sm,
+                  color: AppColors.primary700,
+                ),
+                children: [
+                  TextSpan(
+                    text: '무드별로 모아 봐요',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.accent700,
+                    ),
+                  ),
+                  TextSpan(
+                    text: '  ·  $moodCount개 무드 · $totalQuotes개 인용구',
+                    style: TextStyle(
+                      color: AppColors.primary500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

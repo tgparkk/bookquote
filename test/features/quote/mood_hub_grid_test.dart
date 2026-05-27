@@ -39,16 +39,17 @@ void main() {
     await _pumpGrid(
       tester,
       snapshots: const [
-        (mood: QuoteMood.comfort, count: 12, sampleText: '위로의 한 줄 발췌'),
-        (mood: QuoteMood.wistful, count: 7, sampleText: '먹먹한 한 줄'),
-        (mood: QuoteMood.lateNight, count: 4, sampleText: null),
+        (mood: QuoteMood.comfort, count: 12, sampleText: '위로의 한 줄 발췌', sampleText2: null),
+        (mood: QuoteMood.wistful, count: 7, sampleText: '먹먹한 한 줄', sampleText2: null),
+        (mood: QuoteMood.lateNight, count: 4, sampleText: null, sampleText2: null),
       ],
       onMoodTap: (_) {},
     );
     expect(find.text('위로'), findsOneWidget);
-    expect(find.text('12'), findsOneWidget);
+    // PR29: 카운트 pill이 '12' → '12개'로 변경(라벨화).
+    expect(find.text('12개'), findsOneWidget);
     expect(find.text('먹먹'), findsOneWidget);
-    expect(find.text('7'), findsOneWidget);
+    expect(find.text('7개'), findsOneWidget);
     expect(find.textContaining('위로의 한 줄 발췌'), findsOneWidget);
     // 발췌 없는 카드는 placeholder.
     expect(find.text('잠긴 인용구만 있어요'), findsOneWidget);
@@ -61,9 +62,9 @@ void main() {
     await _pumpGrid(
       tester,
       snapshots: const [
-        (mood: QuoteMood.comfort, count: 12, sampleText: '위로의 한 줄 발췌'),
-        (mood: QuoteMood.wistful, count: 7, sampleText: '먹먹한 본문 한 줄'),
-        (mood: QuoteMood.insight, count: 5, sampleText: '통찰의 한 줄 발췌'),
+        (mood: QuoteMood.comfort, count: 12, sampleText: '위로의 한 줄 발췌', sampleText2: null),
+        (mood: QuoteMood.wistful, count: 7, sampleText: '먹먹한 본문 한 줄', sampleText2: null),
+        (mood: QuoteMood.insight, count: 5, sampleText: '통찰의 한 줄 발췌', sampleText2: null),
       ],
       onMoodTap: (m) => tappedMood = m,
     );

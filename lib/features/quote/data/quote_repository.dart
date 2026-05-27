@@ -47,9 +47,16 @@ typedef QuoteWithBook = ({Quote quote, Book? book});
 /// 내 인용구 무드 통계 — 전체 수 + 무드별 개수 (서재 인용 뷰 필터 칩용).
 typedef MoodCounts = ({int total, Map<QuoteMood, int> byMood});
 
-/// 무드 hub 카드용 스냅샷 — 무드별 카운트 + 대표 한 줄 발췌(평문 인용구만).
+/// 무드 hub 카드용 스냅샷 — 무드별 카운트 + 대표 평문 발췌 최대 2건.
 /// 잠금 인용구는 카운트에는 포함되되 발췌는 null (PR22).
-typedef MoodHubSnapshot = ({QuoteMood mood, int count, String? sampleText});
+/// 두 번째 발췌는 PR29(카드 의미 명확화)에서 추가 — 한 줄로는 무드의 분위기가
+/// 잘 전달되지 않아 카드 미리보기를 2개로 늘렸다. 평문 1건뿐이면 sampleText2 null.
+typedef MoodHubSnapshot = ({
+  QuoteMood mood,
+  int count,
+  String? sampleText,
+  String? sampleText2,
+});
 
 /// `my_quote_mood_counts` RPC 결과 행들을 파싱 — `'__total__'` 행은 전체 수,
 /// 나머지는 무드 name별 개수(알 수 없는 name은 무시).
@@ -578,6 +585,7 @@ class QuoteRepository {
           mood: mood,
           count: (map['cnt'] as num).toInt(),
           sampleText: map['sample_text'] as String?,
+          sampleText2: map['sample_text2'] as String?,
         ));
       }
       // 카운트 내림차순 정렬 — 가장 많이 모은 무드가 그리드 첫 자리.
