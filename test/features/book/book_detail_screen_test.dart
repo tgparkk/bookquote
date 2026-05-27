@@ -72,7 +72,9 @@ void main() {
 
     expect(find.text('미드나잇 라이브러리'), findsOneWidget);
     expect(find.text('매트 헤이그'), findsOneWidget);
-    expect(find.text('ISBN 9791191056556'), findsOneWidget);
+    // PR30-B 이후 ISBN은 헤더가 아닌 기본정보 그리드의 단일 셀에 표시.
+    expect(find.text('9791191056556'), findsOneWidget);
+    expect(find.text('ISBN 9791191056556'), findsNothing);
     expect(find.widgetWithText(ElevatedButton, '이 책 인용구 추가'), findsOneWidget);
     expect(find.widgetWithText(OutlinedButton, '서재에 담기'), findsOneWidget);
     // 공유 배너는 일반 진입에선 없음
@@ -137,15 +139,91 @@ void main() {
     expect(find.widgetWithText(OutlinedButton, '내 서재'), findsOneWidget);
   });
 
-  group('PR18-D — "이 책을 담은 친구 N명"', () {
-    testWidgets('친구 0명 → 행 자체 숨김 (빈상태 회피)', (tester) async {
+  group('PR18-D → PR30-B — "친구 N명도 담음" inline chip', () {
+    testWidgets('친구 0명 → chip 자체 숨김 (빈상태 회피)', (tester) async {
       await pump(tester);
-      expect(find.textContaining('이 책을 담은 친구'), findsNothing);
+      expect(find.textContaining('친구'), findsNothing);
     });
 
-    testWidgets('친구 N≥1 → "이 책을 담은 친구 N명" 행 노출', (tester) async {
+    testWidgets('친구 N≥1 → "친구 N명도 담음" chip이 인용구 섹션 헤더에 노출',
+        (tester) async {
       await pump(tester, friendsWithBookCount: 3);
-      expect(find.text('이 책을 담은 친구 3명'), findsOneWidget);
+      expect(find.text('친구 3명도 담음'), findsOneWidget);
+      // 옛 행 텍스트는 더 이상 존재하지 않음
+      expect(find.text('이 책을 담은 친구 3명'), findsNothing);
+    });
+  });
+
+  group('PR30-B — 기본정보 그리드 + 액션 행', () {
+    testWidgets('InfoGrid — 페이지·출간·분류·ISBN 4셀, ISBN은 헤더가 아닌 그리드에서 표시',
+        (tester) async {
+      const book = Book(
+        id: 'b1',
+        isbn13: '9791191056556',
+        title: '미드나잇 라이브러리',
+        pubDate: '2021-03-15',
+        categoryName: '소설',
+        pageCount: 280,
+      );
+      await pump(tester, book: book);
+
+      expect(find.text('기본 정보'), findsOneWidget);
+      expect(find.text('쪽수'), findsOneWidget);
+      expect(find.text('280쪽'), findsOneWidget);
+      expect(find.text('출간'), findsOneWidget);
+      expect(find.text('2021'), findsOneWidget);
+      expect(find.text('분류'), findsOneWidget);
+      expect(find.text('소설'), findsOneWidget);
+      // ISBN은 그리드 안에만 있음(헤더 텍스트로 노출되지 않음)
+      expect(find.text('ISBN'), findsOneWidget);
+      expect(find.text('9791191056556'), findsOneWidget);
+      expect(find.text('ISBN 9791191056556'), findsNothing);
+    });
+
+    testWidgets('InfoGrid — pageCount null → "입력하기 ▸" 강조 셀', (tester) async {
+      const book = Book(
+        id: 'b1',
+        isbn13: '9791191056556',
+        title: '미드나잇 라이브러리',
+      );
+      await pump(tester, book: book);
+
+      expect(find.text('입력하기 ▸'), findsOneWidget);
+      expect(find.textContaining('쪽'), findsOneWidget); // "쪽수" 라벨만, 값 아님
+    });
+
+    testWidgets('InfoGrid — 출간·분류 빈 값이면 "—"', (tester) async {
+      const book = Book(
+        id: 'b1',
+        isbn13: '',
+        title: '메타 없는 책',
+      );
+      await pump(tester, book: book);
+      // 출간/분류/ISBN 셀 모두 "—"
+      expect(find.text('—'), findsNWidgets(3));
+    });
+
+    testWidgets('액션 행 — 일반 진입은 [인용구 추가]+[서재에 담기] 1줄 Row',
+        (tester) async {
+      await pump(tester);
+      // 두 버튼은 1줄 Row에 같이 있음(렌더 트리에서 둘 다 존재)
+      expect(find.widgetWithText(ElevatedButton, '이 책 인용구 추가'),
+          findsOneWidget);
+      expect(
+          find.widgetWithText(OutlinedButton, '서재에 담기'), findsOneWidget);
+    });
+
+    testWidgets('액션 행 — fromShare 진입은 상단 큰 CTA + 인용구 버튼만(보조 서재 X)',
+        (tester) async {
+      await pump(tester, from: 'share');
+      // 상단의 큰 "내 서재에 담기"
+      expect(find.widgetWithText(ElevatedButton, '내 서재에 담기'),
+          findsOneWidget);
+      // 액션 행에는 보조 "서재에 담기" 없음
+      expect(find.widgetWithText(OutlinedButton, '서재에 담기'), findsNothing);
+      // 인용구 버튼은 그대로
+      expect(find.widgetWithText(ElevatedButton, '이 책 인용구 추가'),
+          findsOneWidget);
     });
   });
 

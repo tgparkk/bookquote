@@ -9,9 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/tokens.dart';
-import '../../../book/data/book_repository.dart';
 import '../../../book/domain/book.dart';
-import '../../../book/state/book_providers.dart';
+import '../../../book/presentation/widgets/page_count_input_sheet.dart';
 
 /// stack view의 캡슐 높이 = pageCount × 0.09mm × 2.5(가시화 배율).
 /// 28~130px clamp — "쌓아 보기" 메타포라 한 캡슐이 한 줄 텍스트 자리만 차지하면 충분.
@@ -134,137 +133,9 @@ class _PendingChip extends ConsumerWidget {
       side: BorderSide(color: AppColors.secondary500),
       shape: const StadiumBorder(),
       visualDensity: VisualDensity.compact,
-      onPressed: () => _openPageCountSheet(context, ref, book),
+      onPressed: () =>
+          openPageCountInputSheet(context: context, ref: ref, book: book),
     );
   }
 }
 
-Future<void> _openPageCountSheet(
-  BuildContext context,
-  WidgetRef ref,
-  Book book,
-) async {
-  // ScaffoldMessenger를 await 전에 캡처 — 비동기 갭 후 context 사용 회피.
-  final messenger = ScaffoldMessenger.of(context);
-  final saved = await showModalBottomSheet<int>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: AppColors.secondary100,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
-    ),
-    builder: (ctx) => _PageCountInputSheet(book: book),
-  );
-  if (saved == null) return;
-  try {
-    await ref.read(bookRepositoryProvider).setBookPageCount(book.id, saved);
-    ref.invalidate(myLibraryProvider);
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(SnackBar(content: Text('"${book.title}" 쪽수를 저장했어요')));
-  } on BookRepositoryException catch (e) {
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(SnackBar(content: Text('저장 실패: ${e.message}')));
-  }
-}
-
-class _PageCountInputSheet extends StatefulWidget {
-  const _PageCountInputSheet({required this.book});
-  final Book book;
-
-  @override
-  State<_PageCountInputSheet> createState() => _PageCountInputSheetState();
-}
-
-class _PageCountInputSheetState extends State<_PageCountInputSheet> {
-  final _controller = TextEditingController();
-  String? _error;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final raw = _controller.text.trim();
-    final n = int.tryParse(raw);
-    if (n == null || n < 1 || n >= 10000) {
-      setState(() => _error = '1~9999 사이의 숫자를 입력해주세요');
-      return;
-    }
-    Navigator.of(context).pop(n);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final viewInsets = MediaQuery.viewInsetsOf(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.s6,
-        AppSpacing.s6,
-        AppSpacing.s6,
-        AppSpacing.s6 + viewInsets.bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.book.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: AppFonts.ui,
-              fontSize: AppFontSize.md,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary900,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s2),
-          Text(
-            '책 뒷표지나 판권면에 적힌 쪽수를 입력해주세요',
-            style: TextStyle(
-              fontFamily: AppFonts.ui,
-              fontSize: AppFontSize.sm,
-              color: AppColors.primary500,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s4),
-          TextField(
-            controller: _controller,
-            keyboardType: TextInputType.number,
-            autofocus: true,
-            decoration: InputDecoration(
-              labelText: '쪽수',
-              suffixText: '쪽',
-              errorText: _error,
-              border: const OutlineInputBorder(),
-            ),
-            onSubmitted: (_) => _submit(),
-          ),
-          const SizedBox(height: AppSpacing.s4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('취소'),
-              ),
-              const SizedBox(width: AppSpacing.s2),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent500,
-                  foregroundColor: AppColors.secondary50,
-                ),
-                onPressed: _submit,
-                child: const Text('저장'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}

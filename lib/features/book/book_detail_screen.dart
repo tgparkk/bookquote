@@ -25,6 +25,7 @@ import '../quote/state/quote_providers.dart';
 import 'data/book_repository.dart';
 import 'domain/book.dart';
 import 'presentation/widgets/book_cover.dart';
+import 'presentation/widgets/page_count_input_sheet.dart';
 import 'presentation/widgets/reading_dates_row.dart';
 import 'presentation/widgets/star_rating.dart';
 import 'state/book_providers.dart';
@@ -120,25 +121,24 @@ class _BookBody extends ConsumerWidget {
         const SizedBox(height: AppSpacing.s6),
         // PR30-A 인용구 hero 카드 — 내 인용 / 알라딘 첫 줄 / 빈 상태 CTA
         _QuoteHeroCard(book: book),
-        const SizedBox(height: AppSpacing.s6),
-        // "이 책 인용구 추가" — 이 화면의 주 행동
-        _AddQuoteButton(bookId: book.id),
-        if (!fromShare) ...[
-          const SizedBox(height: AppSpacing.s2),
-          _LibraryActionButton(bookId: book.id, prominent: false),
-        ],
-        // PR18-D — "이 책을 담은 친구 N명" — N≥1일 때만 자체 렌더(빈상태 회피)
-        _FriendsWithBookRow(bookId: book.id),
+        const SizedBox(height: AppSpacing.s4),
+        // PR30-B 액션 행 — 인용구 추가(주) + 서재 담기(보조) 1줄 Row
+        if (!fromShare) _PrimaryActionRow(bookId: book.id),
+        if (fromShare) _AddQuoteButton(bookId: book.id),
         const SizedBox(height: AppSpacing.s8),
-        // "이 책에서 모은 구절"
+        // "이 책에서 모은 구절" — 헤더에 "친구 N명도 담음" inline chip (PR30-B)
         _BookQuotesSection(bookId: book.id),
         // "이 책 후기" — 본인 + 타인 통합. 미로그인도 타인 후기 조회 가능(공개
         // 프로필 사용자만 노출, RLS 자연 게이트). 본인 카드만 "나" 라벨 + 수정/삭제.
         const SizedBox(height: AppSpacing.s8),
         BookReviewSection(bookId: book.id),
+        // PR30-B 기본정보 그리드 — 페이지/출간/카테고리/ISBN 2×2.
+        // 페이지 칸은 미수집 시 입력 BottomSheet로 열림.
+        const SizedBox(height: AppSpacing.s8),
+        _BookInfoGrid(book: book),
         // 설명 — 점진적 공개
         if (description != null && description.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.s8),
+          const SizedBox(height: AppSpacing.s6),
           Text('설명', style: textTheme.titleMedium),
           const SizedBox(height: AppSpacing.s2),
           _DescriptionText(text: description),
@@ -477,6 +477,10 @@ class _BookQuotesSectionState extends ConsumerState<_BookQuotesSection> {
                         ?.copyWith(color: AppColors.primary400),
                   ),
                 ],
+                const Spacer(),
+                // PR30-B: "친구 N명도 담음" inline chip — 기존 행이었던
+                // _FriendsWithBookRow를 흡수. N≥1일 때만 자체 노출.
+                _FriendsWithBookChip(bookId: widget.bookId),
               ],
             ),
             const SizedBox(height: AppSpacing.s3),
@@ -719,7 +723,6 @@ class _BookHeader extends StatelessWidget {
     final author = book.author?.trim();
     final publisher = book.publisher?.trim();
     final pubDate = book.pubDate?.trim();
-    final isbn = book.isbn13.trim();
     final metaLine = [
       if (publisher != null && publisher.isNotEmpty) publisher,
       if (pubDate != null && pubDate.isNotEmpty) pubDate,
@@ -753,14 +756,6 @@ class _BookHeader extends StatelessWidget {
           Text(
             metaLine,
             style: textTheme.bodySmall,
-            textAlign: TextAlign.center,
-          ),
-        ],
-        if (isbn.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.s2),
-          Text(
-            'ISBN $isbn',
-            style: textTheme.labelSmall,
             textAlign: TextAlign.center,
           ),
         ],
@@ -1047,11 +1042,177 @@ class _HeroQuoteEmpty extends StatelessWidget {
   }
 }
 
-// ── PR18-D — "이 책을 담은 친구 N명" ───────────────────────────
+// ── PR30-B: 액션 행 (인용구 추가 + 서재 담기 1줄) ─────────────────────
 
-/// 헤더 행 — N≥1일 때만 자체 렌더(빈상태 회피). 탭 = 시트 미니리스트.
-class _FriendsWithBookRow extends ConsumerWidget {
-  const _FriendsWithBookRow({required this.bookId});
+/// "이 책 인용구 추가"(주) + "서재에 담기"(보조)를 1줄 Row로 묶는다. 미로그인이나
+/// 이미 서재에 있는 책이면 보조 측 위젯이 알아서 자체 렌더(`_LibraryActionButton`이
+/// 칩 형태로 자동 전환). deep link 진입(fromShare=true)이면 상단 큰 CTA로
+/// 이미 노출되므로 보조 버튼은 표시하지 않는다(이 위젯 자체를 부르지 않는다).
+class _PrimaryActionRow extends StatelessWidget {
+  const _PrimaryActionRow({required this.bookId});
+
+  final String bookId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: _AddQuoteButton(bookId: bookId),
+        ),
+        const SizedBox(width: AppSpacing.s2),
+        Expanded(
+          flex: 2,
+          child: _LibraryActionButton(bookId: bookId, prominent: false),
+        ),
+      ],
+    );
+  }
+}
+
+// ── PR30-B: 기본정보 그리드 (페이지/출간/카테고리/ISBN 2×2) ────────────
+
+/// 책 메타데이터를 2×2 그리드로 정돈. 알라딘이 채워주지 않은 빈 칸은 "—"
+/// 표시(클릭 불가), 단 페이지 칸은 미수집 시 입력 BottomSheet를 띄우는 액션으로.
+class _BookInfoGrid extends ConsumerWidget {
+  const _BookInfoGrid({required this.book});
+
+  final Book book;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final textTheme = Theme.of(context).textTheme;
+    final pubYear = _firstFour(book.pubDate);
+    final category = book.categoryName?.trim();
+    final isbn = book.isbn13.trim();
+    final pageCount = book.pageCount;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('기본 정보', style: textTheme.titleMedium),
+        const SizedBox(height: AppSpacing.s3),
+        Row(
+          children: [
+            Expanded(
+              child: _InfoTile(
+                label: '쪽수',
+                value: pageCount != null ? '$pageCount쪽' : '입력하기 ▸',
+                emphasized: pageCount == null,
+                onTap: pageCount == null
+                    ? () => openPageCountInputSheet(
+                          context: context,
+                          ref: ref,
+                          book: book,
+                        )
+                    : null,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.s2),
+            Expanded(
+              child: _InfoTile(
+                label: '출간',
+                value: pubYear ?? '—',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s2),
+        Row(
+          children: [
+            Expanded(
+              child: _InfoTile(
+                label: '분류',
+                value: (category != null && category.isNotEmpty) ? category : '—',
+              ),
+            ),
+            const SizedBox(width: AppSpacing.s2),
+            Expanded(
+              child: _InfoTile(
+                label: 'ISBN',
+                value: isbn.isNotEmpty ? isbn : '—',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  static String? _firstFour(String? raw) {
+    if (raw == null) return null;
+    final t = raw.trim();
+    if (t.length < 4) return t.isEmpty ? null : t;
+    final yearLike = t.substring(0, 4);
+    return RegExp(r'^\d{4}$').hasMatch(yearLike) ? yearLike : t;
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({
+    required this.label,
+    required this.value,
+    this.emphasized = false,
+    this.onTap,
+  });
+
+  final String label;
+  final String value;
+
+  /// `value` 텍스트를 accent 컬러로 — 액션 상태("입력하기 ▸") 강조용.
+  final bool emphasized;
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final tile = Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s3,
+        vertical: AppSpacing.s2,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.secondary100,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: textTheme.labelSmall?.copyWith(color: AppColors.primary500),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodyMedium?.copyWith(
+              color: emphasized ? AppColors.accent600 : AppColors.primary800,
+              fontWeight: emphasized ? FontWeight.w600 : FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+    if (onTap == null) return tile;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: tile,
+    );
+  }
+}
+
+// ── PR18-D → PR30-B: "이 책을 담은 친구 N명" inline chip ──────────────
+
+/// "이 책에서 모은 구절" 섹션 헤더의 오른쪽 inline chip. N≥1일 때만 자체 렌더.
+/// 탭하면 시트 미니리스트로 친구 프로필을 보여준다 (시트는 동일 — `_FriendsWithBookSheet`).
+class _FriendsWithBookChip extends ConsumerWidget {
+  const _FriendsWithBookChip({required this.bookId});
 
   final String bookId;
 
@@ -1060,40 +1221,42 @@ class _FriendsWithBookRow extends ConsumerWidget {
     final asyncCount = ref.watch(friendsWithBookCountProvider(bookId));
     final n = asyncCount.value ?? 0;
     if (n <= 0) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.s6),
-      child: InkWell(
-        onTap: () => _openFriendsWithBookSheet(context, bookId),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: AppSpacing.s2,
-            horizontal: AppSpacing.s1,
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.group_outlined,
-                size: 18,
-                color: AppColors.primary500,
+    return InkWell(
+      onTap: () => _openFriendsWithBookSheet(context, bookId),
+      borderRadius: BorderRadius.circular(AppRadius.full),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.s2,
+          vertical: 4,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.secondary100,
+          borderRadius: BorderRadius.circular(AppRadius.full),
+          border: Border.all(color: AppColors.primary200),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.group_outlined,
+              size: 14,
+              color: AppColors.primary600,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '친구 $n명도 담음',
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.primary700,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(width: AppSpacing.s2),
-              Expanded(
-                child: Text(
-                  '이 책을 담은 친구 $n명',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.primary700,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: AppColors.primary400,
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 2),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 14,
+              color: AppColors.primary500,
+            ),
+          ],
         ),
       ),
     );
