@@ -104,17 +104,14 @@ class _ReadingDatesRowState extends ConsumerState<ReadingDatesRow> {
     final initial = kind == ReadingDateKind.started
         ? (dates.startedAt ?? today)
         : (dates.finishedAt ?? today);
-    final firstDate = kind == ReadingDateKind.finished
-        ? (dates.startedAt ?? DateTime(today.year - 10))
-        : DateTime(today.year - 50);
-    final lastDate = kind == ReadingDateKind.started
-        ? (dates.finishedAt ?? today)
-        : today;
+    // 년도 헤더가 항상 활성화되도록 범위를 넓힌다. 시작·완독 cross-check은
+    // picker에서 막지 않고 서버 검증(VAL_DATE_RANGE)으로 위임 — picker 범위가
+    // 좁아 년도 선택이 불가능해지는 문제를 우선한다.
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: firstDate,
-      lastDate: lastDate,
+      firstDate: DateTime(1900),
+      lastDate: today,
     );
     if (picked == null || !mounted) return;
     await _set(kind, DateTime(picked.year, picked.month, picked.day));
