@@ -12,3 +12,18 @@ final myBookReviewProvider =
   final repo = ref.read(bookReviewRepositoryProvider);
   return repo.getMyReview(bookId);
 });
+
+/// PR29-F: 이 책의 공개 후기 목록 (본인 제외, 작성자 프로필 포함).
+/// RLS가 is_library_public·차단 게이트 — 미로그인도 호출 가능.
+final publicBookReviewsByBookProvider = FutureProvider.autoDispose
+    .family<List<PublicBookReview>, String>((ref, bookId) async {
+  final repo = ref.read(bookReviewRepositoryProvider);
+  return repo.listPublicReviewsByBook(bookId);
+});
+
+/// PR29-I: 홈 "최근 독자 후기" row 데이터. 본인 외 최신 N개 + 책 정보.
+final recentPublicReviewsProvider =
+    FutureProvider.autoDispose<List<RecentBookReview>>((ref) async {
+  final repo = ref.read(bookReviewRepositoryProvider);
+  return repo.listRecentPublicReviews();
+});

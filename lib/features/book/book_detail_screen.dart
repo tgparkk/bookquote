@@ -170,12 +170,10 @@ class _BookBody extends ConsumerWidget {
         const SizedBox(height: AppSpacing.s8),
         // "이 책에서 모은 구절"
         _BookQuotesSection(bookId: book.id),
-        // "내 후기" — 로그인한 경우만. 인용구(책 문장 옮김)와 후기(본인 감상)는
-        // 별도 도메인이라 같은 화면 안에서 시각적으로 분리.
-        if (loggedIn) ...[
-          const SizedBox(height: AppSpacing.s8),
-          BookReviewSection(bookId: book.id),
-        ],
+        // "이 책 후기" — 본인 + 타인 통합. 미로그인도 타인 후기 조회 가능(공개
+        // 프로필 사용자만 노출, RLS 자연 게이트). 본인 카드만 "나" 라벨 + 수정/삭제.
+        const SizedBox(height: AppSpacing.s8),
+        BookReviewSection(bookId: book.id),
         // 설명 — 점진적 공개
         if (description != null && description.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.s8),

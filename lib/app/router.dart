@@ -22,6 +22,7 @@ import 'package:go_router/go_router.dart';
 import '../core/supabase/supabase_init.dart';
 import '../features/auth/login_screen.dart';
 import '../features/book/book_detail_screen.dart';
+import '../features/book_review/presentation/book_reviews_screen.dart';
 import '../features/card_editor/card_editor_screen.dart';
 import '../features/card_editor/quick_share_screen.dart';
 import '../features/crypto/presentation/lock_password_screen.dart';
@@ -81,6 +82,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           // "[이 사람 서재 ▸]" 칩 노출 → K-factor 다리.
           sender: state.uri.queryParameters['sender'],
         ),
+      ),
+      GoRoute(
+        path: '/book/:id/reviews',
+        builder: (_, state) =>
+            BookReviewsScreen(bookId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/quote/new',

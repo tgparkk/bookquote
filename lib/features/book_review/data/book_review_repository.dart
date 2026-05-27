@@ -21,6 +21,30 @@ class BookReviewRepositoryException implements Exception {
   String toString() => 'BookReviewRepositoryException($code): $message';
 }
 
+/// PR29-F: 책별 공개 후기 한 줄 — 작성자 프로필 join. RPC `book_reviews_by_book`
+/// 응답의 도메인 표현. 본인 후기는 RPC가 제외하므로 isMe 플래그 불필요.
+typedef PublicBookReview = ({
+  String userId,
+  String? displayName,
+  String? avatarUrl,
+  String text,
+  DateTime createdAt,
+  DateTime updatedAt,
+});
+
+/// PR29-I: 홈 "최근 독자 후기" row 한 줄 — 작성자 프로필 + 책 정보(title/cover_url) join.
+/// 본인 후기 제외(발견 목적). 탭하면 `/book/:bookId` 진입.
+typedef RecentBookReview = ({
+  String userId,
+  String? displayName,
+  String? avatarUrl,
+  String bookId,
+  String bookTitle,
+  String? bookCoverUrl,
+  String text,
+  DateTime updatedAt,
+});
+
 class BookReviewRepository {
   BookReviewRepository(this._client);
 
@@ -80,6 +104,54 @@ class BookReviewRepository {
         );
       }
       throw BookReviewRepositoryException('UPSERT_FAILED', e.message);
+    }
+  }
+
+  /// PR29-F: 이 책의 공개 후기 목록 (본인 제외). 작성자 프로필 join.
+  /// RLS·RPC가 비공개 프로필·차단된 사용자 자동 제외. anon 호출 가능.
+  Future<List<PublicBookReview>> listPublicReviewsByBook(String bookId) async {
+    try {
+      final rows = await _client.rpc(
+        'book_reviews_by_book',
+        params: {'p_book_id': bookId},
+      ) as List<dynamic>;
+      return rows.cast<Map<String, dynamic>>().map((r) {
+        return (
+          userId: r['user_id'] as String,
+          displayName: r['display_name'] as String?,
+          avatarUrl: r['avatar_url'] as String?,
+          text: r['text'] as String,
+          createdAt: DateTime.parse(r['created_at'] as String),
+          updatedAt: DateTime.parse(r['updated_at'] as String),
+        );
+      }).toList(growable: false);
+    } on PostgrestException catch (e) {
+      throw BookReviewRepositoryException('LIST_FAILED', e.message);
+    }
+  }
+
+  /// PR29-I: 홈 "최근 독자 후기" row용. 본인 외 공개 후기 + 책 정보 최신순.
+  /// 미로그인 호출 가능 (anon grant). 0건이면 빈 리스트.
+  Future<List<RecentBookReview>> listRecentPublicReviews({int limit = 10}) async {
+    try {
+      final rows = await _client.rpc(
+        'recent_public_book_reviews',
+        params: {'p_limit': limit},
+      ) as List<dynamic>;
+      return rows.cast<Map<String, dynamic>>().map((r) {
+        return (
+          userId: r['user_id'] as String,
+          displayName: r['display_name'] as String?,
+          avatarUrl: r['avatar_url'] as String?,
+          bookId: r['book_id'] as String,
+          bookTitle: r['book_title'] as String,
+          bookCoverUrl: r['book_cover_url'] as String?,
+          text: r['text'] as String,
+          updatedAt: DateTime.parse(r['updated_at'] as String),
+        );
+      }).toList(growable: false);
+    } on PostgrestException catch (e) {
+      throw BookReviewRepositoryException('LIST_RECENT_FAILED', e.message);
     }
   }
 

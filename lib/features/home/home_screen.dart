@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/tokens.dart';
+import '../book_review/presentation/recent_public_reviews_row.dart';
 import '../quote/data/quote_outbox.dart';
 import '../quote/data/quote_repository.dart';
 import '../follow/presentation/widgets/friend_activity_banner.dart';
@@ -146,6 +147,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           const OutboxBanner(),
           // PR20-D — 친구가 새 인용구 추가했음을 인지할 유일한 다리 (V1엔 Realtime 없음).
           const FriendActivityBanner(),
+          // PR29-I — 모든 공개 사용자의 최신 후기 가로 row. 친구 follow 없이도
+          // 모르는 책·사람의 발견 → K-factor. 0건이면 자체 숨김.
+          const RecentPublicReviewsRow(),
           // PR23 — "지금 읽고 있어요" 1행: 적기로 가는 retention ramp.
           const NowReadingRow(),
           const RecallCard(),
@@ -191,6 +195,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           onShare: () => context.push('/quote/${e.quote.id}/share'),
           onMakeCard: () => context.push('/quote/${e.quote.id}/card'),
           onDelete: () => _confirmDelete(e),
+          onOpenBook:
+              e.book == null ? null : () => context.push('/book/${e.book!.id}'),
         );
       },
     );
