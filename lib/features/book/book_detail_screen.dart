@@ -19,6 +19,7 @@ import '../book_review/presentation/book_review_section.dart';
 import '../follow/state/follow_providers.dart';
 import '../profile/domain/profile.dart';
 import '../profile/state/friend_providers.dart';
+import '../quote/domain/quote.dart';
 import '../quote/presentation/widgets/quote_list_card.dart';
 import '../quote/state/quote_providers.dart';
 import 'data/book_repository.dart';
@@ -94,15 +95,7 @@ class _BookBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final loggedIn = ref.watch(currentSessionProvider) != null;
     final textTheme = Theme.of(context).textTheme;
-    final author = book.author?.trim();
-    final publisher = book.publisher?.trim();
-    final pubDate = book.pubDate?.trim();
-    final isbn = book.isbn13.trim();
     final description = book.description?.trim();
-    final metaLine = [
-      if (publisher != null && publisher.isNotEmpty) publisher,
-      if (pubDate != null && pubDate.isNotEmpty) pubDate,
-    ].join(' · ');
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -118,46 +111,15 @@ class _BookBody extends ConsumerWidget {
           _LibraryActionButton(bookId: book.id, prominent: true),
           const SizedBox(height: AppSpacing.s6),
         ],
-        // 헤더 — 표지 + 제목/저자/출판사·연도/ISBN (+로그인 시 별점)
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            BookCover(
-              url: book.coverUrl,
-              title: book.title,
-              width: 96,
-              height: 140,
-            ),
-            const SizedBox(width: AppSpacing.s4),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(book.title, style: textTheme.headlineMedium),
-                  const SizedBox(height: AppSpacing.s2),
-                  if (author != null && author.isNotEmpty)
-                    Text(author, style: textTheme.bodyMedium),
-                  if (metaLine.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(metaLine, style: textTheme.bodySmall),
-                    ),
-                  if (isbn.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.s2),
-                      child: Text('ISBN $isbn', style: textTheme.labelSmall),
-                    ),
-                  if (loggedIn) ...[
-                    const SizedBox(height: AppSpacing.s3),
-                    Text('내 별점', style: textTheme.labelMedium),
-                    _BookRatingRow(bookId: book.id),
-                    ReadingDatesRow(bookId: book.id),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
+        // PR30-A 헤더 — 큰 중앙 표지 + 메타 + (로그인) 큰 별점
+        _BookHeader(book: book, loggedIn: loggedIn),
+        if (loggedIn) ...[
+          const SizedBox(height: AppSpacing.s4),
+          ReadingDatesRow(bookId: book.id),
+        ],
+        const SizedBox(height: AppSpacing.s6),
+        // PR30-A 인용구 hero 카드 — 내 인용 / 알라딘 첫 줄 / 빈 상태 CTA
+        _QuoteHeroCard(book: book),
         const SizedBox(height: AppSpacing.s6),
         // "이 책 인용구 추가" — 이 화면의 주 행동
         _AddQuoteButton(bookId: book.id),
@@ -741,18 +703,89 @@ class _OverflowMenu extends ConsumerWidget {
   }
 }
 
-/// 책 상세 헤더의 별점 행. `myRatingProvider`를 watch하고 탭 시 `setMyRating` →
-/// invalidate. 이 책의 다른 화면(서재 등)도 갱신되게 `myLibraryProvider`도 invalidate.
-class _BookRatingRow extends ConsumerStatefulWidget {
-  const _BookRatingRow({required this.bookId});
+// ── PR30-A: 헤더 (큰 표지 + 중앙 메타 + 큰 별점) ────────────────
+
+/// 큰 중앙 표지(140×200) + 제목·저자·출판사·연도·ISBN + (로그인 시) 큰 별점.
+/// 읽기 시작/완독일은 별도 행으로 빠져 헤더 밖에 배치된다.
+class _BookHeader extends StatelessWidget {
+  const _BookHeader({required this.book, required this.loggedIn});
+
+  final Book book;
+  final bool loggedIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final author = book.author?.trim();
+    final publisher = book.publisher?.trim();
+    final pubDate = book.pubDate?.trim();
+    final isbn = book.isbn13.trim();
+    final metaLine = [
+      if (publisher != null && publisher.isNotEmpty) publisher,
+      if (pubDate != null && pubDate.isNotEmpty) pubDate,
+    ].join(' · ');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        BookCover(
+          url: book.coverUrl,
+          title: book.title,
+          width: 140,
+          height: 200,
+        ),
+        const SizedBox(height: AppSpacing.s4),
+        Text(
+          book.title,
+          style: textTheme.headlineMedium,
+          textAlign: TextAlign.center,
+        ),
+        if (author != null && author.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.s2),
+          Text(
+            author,
+            style: textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+        ],
+        if (metaLine.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            metaLine,
+            style: textTheme.bodySmall,
+            textAlign: TextAlign.center,
+          ),
+        ],
+        if (isbn.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.s2),
+          Text(
+            'ISBN $isbn',
+            style: textTheme.labelSmall,
+            textAlign: TextAlign.center,
+          ),
+        ],
+        if (loggedIn) ...[
+          const SizedBox(height: AppSpacing.s4),
+          _BookRatingBlock(bookId: book.id),
+        ],
+      ],
+    );
+  }
+}
+
+/// 헤더 중앙의 별점 블록 — "내 별점" 라벨 + 큰 별 5개(32pt) + "N / 5" 텍스트.
+/// `myRatingProvider`를 watch하고 탭 시 `setMyRating` → invalidate. 이 책의 다른
+/// 화면(서재 등)도 갱신되게 `myLibraryProvider`도 invalidate.
+class _BookRatingBlock extends ConsumerStatefulWidget {
+  const _BookRatingBlock({required this.bookId});
 
   final String bookId;
 
   @override
-  ConsumerState<_BookRatingRow> createState() => _BookRatingRowState();
+  ConsumerState<_BookRatingBlock> createState() => _BookRatingBlockState();
 }
 
-class _BookRatingRowState extends ConsumerState<_BookRatingRow> {
+class _BookRatingBlockState extends ConsumerState<_BookRatingBlock> {
   bool _busy = false;
 
   Future<void> _rate(int? value) async {
@@ -790,10 +823,226 @@ class _BookRatingRowState extends ConsumerState<_BookRatingRow> {
   @override
   Widget build(BuildContext context) {
     final rating = ref.watch(myRatingProvider(widget.bookId)).value;
-    return StarRating(
-      rating: rating,
-      size: 24,
-      onRated: _busy ? null : _rate,
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      children: [
+        Text('내 별점', style: textTheme.labelMedium),
+        const SizedBox(height: 4),
+        StarRating(
+          rating: rating,
+          size: 32,
+          onRated: _busy ? null : _rate,
+        ),
+        if (rating != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            '$rating / 5',
+            style: textTheme.bodySmall?.copyWith(color: AppColors.primary500),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+// ── PR30-A: 인용구 hero 카드 (3-state) ─────────────────────────
+
+/// 책 상세 헤더 직하의 큰 인용 카드. 우선순위:
+/// (1) 내가 이 책에서 모은 인용구 중 최신 = 큰 따옴표 카드. 잠긴 인용(text==null)은
+///     건너뛴다.
+/// (2) 알라딘 description의 첫 문단 = 출판사 소개 미리보기 카드(아래 "설명" 섹션과
+///     의도된 중복 — UX-B 권고).
+/// (3) 둘 다 없으면 "이 책의 첫 인용구를 남겨주세요" CTA 카드.
+class _QuoteHeroCard extends ConsumerWidget {
+  const _QuoteHeroCard({required this.book});
+
+  final Book book;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncQuotes = ref.watch(bookQuotesProvider(book.id));
+    final loggedIn = ref.watch(currentSessionProvider) != null;
+    final quotes = asyncQuotes.value ?? const <Quote>[];
+    final visible =
+        quotes.where((q) => (q.text ?? '').trim().isNotEmpty).toList();
+
+    if (visible.isNotEmpty) {
+      return _HeroQuoteFromUser(quote: visible.first);
+    }
+    final description = book.description?.trim();
+    final descPreview = _firstParagraph(description);
+    if (descPreview != null) {
+      return _HeroQuoteFromDescription(text: descPreview);
+    }
+    return _HeroQuoteEmpty(bookId: book.id, loggedIn: loggedIn);
+  }
+
+  /// description의 첫 줄·문단 추출. 빈 줄로 끊긴 부분 또는 첫 줄까지.
+  static String? _firstParagraph(String? text) {
+    if (text == null || text.isEmpty) return null;
+    for (final line in text.split('\n')) {
+      final t = line.trim();
+      if (t.isNotEmpty) return t;
+    }
+    return null;
+  }
+}
+
+class _HeroQuoteFromUser extends StatelessWidget {
+  const _HeroQuoteFromUser({required this.quote});
+
+  final Quote quote;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final text = (quote.text ?? '').trim();
+    final page = quote.page;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      decoration: BoxDecoration(
+        color: AppColors.accent50,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.accent200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '“',
+            style: TextStyle(
+              fontFamily: AppFonts.quote,
+              fontSize: 36,
+              height: 1,
+              color: AppColors.accent400,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            text,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontFamily: AppFonts.quote,
+              fontSize: AppFontSize.base,
+              height: AppLineHeight.relaxed,
+              color: AppColors.accent800,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          if (page != null) ...[
+            const SizedBox(height: AppSpacing.s2),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                'p.$page',
+                style: textTheme.labelSmall
+                    ?.copyWith(color: AppColors.accent700),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroQuoteFromDescription extends StatelessWidget {
+  const _HeroQuoteFromDescription({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      decoration: BoxDecoration(
+        color: AppColors.secondary50,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.primary200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '출판사 소개',
+            style: textTheme.labelSmall
+                ?.copyWith(color: AppColors.primary500),
+          ),
+          const SizedBox(height: AppSpacing.s2),
+          Text(
+            text,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodyMedium?.copyWith(
+              height: AppLineHeight.relaxed,
+              color: AppColors.primary800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroQuoteEmpty extends StatelessWidget {
+  const _HeroQuoteEmpty({required this.bookId, required this.loggedIn});
+
+  final String bookId;
+  final bool loggedIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return InkWell(
+      onTap: () => context.push('/quote/new?bookId=$bookId'),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.s4),
+        decoration: BoxDecoration(
+          color: AppColors.accent50,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: AppColors.accent200,
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.format_quote_rounded,
+              color: AppColors.accent500,
+              size: 28,
+            ),
+            const SizedBox(width: AppSpacing.s3),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '이 책의 첫 인용구를 남겨주세요',
+                    style: textTheme.titleSmall
+                        ?.copyWith(color: AppColors.accent800),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    loggedIn ? '읽다 마음에 든 한 줄을 한 손에 모아둘 수 있어요.' : '로그인하면 한 줄을 모을 수 있어요.',
+                    style: textTheme.bodySmall
+                        ?.copyWith(color: AppColors.primary600),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.accent500,
+              size: 22,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

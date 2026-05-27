@@ -101,7 +101,9 @@ void main() {
 
     expect(find.text('이 책에서 모은 구절'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
-    expect(find.textContaining('가장 깊은 밤에'), findsOneWidget);
+    // PR30-A 이후 첫 인용구는 hero 카드 + 리스트 양쪽에 노출됨(의도된 중복).
+    expect(find.textContaining('가장 깊은 밤에'), findsNWidgets(2));
+    expect(find.textContaining('후회는 인생'), findsOneWidget);
     expect(find.text('아직 이 책에서 모은 구절이 없어요.'), findsNothing);
   });
 
@@ -144,6 +146,69 @@ void main() {
     testWidgets('친구 N≥1 → "이 책을 담은 친구 N명" 행 노출', (tester) async {
       await pump(tester, friendsWithBookCount: 3);
       expect(find.text('이 책을 담은 친구 3명'), findsOneWidget);
+    });
+  });
+
+  group('PR30-A — 인용구 hero 카드 3-state', () {
+    testWidgets('State 1: 내 인용구 있으면 hero 큰 따옴표 카드', (tester) async {
+      await pump(tester, quotes: [
+        _quote('q1', '가장 깊은 밤에 가장 빛나는 별이 보인다.'),
+      ]);
+      // hero(1) + 리스트(1) 양쪽 노출
+      expect(find.textContaining('가장 깊은 밤에'), findsNWidgets(2));
+      // description fallback도, empty CTA도 안 보임
+      expect(find.text('출판사 소개'), findsNothing);
+      expect(find.text('이 책의 첫 인용구를 남겨주세요'), findsNothing);
+    });
+
+    testWidgets(
+        'State 1: 잠긴 인용구(text=null) 1개 → hero에서 건너뛰고 description fallback',
+        (tester) async {
+      final lockedQuote = Quote(
+        id: 'q-locked',
+        userId: 'u1',
+        bookId: 'b1',
+        text: null,
+        isPrivate: true,
+        cryptoVersion: 1,
+        createdAt: DateTime(2026, 5, 12),
+        updatedAt: DateTime(2026, 5, 12),
+      );
+      await pump(tester, quotes: [lockedQuote]);
+      expect(find.text('출판사 소개'), findsOneWidget);
+      expect(find.text('이 책의 첫 인용구를 남겨주세요'), findsNothing);
+    });
+
+    testWidgets('State 2: 인용구 없고 description 있으면 "출판사 소개" 미리보기',
+        (tester) async {
+      await pump(tester);
+      expect(find.text('출판사 소개'), findsOneWidget);
+      // hero(1) + 본문 설명(1) 양쪽 노출
+      expect(find.textContaining('미드나잇 라이브러리는 삶과 죽음'),
+          findsNWidgets(2));
+      expect(find.text('이 책의 첫 인용구를 남겨주세요'), findsNothing);
+    });
+
+    testWidgets('State 3: 인용구·description 모두 없으면 "첫 인용구 남겨주세요" CTA',
+        (tester) async {
+      const emptyBook = Book(
+        id: 'b1',
+        isbn13: '9791191056556',
+        title: '제목 없는 책',
+      );
+      await pump(tester, book: emptyBook);
+      expect(find.text('이 책의 첫 인용구를 남겨주세요'), findsOneWidget);
+      expect(find.text('출판사 소개'), findsNothing);
+    });
+  });
+
+  group('PR30-A — 헤더 (큰 표지 + 중앙 별점)', () {
+    testWidgets('큰 표지 BookCover 140×200, 미로그인이면 "내 별점" 블록 숨김',
+        (tester) async {
+      await pump(tester);
+      // 미로그인 → 별점·읽기날짜 모두 안 보임
+      expect(find.text('내 별점'), findsNothing);
+      expect(find.text('읽기 시작'), findsNothing);
     });
   });
 
