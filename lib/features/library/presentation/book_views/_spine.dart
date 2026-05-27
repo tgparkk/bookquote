@@ -13,11 +13,12 @@ import '../../../book/data/book_repository.dart';
 import '../../../book/domain/book.dart';
 import '../../../book/state/book_providers.dart';
 
-/// 1mm = 4 logical px (stack 세로 가시화 배율). pageCount × 0.09mm/페이지.
-/// 50~200px clamp — 너무 얇으면 탭하기 어렵고 너무 두꺼우면 화면 점유 과함.
+/// stack view의 캡슐 높이 = pageCount × 0.09mm × 2.5(가시화 배율).
+/// 28~130px clamp — "쌓아 보기" 메타포라 한 캡슐이 한 줄 텍스트 자리만 차지하면 충분.
+/// 두꺼운 책(700p+)은 130px에 cap돼 화면당 권수 보장.
 double stackHeightForPages(int pages) {
-  final h = pages * 0.09 * 4.0;
-  return h.clamp(50.0, 200.0);
+  final h = pages * 0.09 * 2.5;
+  return h.clamp(28.0, 130.0);
 }
 
 /// 1mm = 2.5 logical px (shelf spine 가로 가시화 배율).

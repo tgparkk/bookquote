@@ -21,16 +21,7 @@ class MyFollowingScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(myFollowingProvider);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('내 친구'),
-        actions: [
-          IconButton(
-            tooltip: '독서량 순위',
-            icon: const Icon(Icons.emoji_events_outlined),
-            onPressed: () => context.push('/me/friends-ranking'),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('내 친구')),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async => ref.invalidate(myFollowingProvider),

@@ -85,7 +85,17 @@ class QuoteListCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (coverUrl != null || (bookLabel != null && bookLabel.isNotEmpty)) ...[
-                BookCover(url: coverUrl, title: bookLabel ?? '', width: 34, height: 50),
+                // 표지 탭 → 책 상세 (onOpenBook이 있을 때만 — bookId 없으면 호출자가 null).
+                // 카드 전체 InkWell(onTap)과 nest 충돌 회피 위해 GestureDetector.
+                GestureDetector(
+                  onTap: onOpenBook,
+                  child: BookCover(
+                    url: coverUrl,
+                    title: bookLabel ?? '',
+                    width: 34,
+                    height: 50,
+                  ),
+                ),
                 const SizedBox(width: AppSpacing.s3),
               ],
               Expanded(
@@ -137,14 +147,20 @@ class QuoteListCard extends StatelessWidget {
                       ),
                     ),
                     if (meta.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: AppSpacing.s2),
-                        child: Text(
-                          meta,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.labelSmall
-                              ?.copyWith(color: AppColors.primary400),
+                      // 책 메타 라인(제목·저자·페이지)도 탭하면 책 상세.
+                      // HitTestBehavior.opaque로 padding 영역까지 hit.
+                      GestureDetector(
+                        onTap: onOpenBook,
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.s2),
+                          child: Text(
+                            meta,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelSmall
+                                ?.copyWith(color: AppColors.primary400),
+                          ),
                         ),
                       ),
                     if (quote.moods.isNotEmpty)

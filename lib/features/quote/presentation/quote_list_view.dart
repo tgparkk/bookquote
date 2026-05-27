@@ -405,6 +405,8 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
           onShare: () => context.push('/quote/${e.quote.id}/share'),
           onMakeCard: () => context.push('/quote/${e.quote.id}/card'),
           onDelete: () => _confirmDelete(e),
+          onOpenBook:
+              e.book == null ? null : () => context.push('/book/${e.book!.id}'),
         );
       },
     );

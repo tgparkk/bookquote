@@ -81,6 +81,11 @@ class MeScreen extends ConsumerWidget {
               onTap: () => context.push('/me/following'),
             ),
             _ActionTile(
+              icon: Icons.emoji_events_outlined,
+              title: '친구 독서량 순위',
+              onTap: () => context.push('/me/friends-ranking'),
+            ),
+            _ActionTile(
               icon: Icons.people_outline,
               title: '친구 찾기',
               onTap: () => context.push('/me/friend-search'),

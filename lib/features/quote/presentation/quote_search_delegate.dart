@@ -102,6 +102,12 @@ class QuoteSearchDelegate extends SearchDelegate<void> {
                     return QuoteListCard(
                       quote: item.quote,
                       book: item.book,
+                      onOpenBook: item.book == null
+                          ? null
+                          : () {
+                              close(context, null);
+                              context.push('/book/${item.book!.id}');
+                            },
                       onTap: () {
                         close(context, null);
                         // hot 컨텍스트: 검색 결과에서 1탭 = 카드 펼침 대신 바로
