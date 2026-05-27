@@ -15,6 +15,33 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/supabase/supabase_init.dart';
 import '../../profile/domain/profile.dart';
 
+/// PR29: 친구 독서량 순위 한 줄. `friends_reading_ranking` RPC row의 도메인 표현.
+class FriendReadingRankEntry {
+  const FriendReadingRankEntry({
+    required this.userId,
+    required this.displayName,
+    required this.avatarUrl,
+    required this.bookCount,
+    required this.isMe,
+  });
+
+  factory FriendReadingRankEntry.fromRow(Map<String, dynamic> row) {
+    return FriendReadingRankEntry(
+      userId: row['user_id'] as String,
+      displayName: row['display_name'] as String?,
+      avatarUrl: row['avatar_url'] as String?,
+      bookCount: (row['book_count'] as num?)?.toInt() ?? 0,
+      isMe: (row['is_me'] as bool?) ?? false,
+    );
+  }
+
+  final String userId;
+  final String? displayName;
+  final String? avatarUrl;
+  final int bookCount;
+  final bool isMe;
+}
+
 class FollowRepositoryException implements Exception {
   FollowRepositoryException(this.code, this.message);
   final String code;
@@ -280,6 +307,23 @@ class FollowRepository {
           .toList(growable: false);
     } on PostgrestException catch (e) {
       throw FollowRepositoryException('SEARCH_FAILED', e.message);
+    }
+  }
+
+  /// PR29: 본인 + 팔로위들의 읽은 책 권수 순위. 권수 내림차순, 이름 오름차순 tie-break.
+  /// `friends_reading_ranking` RPC가 RLS를 통해 비공개 프로필·비공개 서재 친구를
+  /// 자동 제외하므로 클라이언트 필터 불필요.
+  Future<List<FriendReadingRankEntry>> listFriendsReadingRanking() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return const <FriendReadingRankEntry>[];
+    try {
+      final rows = await _client.rpc('friends_reading_ranking') as List<dynamic>;
+      return rows
+          .cast<Map<String, dynamic>>()
+          .map(FriendReadingRankEntry.fromRow)
+          .toList(growable: false);
+    } on PostgrestException catch (e) {
+      throw FollowRepositoryException('RANKING_FAILED', e.message);
     }
   }
 

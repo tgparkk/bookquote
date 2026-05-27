@@ -48,6 +48,15 @@ final myFollowingProvider =
   return repo.listFollowing(uid);
 });
 
+/// PR29: 본인 + 팔로위들의 읽은 책 권수 순위. 친구 독서량 랭킹 화면이 watch.
+final friendsReadingRankingProvider =
+    FutureProvider.autoDispose<List<FriendReadingRankEntry>>((ref) async {
+  final uid = ref.watch(currentUserIdProvider);
+  if (uid == null) return const <FriendReadingRankEntry>[];
+  final repo = ref.watch(followRepositoryProvider);
+  return repo.listFriendsReadingRanking();
+});
+
 /// 이 책을 담은 *친구* 수 (PR18-D). 책 상세 헤더에서 watch — N≥1일 때만 렌더.
 final friendsWithBookCountProvider =
     FutureProvider.autoDispose.family<int, String>((ref, bookId) async {
