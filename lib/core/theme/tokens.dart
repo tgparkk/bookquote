@@ -122,7 +122,7 @@ abstract final class AppFonts {
 abstract final class AppFontSize {
   /// 워터마크, 법적 표기
   static const double xxs  = 9.0;
-  /// 출판사·ISBN 등 부가 메타. (인용구 본문 최소는 13으로 상향 — `getQuoteFontSize` 하한)
+  /// 출판사·ISBN 등 부가 메타. (인용구 본문 최소는 15로 상향 — `getQuoteFontSize` 하한, PR29 dogfood)
   static const double xs   = 11.0;
   /// 보조 레이블, 저자명
   static const double sm   = 13.0;
@@ -291,31 +291,33 @@ enum CardRatio {
 /// 인용구 글자 수에 따라 폰트 크기를 자동으로 결정한다.
 /// 세 기준점 선형 보간:
 ///   ≤50자  → 22px
-///   200자  → 15px
-///   ≥500자 → 13px
+///   200자  → 17px
+///   ≥500자 → 15px
 ///
-/// 하한 13px은 NotoSerifKR w500의 한글 획 두께가 판독 한계에 닿지 않는 최소값
-/// (디자인 회의 2026-05-18: 타이포 마스터·UX 전문가 공동 합의).
+/// 하한 15px (PR29). 이전 13px은 NotoSerifKR 판독 *최소* 한계였으나 dogfood 결과
+/// 카드 공유 시 SNS 압축까지 거치면 13px이 잘 읽히지 않는 케이스가 다수 — 출시
+/// 전 사용자 본인이 직접 가독성 문제 보고. 15px는 한 줄 공간을 약간 더 잡지만
+/// 200자대 인용구에서도 자연스럽다.
 ///
 /// [charCount] - 인용구 글자 수 (공백 포함)
 /// returns 권장 폰트 크기 (논리 픽셀, 소수점 가능 — round 해서 사용)
 double getQuoteFontSize(int charCount) {
   if (charCount <= 50) return 22.0;
-  if (charCount >= 500) return 13.0;
+  if (charCount >= 500) return 15.0;
   if (charCount <= 200) {
-    // 50 → 200자 구간: 22px → 15px 선형 보간
-    return 22.0 - ((charCount - 50) / 150.0) * 7.0;
+    // 50 → 200자 구간: 22px → 17px 선형 보간
+    return 22.0 - ((charCount - 50) / 150.0) * 5.0;
   } else {
-    // 200 → 500자 구간: 15px → 13px 선형 보간
-    return 15.0 - ((charCount - 200) / 300.0) * 2.0;
+    // 200 → 500자 구간: 17px → 15px 선형 보간
+    return 17.0 - ((charCount - 200) / 300.0) * 2.0;
   }
 }
 
 /// 사용자가 [A−]/[A+]로 미세조정한 step을 반영한 최종 인용구 폰트 크기.
-/// step 1당 2px 가감. 인용구 본문 가독 한계 clamp(13~36px). PR12-B.
+/// step 1당 2px 가감. 인용구 본문 가독 한계 clamp(15~36px) — PR29 하한 상향.
 double getEffectiveQuoteFontSize(int charCount, int fontStep) {
   final base = getQuoteFontSize(charCount);
-  return (base + fontStep * 2).clamp(13.0, 36.0);
+  return (base + fontStep * 2).clamp(15.0, 36.0);
 }
 
 /// 인용구 폰트 크기에 따라 최적 행간을 반환한다.

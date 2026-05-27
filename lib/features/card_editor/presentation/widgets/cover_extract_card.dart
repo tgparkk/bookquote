@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -6,14 +5,15 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../book/presentation/widgets/book_cover.dart';
+import '../../data/color_utils.dart';
 import '../../domain/quote_card_data.dart';
 import 'card_watermark.dart';
 
 /// T4 — 표지 발췌 카드. `docs/design/templates/04-cover-extract.md`.
 ///
 /// 레이어 0: 표지 blur 배경(`ImageFilter.blur` 35px)
-/// 레이어 1: `palette.dominant` 60% overlay
-/// 레이어 2: 인용구 텍스트 (NotoSerifKR Bold, min 15px)
+/// 레이어 1: `palette.dominant` 72% overlay (PR29: 60→72, 텍스트 대비 보강)
+/// 레이어 2: 인용구 텍스트 (NotoSerifKR Bold, 토큰 하한 15px)
 /// 레이어 3: 그라데이션 overlay (transparent → `darkVibrant` 85%)
 /// 레이어 4: 선명 표지 (우하단)
 /// 레이어 5: 책 정보 (좌하단, 선명 표지와 겹치지 않게 maxWidth 540)
@@ -72,8 +72,7 @@ class CoverExtractCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final v = _variants[ratio]!;
-    final rawSize = getEffectiveQuoteFontSize(data.charCount, fontStep);
-    final fontSize = math.max(rawSize, 15.0);
+    final fontSize = getEffectiveQuoteFontSize(data.charCount, fontStep);
     final lineHeight = getQuoteLineHeight(fontSize);
 
     return SizedBox(
@@ -84,7 +83,10 @@ class CoverExtractCard extends StatelessWidget {
           Positioned.fill(child: _BlurredBackground(data: data, palette: palette)),
           Positioned.fill(
             child: ColoredBox(
-              color: palette.dominant.withValues(alpha: 0.60),
+              // PR29: 60→72. blur 배경이 비치는 정도를 줄여 인용구 텍스트와
+              // dominant 배경 사이의 실제 대비가 palette.textOnBackground 계산값
+              // (vs dominant)에 더 가까워진다.
+              color: palette.dominant.withValues(alpha: 0.72),
             ),
           ),
           Positioned(
@@ -200,6 +202,14 @@ class _BookInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasTitle = data.bookTitle != null && data.bookTitle!.isNotEmpty;
     final hasAuthor = data.bookAuthor != null && data.bookAuthor!.isNotEmpty;
+    // PR29: BookInfo는 카드 하단 그라데이션(→ darkVibrant 85%) 구간에 배치된다.
+    // palette.subtextOnBackground는 dominant 기준으로 계산되어 하단 darkVibrant
+    // 위에서는 대비 미달 가능 — 실제 배경(darkVibrant)에 다시 ensureContrast.
+    final infoColor = ensureContrast(
+      palette.darkVibrant,
+      palette.subtextOnBackground,
+      minRatio: 4.5,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,7 +222,7 @@ class _BookInfo extends StatelessWidget {
               fontFamily: AppFonts.quote,
               fontWeight: FontWeight.w500,
               fontSize: 36,
-              color: palette.subtextOnBackground,
+              color: infoColor,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -225,7 +235,7 @@ class _BookInfo extends StatelessWidget {
               fontFamily: AppFonts.ui,
               fontWeight: FontWeight.w400,
               fontSize: 36,
-              color: palette.subtextOnBackground,
+              color: infoColor,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
