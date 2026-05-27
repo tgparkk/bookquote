@@ -8,8 +8,13 @@
 -- DISTINCT ON 1개 → LATERAL LIMIT 2로 바뀌면서 컬럼이 sample_text/sample_id에
 -- sample_text2/sample_id2가 더해진다. 기존 컬럼명 유지 = 클라이언트 backward
 -- compat. SECURITY/auth 정책은 동일.
+--
+-- 주의: CREATE OR REPLACE는 OUT 파라미터(반환 타입) 변경 불가(42P13). 기존 함수를
+-- 명시적으로 DROP 후 재생성. grant도 함께 사라지므로 마지막에 다시 부여한다.
 
-create or replace function public.my_quote_mood_hub_snapshots()
+drop function if exists public.my_quote_mood_hub_snapshots();
+
+create function public.my_quote_mood_hub_snapshots()
 returns table (
   mood text,
   cnt int,
@@ -36,26 +41,16 @@ as $$
   ),
   samples as (
     -- 무드별 최신 평문 2건 (잠금 인용구 자연 제외 — text IS NULL).
-    -- row_number 윈도우 후 pivot으로 sample/sample2 2개 컬럼 추출.
+    -- array_agg(... order by ...)[1]/[2] 패턴 — Postgres가 uuid에 max() 미지원이라
+    -- conditional max 패턴(42883) 회피. array 인덱싱은 row 부족 시 NULL.
     select
       mood,
-      max(case when rn = 1 then id end)   as id1,
-      max(case when rn = 1 then text end) as text1,
-      max(case when rn = 2 then id end)   as id2,
-      max(case when rn = 2 then text end) as text2
-    from (
-      select
-        mood,
-        id,
-        text,
-        row_number() over (
-          partition by mood
-          order by created_at desc, id desc
-        ) as rn
-      from mine
-      where text is not null
-    ) ranked
-    where rn <= 2
+      (array_agg(id   order by created_at desc, id desc))[1] as id1,
+      (array_agg(text order by created_at desc, id desc))[1] as text1,
+      (array_agg(id   order by created_at desc, id desc))[2] as id2,
+      (array_agg(text order by created_at desc, id desc))[2] as text2
+    from mine
+    where text is not null
     group by mood
   )
   select
