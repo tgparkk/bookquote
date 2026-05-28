@@ -9,6 +9,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/tokens.dart';
 import '../book/data/book_repository.dart';
@@ -36,6 +37,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   int _tab = 0; // 0 = 책, 1 = 인용구, 2 = 캘린더 (PR17-C)
   QuoteMood? _initialMood;
   bool _readQuery = false;
+  bool _longPressHintChecked = false;
+
+  /// PR11 — long-press 디스커버리 SnackBar 1회 노출 플래그.
+  static const String _kLongPressHintShownKey = 'library_long_press_hint_v1';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowLongPressHint());
+  }
 
   @override
   void didChangeDependencies() {
@@ -47,6 +58,33 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     if (q['tab'] == 'calendar') _tab = 2;
     final moodName = q['mood'];
     if (moodName != null) _initialMood = QuoteMood.fromName(moodName);
+  }
+
+  /// 책 탭 + 라이브러리 ≥1권 + 첫 진입(prefs flag 미설정)인 경우에만
+  /// "표지를 길게 누르면 빠른 액션이 떨어요" SnackBar 한 번. 동선 인지가 목적이라
+  /// `[알겠어요]` action으로 명시적 dismiss, SnackBar 자체는 8초 노출.
+  Future<void> _maybeShowLongPressHint() async {
+    if (_longPressHintChecked || !mounted) return;
+    _longPressHintChecked = true;
+    if (_tab != 0) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_kLongPressHintShownKey) ?? false) return;
+      final books = await ref.read(myLibraryProvider.future);
+      if (books.isEmpty || !mounted) return;
+      await prefs.setBool(_kLongPressHintShownKey, true);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          content: const Text('💡 표지를 길게 누르면 빠른 액션 시트가 떨어요.'),
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(
+            label: '알겠어요',
+            onPressed: () {/* dismiss로 충분 */},
+          ),
+        ));
+    } catch (_) {/* hint 실패는 침묵 — 본 화면 동작에 영향 없음 */}
   }
 
   Future<void> _onAddBook() async {

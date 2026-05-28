@@ -16,6 +16,7 @@ import '../../../quote/domain/quote.dart';
 import '../../../quote/domain/quote_mood.dart';
 import '../../../quote/state/quote_providers.dart';
 import 'book_quick_actions_sheet.dart';
+import 'long_press_hint.dart';
 
 class BookListView extends StatelessWidget {
   const BookListView({super.key, required this.books});
@@ -68,7 +69,10 @@ class _BookRow extends ConsumerWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            BookCover(url: book.coverUrl, title: book.title),
+            LongPressHintOverlay(
+              padding: 2,
+              child: BookCover(url: book.coverUrl, title: book.title),
+            ),
             const SizedBox(width: AppSpacing.s4),
             Expanded(
               child: Column(

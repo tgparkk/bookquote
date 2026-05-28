@@ -15,6 +15,7 @@ import '../../../book/presentation/widgets/book_cover.dart';
 import '../../../card_editor/state/palette_providers.dart';
 import '_spine.dart';
 import 'book_quick_actions_sheet.dart';
+import 'long_press_hint.dart';
 
 class BookStackView extends StatelessWidget {
   const BookStackView({super.key, required this.books});
@@ -157,12 +158,15 @@ class _StackedCapsule extends ConsumerWidget {
                   // 두꺼운 책은 표지도 커보임 — 책 메타포 강화.
                   AspectRatio(
                     aspectRatio: 2 / 3,
-                    child: BookCover(
-                      url: book.coverUrl,
-                      title: book.title,
-                      width: height * (2 / 3),
-                      height: height,
-                      borderRadius: BorderRadius.zero,
+                    child: LongPressHintOverlay(
+                      padding: 2,
+                      child: BookCover(
+                        url: book.coverUrl,
+                        title: book.title,
+                        width: height * (2 / 3),
+                        height: height,
+                        borderRadius: BorderRadius.zero,
+                      ),
                     ),
                   ),
                   // 우측: spine — dominant 색 + 좌측 정렬 제목. 책 옆면이

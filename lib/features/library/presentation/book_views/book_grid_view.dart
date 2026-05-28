@@ -12,6 +12,7 @@ import '../../../../core/theme/tokens.dart';
 import '../../../book/domain/book.dart';
 import '../../../book/presentation/widgets/book_cover.dart';
 import 'book_quick_actions_sheet.dart';
+import 'long_press_hint.dart';
 
 class BookGridView extends StatelessWidget {
   const BookGridView({super.key, required this.books});
@@ -58,12 +59,14 @@ class _CoverCell extends ConsumerWidget {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            return BookCover(
-              url: book.coverUrl,
-              title: book.title,
-              width: constraints.maxWidth,
-              height: constraints.maxHeight,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
+            return LongPressHintOverlay(
+              child: BookCover(
+                url: book.coverUrl,
+                title: book.title,
+                width: constraints.maxWidth,
+                height: constraints.maxHeight,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
             );
           },
         ),
