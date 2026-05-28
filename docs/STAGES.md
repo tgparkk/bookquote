@@ -7,39 +7,61 @@
 
 ---
 
-## ▶ 다음 세션 시작점 (2026-05-28 기준 — **V1.0.x 백로그 1차 배치 7 PR commit. PR5-A 마이그레이션 박태건 손 push 대기 + PR4-B·PR5-B·PR7 미수행**)
+## ▶ 다음 세션 시작점 (2026-05-28 기준 — **V1.0.x 백로그 13 PR commit + push 완료, 마이그레이션 적용 완료, release APK 폰 검증 완료. versionCode 11 비공개 트랙 업로드 + PR4-B·PR5-B·PR7만 deferred**)
 
-**2026-05-28 산출 — V1.0.x 백로그 1차 배치**:
+**2026-05-28 산출 — V1.0.x 백로그 13 PR + 마이그레이션 1 + STAGES doc 1**:
 
-원래 계획은 백로그 1-11번 일괄 처리였으나, 한 세션 컨텍스트로는 9 PR이 한계. 7개 commit + 1개 skip 확인 + 3개 deferred로 마무리. 각 PR마다 297/297 테스트 통과 + `flutter analyze` clean.
+전 세션에서 백로그 1차 배치 7 PR, 2차 배치 5 PR(폰 dogfood 피드백 반영), 디스커버리 보강 1 PR. 모두 main `origin` push 완료. 각 PR마다 297/297 테스트 통과 + `flutter analyze` clean + release APK 폰(R3CXA0PANWX) 설치 검증.
 
-- **PR0 (3c1f565)** — 공유 카드 카탈로그에서 mono·typography 제외 + 글자 baseline +3. `CardTemplate.all`을 3종(minimal/warm/coverExtract)으로 축소. 위젯 클래스와 `byId` 폴백 경로는 dormant 유지(과거 draft `templateId='mono'/'typography'`는 `MinimalTemplate`으로 자연 폴백, V1.x에서 한 줄 추가로 복원). `CardEditorState.initial.fontStep` 0→3, `setTemplate` F8 리셋·`applyRecommended`·card_editor_screen의 fontReset SnackBar 비교 모두 새 baseline 사용. orphan 골든 6장 삭제(mono/typography × 3비율).
+### 1차 배치 — 백로그 PR0~PR8
 
-- **PR1 (c755a25)** — 인용구 삭제 확인 다이얼로그 → 5초 [되돌리기] SnackBar. 홈·서재 양쪽에서 낙관적 제거 후 `SnackBar.closed`의 `reason`으로 commit/restore 분기: `action`(되돌리기)면 원래 index에 재삽입(DB 호출 없음), 그 외 reason은 실제 `deleteQuote()` 커밋. `QuoteFeedNotifier.insertAt(index, entry)` 추가 — invalidate 없이 원래 자리에 재삽입(스크롤·expanded 보존).
+- **PR0 (3c1f565)** — 공유 카드 카탈로그에서 mono·typography 제외 + 글자 baseline +3. `CardTemplate.all`을 3종(minimal/warm/coverExtract)으로 축소. 위젯 클래스와 `byId` 폴백 경로는 dormant 유지(과거 draft `templateId='mono'/'typography'`는 `MinimalTemplate`으로 자연 폴백). `CardEditorState.initial.fontStep` 0→3, `setTemplate` F8 리셋·`applyRecommended`·card_editor_screen의 fontReset SnackBar 비교 모두 새 baseline 사용. orphan 골든 6장 삭제.
 
-- **PR2 (skip 확인)** — Markdown XFile 첨부는 이미 PR14-E B4에서 완료된 상태(`quote_export.dart`가 임시 디렉토리 + `XFile` + `SharePlus.share(files:)` 패턴). 백로그 항목이 stale.
+- **PR1 (c755a25)** — 인용구 삭제 확인 다이얼로그 → 5초 [되돌리기] SnackBar. 홈·서재 양쪽 낙관적 제거 후 `SnackBar.closed.reason`으로 분기: `action` → 원래 index 재삽입(DB 호출 0), 그 외 → `deleteQuote()` 커밋. `QuoteFeedNotifier.insertAt(index, entry)` 신규.
 
-- **PR3 (b15c3ec)** — 카드 인라인 [수정] + [무드 변경] 시트. `QuoteListCard`에 `onEdit`/`onChangeMoods` 콜백 추가. [수정]은 기존 `/quote/new?quoteId=` 라우트 재사용, [무드]는 `change_moods_sheet.dart` BottomSheet(최대 3 토글). **`QuoteRepository.setMoods(id, moods)` 신규** — `updateQuote`가 `isPrivate`를 caller가 매번 정확히 전달해야 평문/잠금 컬럼이 안 흔들리는 footgun이 있어, mood-only 갱신은 본 메서드로 위임(잠금 인용구가 silent로 평문화되지 않게). 시트 닫힘 후 quoteFeed/moodCounts/quoteById invalidate.
+- **PR2 (skip 확인)** — Markdown XFile 첨부는 PR14-E B4에서 이미 완료(`quote_export.dart`가 임시 디렉토리 + `XFile` + `SharePlus.share(files:)`). 백로그 항목 stale.
 
-- **PR4-A (9cf78b5)** — 무드 chip 탭 → `/library?tab=quotes&mood=` navigation. 홈 카드의 `_MoodBadge`와 책 상세의 무드 chip 둘 다 탭 가능하게(라우터는 이미 쿼리 파싱 지원 — recall_card에서 사용 중인 패턴). `QuoteListCard.onMoodTap(QuoteMood)` 콜백 추가, null이면 비-인터랙티브(readOnly 친구 카드). 카드 전체 InkWell과 nest 충돌은 `GestureDetector(opaque)`로 hit 흡수. 검색 자체는 PR20-B에서 이미 완료.
+- **PR3 (b15c3ec)** — 카드 인라인 [수정] + [무드 변경] 시트. `QuoteListCard.onEdit`/`onChangeMoods` 콜백 추가. **`QuoteRepository.setMoods(id, moods)` 신규** — `updateQuote`가 `isPrivate`를 caller가 매번 정확히 전달해야 평문/잠금 컬럼이 안 흔들리는 footgun이 있어, mood-only 갱신은 본 메서드로 위임(잠금 인용구가 silent로 평문화되지 않게).
 
-- **PR5-A (d36b8ae)** — 친구 프로필 segment 카운트 라벨(책 N / 인용구 N). 마이그레이션 `20260528120000_friend_profile_aggregate.sql` — SECURITY INVOKER RPC가 책 수 + 인용구 수를 한 round-trip 반환(caller RLS 자동 적용이라 잠금 인용구는 자연 제외, 비공개 친구 비팔로워는 0). `FollowRepository.getFriendProfileAggregate(uid)` + `friendProfileAggregateProvider` family. `_SegmentHeader`가 ConsumerWidget 전환되어 watch. pull-to-refresh + 팔로우 토글에서 함께 invalidate. ⚠️ **마이그레이션 git only — `npx supabase db push` 박태건 손 대기**. push 전엔 repository try/catch가 `(0, 0)` 폴백이라 라벨이 그냥 "책" / "인용구"로 표시됨(graceful degradation — 화면 안 깨짐).
+- **PR4-A (9cf78b5)** — 무드 chip 탭 → `/library?tab=quotes&mood=` navigation. 홈 카드 `_MoodBadge` + 책 상세 무드 chip 둘 다 탭 가능. `QuoteListCard.onMoodTap(QuoteMood)` 콜백 추가(readOnly 친구 카드는 null로 비-인터랙티브). 검색은 PR20-B에서 이미 완료.
 
-- **PR6 (ab86d55)** — 서재 책 표지 long-press → 빠른 액션 시트(Letterboxd 패턴). 4뷰(grid/list/shelf/stack) 표지 길게 누르면 책 상세 대신 [인용구 추가 / 읽기 시작 / 다 읽음 / 공유] 1탭. `book_quick_actions_sheet.dart` 신규 — `setReadingDate` 후 `currentlyReadingProvider` + `myLibraryProvider` invalidate. 공유는 `SharePlus`로 제목·저자·교보문고 ISBN 검색 URL 묶음. grid·shelf는 StatelessWidget → ConsumerWidget 전환.
+- **PR5-A (d36b8ae)** — 친구 프로필 segment 카운트(책 N / 인용구 N). 마이그레이션 `20260528120000_friend_profile_aggregate.sql` — SECURITY INVOKER RPC가 책·인용구 카운트 한 round-trip 반환(caller RLS 자동 적용 — 잠금 인용구 자연 제외, 비공개 친구 비팔로워 0). `FollowRepository.getFriendProfileAggregate(uid)` + `friendProfileAggregateProvider` family. ✅ **마이그레이션 원격 push 완료**(`npx supabase db push`, 2026-05-28).
 
-- **PR8 (d6ab1ca)** — `connectivity_plus` 연결-회복 시 outbox flush. 기존엔 `AppLifecycle.resumed`에서만 flush — 앱이 포그라운드에 떠 있는 동안 wifi가 끊겼다 돌아온 케이스를 못 잡아 사용자가 손으로 들어왔다 나가야 동기화됐음. `Connectivity().onConnectivityChanged` 구독 추가로 오프라인→온라인 전환 시점에 자동 flush. (동기화 대기 N개 배너는 이미 `OutboxBanner`로 노출 중.)
+- **PR6 (ab86d55)** — 서재 책 표지 long-press → 빠른 액션 시트(Letterboxd 패턴). 4뷰(grid/list/shelf/stack) 표지 길게 누르면 [인용구 추가 / 읽기 시작 / 다 읽음 / 공유] 1탭. `book_quick_actions_sheet.dart` 신규. grid·shelf는 StatelessWidget → ConsumerWidget 전환.
 
-**▶ 박태건이 직접 해야 할 일 (다음 세션 첫 작업)**:
+- **PR8 (d6ab1ca)** — `connectivity_plus` 연결-회복 시 outbox flush. `Connectivity().onConnectivityChanged` 구독으로 오프라인→온라인 전환 시점 자동 flush(`AppLifecycle.resumed`로는 못 잡던 wifi 회복 케이스).
 
-1. **마이그레이션 원격 push** — `npx --yes supabase db push`로 `20260528120000_friend_profile_aggregate.sql` 적용 → PR5-A 친구 프로필 segment 카운트 활성화.
-2. **release APK 빌드 검증** — PR0-PR8을 묶어 한 번 `flutter build apk --release --dart-define-from-file=.env.json` + SM F956N 폰 설치해 핵심 플로우(인용구 삭제 undo / 카드 공유에 mono·typography 없음 / 책 표지 long-press / 무드 chip 탭) 확인. [[feedback-release-only-traps]] 패턴 준수.
-3. **versionCode 11 상향** (이전 push 10) → AAB 빌드 → Play Console 비공개 트랙 수동 업로드(자동 업로드 셋업은 여전히 대기 중).
+### 2차 배치 — 폰 dogfood 피드백 PR9~PR12
 
-**▶ 다음 세션 코딩 deferred (각각 별도 PR/세션)**:
+- **PR9 (b6ad6c8)** — 인용구 폰트 base 전 구간 +6 (PR0의 baseline=3가 step max라 추가 여유 없음). `getQuoteFontSize`: 짧은 22→28, 중간 22→17→28→23, 긴 15→21. `clamp(15-36)` → `clamp(21-44)`로 확장. 골든 6장 재생성.
+
+- **PR10 (a88f49b)** — 책 상세에 교보문고 + 알라딘 chip(`buildAladinSearchUrl` 신규, `buildBookPurchaseUrl`과 동일 패턴). ISBN13 있을 때만 노출(직접 입력 책 미노출). `url_launcher.externalApplication`. 실패 시 SnackBar. V1.0엔 plain 검색 URL(제휴 ID/UTM은 출시 후 추가 — 백로그).
+
+- **PR11 (2600842)** — 책 long-press 디스커버리 — 첫 진입 SnackBar(8초, [알겠어요] action, SharedPreferences `library_long_press_hint_v1` 1회 한정) + 표지 우상단 ⋮ overlay(14×14 반투명 원형, `LongPressHintOverlay` 위젯 grid/list/stack 3뷰 적용 — shelf spine은 폭 부족으로 skip).
+
+- **PR12 (0c04eea)** — 공유 텍스트에 책 출처·페이지 정보. 카드 공유: `buildShareMessage`가 `bookTitle`/`bookAuthor`/`quotePage` 받아 `"— 〈책 제목〉 김저자 (p.42)"` 한 줄 prepend. `QuoteCardData.quotePage` 필드 추가, provider가 `quote.page` 전달. 책 long-press 공유는 `book.pageCount` 있을 때 `"제목 · 저자 · 423쪽"` 한 줄.
+
+### 3차 배치 — 친구 추가 디스커버리 PR13
+
+- **PR13 (87ea80a)** — 친구 찾기 화면 상단에 "내 프로필 공유하기" 카드. 공개 상태 inline chip + 액션 분기:
+  - **공개**: [📤 초대 링크 공유] → SharePlus로 `io.github.tgparkk.bookquote://u/<myUid>?from=invite` + 안내 카피. 받는 친구가 탭 → `/u/:userId` 직진.
+  - **비공개**: [공개로 바꾸기] 1탭 (catch-22 해소 — 친구가 검색해도 못 찾던 문제). `profileRepository.updateMine`.
+  - `deep_link_handler._routeFor`에 `u/:userId` segment 허용 추가. 본인 진입은 router `_redirect`가 `/me`로 안전 처리(기존).
+
+### 진행 산출 (2026-05-28 마무리)
+
+- ✅ **마이그레이션 원격 push 완료** — `20260528120000_friend_profile_aggregate.sql` 적용 → PR5-A 친구 segment 카운트 활성화.
+- ✅ **release APK 폰 설치 검증 완료** — 13 PR 누적분이 SM F956N에서 정상 동작.
+
+### ▶ 다음 세션 박태건 손 작업
+
+1. **versionCode 11 상향** (이전 push 10) → AAB 빌드 → Play Console 비공개 트랙 수동 업로드(자동 업로드 셋업은 여전히 대기 중).
+
+### ▶ 다음 세션 코딩 deferred
 
 - **PR4-B** — 인용 목록 정렬(책별 그룹 / 페이지순). ListView → SliverList 패턴 전환 큼, 단독 세션 권장.
-- **PR5-B** — 책별 N구절 배지(친구 책탭 + 내 서재 책카드). 공유 RPC 1개 추가 + UI 4뷰. PR5-A와 같은 RPC 확장 또는 별도 RPC(quotes_per_book(uid) → jsonb map). `friend-profile.md §2/§6` 명시.
-- **PR7** — 읽은 책 통계 화면. 신규 화면 — 가장 큰 작업, 1세션 full 필요. 지표 후보(누적 권수·기간별 추이·월별·장르 등) 설계 단계부터.
+- **PR5-B** — 책별 N구절 배지(친구 책탭 + 내 서재 책카드). 공유 RPC 1개 추가 + UI 4뷰. PR5-A RPC 확장 또는 별도 RPC(quotes_per_book(uid) → jsonb map). `friend-profile.md §2/§6` 명시.
+- **PR7** — 읽은 책 통계 화면. 신규 화면 — 가장 큰 작업, 1세션 full 필요.
 
 **유지 — 출시 트랙 항목**: 카카오 로그인 재오픈 (V1.0.x, 검수 의존) · iOS 출시 (안드로이드 트랙션 확인 후) · keystore 비밀번호 rotate · Supabase DPA + 키 회전 SOP · pgTAP RLS 단위 테스트 · 레이어 누수 5곳 정리 · PostHog 연동 · release 환경 진단 배너.
 
