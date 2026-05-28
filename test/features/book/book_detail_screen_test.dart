@@ -1,5 +1,6 @@
 import 'package:bookquote/features/book/book_detail_screen.dart';
 import 'package:bookquote/features/book/domain/book.dart';
+import 'package:bookquote/features/book/domain/reading_dates.dart';
 import 'package:bookquote/features/book/state/book_providers.dart';
 import 'package:bookquote/features/follow/state/follow_providers.dart';
 import 'package:bookquote/features/profile/domain/profile.dart';
@@ -41,6 +42,8 @@ void main() {
     List<Quote> quotes = const [],
     bool inLibrary = false,
     int friendsWithBookCount = 0,
+    ({int n, double avg}) friendsAvgRating = (n: 0, avg: 0.0),
+    ReadingDates readingDates = const ReadingDates(),
   }) async {
     tester.view.physicalSize = const Size(1000, 2400);
     tester.view.devicePixelRatio = 1.0;
@@ -55,6 +58,10 @@ void main() {
           isInLibraryProvider('b1').overrideWith((ref) => inLibrary),
           friendsWithBookCountProvider('b1')
               .overrideWith((ref) async => friendsWithBookCount),
+          friendsAvgRatingProvider('b1')
+              .overrideWith((ref) async => friendsAvgRating),
+          readingDatesProvider('b1')
+              .overrideWith((ref) async => readingDates),
           if (sender != null)
             friendProfileProvider(sender)
                 .overrideWith((ref) async => senderProfile),
@@ -287,6 +294,96 @@ void main() {
       // 미로그인 → 별점·읽기날짜 모두 안 보임
       expect(find.text('내 별점'), findsNothing);
       expect(find.text('읽기 시작'), findsNothing);
+    });
+  });
+
+  group('PR30-C — 친구 평균 별점 칩', () {
+    testWidgets('N=0 → 칩 숨김', (tester) async {
+      await pump(tester);
+      expect(find.textContaining('친구만의 평균'), findsNothing);
+    });
+
+    testWidgets('N=2 → 표본 부족으로 칩 숨김(N<3 가드)', (tester) async {
+      await pump(tester, friendsAvgRating: (n: 2, avg: 4.5));
+      expect(find.textContaining('친구만의 평균'), findsNothing);
+    });
+
+    testWidgets('N=3 → "친구만의 평균 4.0 (N=3)" 노출', (tester) async {
+      await pump(tester, friendsAvgRating: (n: 3, avg: 4.0));
+      expect(find.text('친구만의 평균 4.0'), findsOneWidget);
+      expect(find.text('(N=3)'), findsOneWidget);
+    });
+
+    testWidgets('N=5 + 소수점 평균 → "친구만의 평균 4.4 (N=5)"', (tester) async {
+      await pump(tester, friendsAvgRating: (n: 5, avg: 4.4));
+      expect(find.text('친구만의 평균 4.4'), findsOneWidget);
+      expect(find.text('(N=5)'), findsOneWidget);
+    });
+  });
+
+  group('PR30-C — 무드 summary chips', () {
+    testWidgets('quotes 0개 → 무드 chip 숨김', (tester) async {
+      await pump(tester);
+      // 무드 라벨이 어디에도 노출 안 됨
+      expect(find.text('위로'), findsNothing);
+      expect(find.text('통찰'), findsNothing);
+    });
+
+    testWidgets('quotes 있지만 moods 모두 비어있으면 chip 숨김', (tester) async {
+      await pump(tester, quotes: [
+        _quote('q1', '본문만 있고 무드 없음'),
+      ]);
+      expect(find.text('위로'), findsNothing);
+      expect(find.text('통찰'), findsNothing);
+    });
+
+    testWidgets('moods 집계 top 3 — 위로 ×3, 통찰 ×2, 설렘 ×1', (tester) async {
+      await pump(tester, quotes: [
+        _quote('q1', '한 줄 A',
+            moods: [QuoteMood.comfort, QuoteMood.insight]),
+        _quote('q2', '한 줄 B', moods: [QuoteMood.comfort]),
+        _quote('q3', '한 줄 C',
+            moods: [QuoteMood.comfort, QuoteMood.insight, QuoteMood.excitement]),
+      ]);
+      // 무드 라벨은 summary chip + QuoteListCard 인용구별 무드 chip에서도 노출되므로
+      // findsWidgets로 검증(존재 여부만).
+      expect(find.text('위로'), findsWidgets);
+      expect(find.text('통찰'), findsWidgets);
+      expect(find.text('설렘'), findsWidgets);
+      // 빈도가 안 나오는 무드는 summary chip에 없음 — wistful은 어디에도 없어야 함.
+      expect(find.text('먹먹'), findsNothing);
+      expect(find.text('새벽3시'), findsNothing);
+    });
+  });
+
+  group('PR30-C — 읽기 진행 strip', () {
+    testWidgets('started 없음 → strip 숨김', (tester) async {
+      await pump(tester);
+      expect(find.textContaining('읽는 중'), findsNothing);
+      expect(find.text('오늘 한 줄 ▸'), findsNothing);
+    });
+
+    testWidgets('started + finished 완독 상태 → strip 숨김', (tester) async {
+      await pump(
+        tester,
+        readingDates: ReadingDates(
+          startedAt: DateTime(2026, 5, 10),
+          finishedAt: DateTime(2026, 5, 20),
+        ),
+      );
+      expect(find.textContaining('읽는 중'), findsNothing);
+    });
+
+    testWidgets('started만 있고 미완독 → "N일째 읽는 중" + 미니 CTA', (tester) async {
+      final today = DateTime.now();
+      await pump(
+        tester,
+        readingDates: ReadingDates(
+          startedAt: DateTime(today.year, today.month, today.day),
+        ),
+      );
+      expect(find.textContaining('일째 읽는 중'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, '오늘 한 줄 ▸'), findsOneWidget);
     });
   });
 

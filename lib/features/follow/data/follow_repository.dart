@@ -155,6 +155,41 @@ class FollowRepository {
     }
   }
 
+  /// PR30-C: 이 책에 *친구가* 매긴 별점의 평균과 표본 수.
+  ///
+  /// `user_books_friends_read` RLS가 친구 + `is_library_public=true` row만 통과시키므로
+  /// 클라이언트에서 직접 select 후 rating non-null만 집계. 표본 부족(`n < 3`)으로 인한
+  /// 평균 오해는 호출 측에서 가드 — 데이터 레이어는 원본 사실만 반환.
+  ///
+  /// 미로그인이면 `(0, 0.0)`(친구 없음). 쿼리 실패도 동일 — 책 상세 다른 섹션은
+  /// 계속 보이게 격리(error-handling §부분 실패).
+  Future<({int n, double avg})> friendsAvgRatingForBook(String bookId) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return (n: 0, avg: 0.0);
+    try {
+      final rows = await _client
+          .from('user_books')
+          .select('rating')
+          .eq('book_id', bookId)
+          .neq('user_id', uid)
+          .not('rating', 'is', null);
+      final ratings = <int>[];
+      for (final r in (rows as List)) {
+        final v = (r as Map)['rating'];
+        if (v is int) {
+          ratings.add(v);
+        } else if (v is num) {
+          ratings.add(v.toInt());
+        }
+      }
+      if (ratings.isEmpty) return (n: 0, avg: 0.0);
+      final avg = ratings.reduce((a, b) => a + b) / ratings.length;
+      return (n: ratings.length, avg: avg);
+    } on PostgrestException {
+      return (n: 0, avg: 0.0);
+    }
+  }
+
   /// 이 책을 담은 친구 프로필 목록 (PR18-D 시트 미니리스트). 카운트와 분리 — 시트
   /// 열릴 때만 fetch(lazy). 2-step: user_books 가시 row → profiles inFilter.
   Future<List<Profile>> friendsWithBook(

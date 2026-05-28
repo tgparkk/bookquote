@@ -20,6 +20,7 @@ import '../follow/state/follow_providers.dart';
 import '../profile/domain/profile.dart';
 import '../profile/state/friend_providers.dart';
 import '../quote/domain/quote.dart';
+import '../quote/domain/quote_mood.dart';
 import '../quote/presentation/widgets/quote_list_card.dart';
 import '../quote/state/quote_providers.dart';
 import 'data/book_repository.dart';
@@ -118,9 +119,14 @@ class _BookBody extends ConsumerWidget {
           const SizedBox(height: AppSpacing.s4),
           ReadingDatesRow(bookId: book.id),
         ],
+        // PR30-C 진행 strip — 자체 가드(hasStarted && !hasFinished)로 노출.
+        // 미로그인이면 readingDatesProvider가 빈 결과라 자연 hide.
+        _ReadingProgressStrip(bookId: book.id),
         const SizedBox(height: AppSpacing.s6),
         // PR30-A 인용구 hero 카드 — 내 인용 / 알라딘 첫 줄 / 빈 상태 CTA
         _QuoteHeroCard(book: book),
+        // PR30-C 무드 chips — 이 책 인용에 자주 붙인 무드 top 3 (인용구 없으면 hide).
+        _MoodSummaryChips(bookId: book.id),
         const SizedBox(height: AppSpacing.s4),
         // PR30-B 액션 행 — 인용구 추가(주) + 서재 담기(보조) 1줄 Row
         if (!fromShare) _PrimaryActionRow(bookId: book.id),
@@ -763,6 +769,8 @@ class _BookHeader extends StatelessWidget {
           const SizedBox(height: AppSpacing.s4),
           _BookRatingBlock(bookId: book.id),
         ],
+        // PR30-C 친구 평균 별점 칩 — N≥3일 때만 자체 노출.
+        _FriendsAvgRatingChip(bookId: book.id),
       ],
     );
   }
@@ -1203,6 +1211,201 @@ class _InfoTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadius.md),
       child: tile,
+    );
+  }
+}
+
+// ── PR30-C: 친구 평균 별점 칩 ─────────────────────────────────
+
+/// 헤더 별점 블록 아래에 "친구만의 평균 ★4.2 (N=5)" 노출. N≥3 가드로 표본
+/// 부족 오해 회피. 라벨에 "친구만의"를 명시해 왓챠 평균 같은 대중 평점과 혼동
+/// 되지 않게 한다(매니저 모드 합의).
+class _FriendsAvgRatingChip extends ConsumerWidget {
+  const _FriendsAvgRatingChip({required this.bookId});
+
+  final String bookId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(friendsAvgRatingProvider(bookId));
+    final data = async.value;
+    if (data == null || data.n < 3) return const SizedBox.shrink();
+    final avg = data.avg.toStringAsFixed(1);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.s3),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.s3,
+          vertical: 4,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.secondary100,
+          borderRadius: BorderRadius.circular(AppRadius.full),
+          border: Border.all(color: AppColors.primary200),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.star_rounded,
+              size: 16,
+              color: AppColors.accent500,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '친구만의 평균 $avg',
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.primary700,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '(N=${data.n})',
+              style: AppTextStyles.labelSmall
+                  .copyWith(color: AppColors.primary500),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── PR30-C: 읽기 진행 strip ─────────────────────────────────────
+
+/// `started_at`이 있고 `finished_at`이 없는 상태(=지금 읽는 중)에만 노출.
+/// 경과일 + 미니 CTA로 매일 펼쳐보게 만든다. PM-B 권고(매일 열게 함).
+class _ReadingProgressStrip extends ConsumerWidget {
+  const _ReadingProgressStrip({required this.bookId});
+
+  final String bookId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dates = ref.watch(readingDatesProvider(bookId)).value;
+    if (dates == null) return const SizedBox.shrink();
+    if (!dates.hasStarted || dates.hasFinished) {
+      return const SizedBox.shrink();
+    }
+    final started = dates.startedAt!;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final days = today.difference(started).inDays + 1; // 시작 당일을 1일째로
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.s3),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.s3,
+          vertical: AppSpacing.s2,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.accent50,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.accent200),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.menu_book_rounded,
+              size: 16,
+              color: AppColors.accent600,
+            ),
+            const SizedBox(width: AppSpacing.s2),
+            Expanded(
+              child: Text(
+                '$days일째 읽는 중',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.accent800,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.accent600,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpacing.s2),
+                minimumSize: const Size(0, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+              onPressed: () => context.push('/quote/new?bookId=$bookId'),
+              child: const Text('오늘 한 줄 ▸'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── PR30-C: 무드 summary chips ────────────────────────────────
+
+/// 이 책에서 내가 모은 인용구에 자주 붙인 무드 top 3. 인용구·무드가 비면 hide.
+/// 신규 백엔드 없이 `bookQuotesProvider`만 사용 — V1.0 안전 범위.
+class _MoodSummaryChips extends ConsumerWidget {
+  const _MoodSummaryChips({required this.bookId});
+
+  final String bookId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final quotes =
+        ref.watch(bookQuotesProvider(bookId)).value ?? const <Quote>[];
+    if (quotes.isEmpty) return const SizedBox.shrink();
+    final counts = <QuoteMood, int>{};
+    for (final q in quotes) {
+      for (final m in q.moods) {
+        counts[m] = (counts[m] ?? 0) + 1;
+      }
+    }
+    if (counts.isEmpty) return const SizedBox.shrink();
+    final top = counts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final shown = top.take(3).toList();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.s3),
+      child: Wrap(
+        spacing: AppSpacing.s2,
+        runSpacing: 4,
+        children: [
+          for (final e in shown)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.s2,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.secondary100,
+                borderRadius: BorderRadius.circular(AppRadius.full),
+                border: Border.all(color: AppColors.primary200),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(e.key.icon, size: 14, color: AppColors.primary600),
+                  const SizedBox(width: 4),
+                  Text(
+                    e.key.label,
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.primary700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${e.value}',
+                    style: AppTextStyles.labelSmall
+                        .copyWith(color: AppColors.primary500),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

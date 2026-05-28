@@ -72,3 +72,13 @@ final friendsWithBookProvider =
     return repo.friendsWithBook(bookId);
   },
 );
+
+/// PR30-C: 이 책의 *친구만의* 평균 별점 + 표본 수. 책 상세 헤더 칩이 watch.
+/// 표본 적은 시점 오해 방지는 UI에서 N≥3 가드.
+final friendsAvgRatingProvider =
+    FutureProvider.autoDispose.family<({int n, double avg}), String>(
+  (ref, bookId) async {
+    final repo = ref.watch(followRepositoryProvider);
+    return repo.friendsAvgRatingForBook(bookId);
+  },
+);
