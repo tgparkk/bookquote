@@ -191,42 +191,52 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
     _reload();
   }
 
-  Future<void> _confirmDelete(QuoteWithBook entry) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('인용구 삭제'),
-        content: const Text('이 인용구를 삭제할까요? 되돌릴 수 없어요.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('삭제', style: TextStyle(color: AppColors.semanticError)),
-          ),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
+  /// 낙관적 제거 + 5초 SnackBar [되돌리기] (PR1, 2026-05-28).
+  /// `_items` 로컬 state라 원래 index 캡처 후 undo 시 같은 자리에 재삽입.
+  Future<void> _deleteWithUndo(QuoteWithBook entry) async {
     final messenger = ScaffoldMessenger.of(context);
+    final originalIndex =
+        _items.indexWhere((e) => e.quote.id == entry.quote.id);
+    if (originalIndex < 0) return;
+
     setState(() {
       _items = _items.where((e) => e.quote.id != entry.quote.id).toList();
       if (_expandedId == entry.quote.id) _expandedId = null;
     });
+
+    messenger.clearSnackBars();
+    final controller = messenger.showSnackBar(
+      SnackBar(
+        content: const Text('인용구를 삭제했어요.'),
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: '되돌리기',
+          onPressed: () {/* closed.reason=action으로 판정 */},
+        ),
+      ),
+    );
+    final reason = await controller.closed;
+    if (!mounted) return;
+    if (reason == SnackBarClosedReason.action) {
+      setState(() {
+        final next = List<QuoteWithBook>.of(_items);
+        final clamped = originalIndex.clamp(0, next.length);
+        next.insert(clamped, entry);
+        _items = next;
+      });
+      return;
+    }
     try {
       await ref.read(quoteRepositoryProvider).deleteQuote(entry.quote.id);
+      if (!mounted) return;
       ref
         ..invalidate(quoteFeedProvider) // 홈 피드도 갱신
         ..invalidate(moodCountsProvider); // RecallCard 카운트 갱신 (PR15-B)
-      if (mounted) _loadCounts();
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(const SnackBar(content: Text('인용구를 삭제했어요.')));
+      _loadCounts();
     } catch (_) {
-      if (mounted) _reload(); // 삭제 실패 — 목록 복구
-      messenger
+      if (!mounted) return;
+      _reload(); // 삭제 실패 → 서버 기준으로 목록 복구
+      ScaffoldMessenger.of(context)
         ..clearSnackBars()
         ..showSnackBar(
           const SnackBar(content: Text('삭제하지 못했어요. 다시 시도해주세요.')),
@@ -404,7 +414,7 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
           ),
           onShare: () => context.push('/quote/${e.quote.id}/share'),
           onMakeCard: () => context.push('/quote/${e.quote.id}/card'),
-          onDelete: () => _confirmDelete(e),
+          onDelete: () => _deleteWithUndo(e),
           onOpenBook:
               e.book == null ? null : () => context.push('/book/${e.book!.id}'),
         );

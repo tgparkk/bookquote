@@ -74,6 +74,17 @@ class QuoteFeedNotifier extends Notifier<AsyncValue<List<QuoteWithBook>>> {
       current.where((e) => e.quote.id != quoteId).toList(),
     );
   }
+
+  /// undo SnackBar용 — `removeLocal`로 뺀 항목을 원래 위치에 되돌린다.
+  /// index가 현재 길이를 넘으면 끝에 append.
+  void insertAt(int index, QuoteWithBook entry) {
+    final current = state.value;
+    if (current == null) return;
+    final next = List<QuoteWithBook>.of(current);
+    final clamped = index.clamp(0, next.length);
+    next.insert(clamped, entry);
+    state = AsyncValue.data(next);
+  }
 }
 
 final quoteFeedProvider =
