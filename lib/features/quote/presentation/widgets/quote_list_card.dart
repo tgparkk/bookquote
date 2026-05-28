@@ -24,6 +24,8 @@ class QuoteListCard extends StatelessWidget {
     this.onShare,
     this.onMakeCard,
     this.onDelete,
+    this.onEdit,
+    this.onChangeMoods,
     this.readOnly = false,
     this.onOpenBook,
     this.onReport,
@@ -37,6 +39,12 @@ class QuoteListCard extends StatelessWidget {
   final VoidCallback? onShare;
   final VoidCallback? onMakeCard;
   final VoidCallback? onDelete;
+
+  /// PR3 — 펼침 상태에서 [수정] → /quote/new?quoteId= 편집 모드.
+  final VoidCallback? onEdit;
+
+  /// PR3 — 펼침 상태에서 [무드 변경] → bottom sheet에서 무드 칩 토글.
+  final VoidCallback? onChangeMoods;
 
   /// PR18-C 친구 프로필 인용구 카드 — 액션 전부 숨김(공유·카드 디자인·삭제·수정).
   /// 펼침 시 [📕 책 보기 ▸]만(`onOpenBook` 있을 때).
@@ -262,6 +270,45 @@ class QuoteListCard extends StatelessWidget {
                                 visualDensity: VisualDensity.compact,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: AppSpacing.s3,
+                                ),
+                                textStyle: const TextStyle(
+                                  fontFamily: AppFonts.ui,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: AppFontSize.sm,
+                                ),
+                              ),
+                            ),
+                          if (onEdit != null)
+                            TextButton.icon(
+                              onPressed: onEdit,
+                              icon: const Icon(Icons.edit_outlined, size: 14),
+                              label: const Text('수정'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.primary600,
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.s2,
+                                ),
+                                textStyle: const TextStyle(
+                                  fontFamily: AppFonts.ui,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: AppFontSize.sm,
+                                ),
+                              ),
+                            ),
+                          if (onChangeMoods != null)
+                            TextButton.icon(
+                              onPressed: onChangeMoods,
+                              icon: const Icon(
+                                Icons.emoji_emotions_outlined,
+                                size: 14,
+                              ),
+                              label: const Text('무드'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.primary600,
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.s2,
                                 ),
                                 textStyle: const TextStyle(
                                   fontFamily: AppFonts.ui,

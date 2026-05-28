@@ -15,9 +15,11 @@ import '../../core/theme/tokens.dart';
 import '../book_review/presentation/recent_public_reviews_row.dart';
 import '../quote/data/quote_outbox.dart';
 import '../quote/data/quote_repository.dart';
+import '../quote/domain/quote.dart';
 import '../follow/presentation/widgets/friend_activity_banner.dart';
 import '../follow/state/friend_activity_provider.dart';
 import '../quote/presentation/quote_search_delegate.dart';
+import '../quote/presentation/widgets/change_moods_sheet.dart';
 import '../quote/presentation/widgets/outbox_banner.dart';
 import '../quote/presentation/widgets/quote_list_card.dart';
 import '../quote/presentation/widgets/recall_card.dart';
@@ -87,6 +89,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ));
       }
     } catch (_) {/* best-effort */}
+  }
+
+  /// PR3 (2026-05-28): 인라인 무드 변경. 시트 결과 변경됐을 때만 invalidate.
+  Future<void> _changeMoods(Quote quote) async {
+    final result = await showChangeMoodsSheet(
+      context: context,
+      ref: ref,
+      quote: quote,
+    );
+    if (result == null || !mounted) return;
+    ref
+      ..invalidate(quoteFeedProvider)
+      ..invalidate(moodCountsProvider)
+      ..invalidate(quoteByIdProvider(quote.id));
   }
 
   /// 낙관적 제거 + 5초 SnackBar [되돌리기] (PR1, 2026-05-28).
@@ -201,6 +217,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
           onShare: () => context.push('/quote/${e.quote.id}/share'),
           onMakeCard: () => context.push('/quote/${e.quote.id}/card'),
+          onEdit: () => context.push('/quote/new?quoteId=${e.quote.id}'),
+          onChangeMoods: () => _changeMoods(e.quote),
           onDelete: () => _deleteWithUndo(e),
           onOpenBook:
               e.book == null ? null : () => context.push('/book/${e.book!.id}'),

@@ -2,7 +2,7 @@
 //
 // 상단 무드 필터 칩(전체 N · 무드별 개수) + cursor-after 무한스크롤 카드 목록 +
 // pull-to-refresh. "사진은 찍는데 다시 안 봄" 페인의 답 = 테마 단위 다시 보기
-// (차별화 ④). [수정]/[무드 변경] 인라인·정렬·검색은 후속.
+// (차별화 ④). 정렬·검색은 PR4 후속(PR3에서 [수정]/[무드 변경] 인라인은 추가).
 //
 // Scaffold 없음 — library_screen의 Scaffold/AppBar/FAB 안에 들어간다.
 // 설계: docs/design/screens/quote-list.md
@@ -13,9 +13,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/tokens.dart';
 import '../data/quote_repository.dart';
+import '../domain/quote.dart';
 import '../domain/quote_mood.dart';
 import '../state/quote_feed_provider.dart';
 import '../state/quote_providers.dart';
+import 'widgets/change_moods_sheet.dart';
 import 'widgets/mood_chips.dart';
 import 'widgets/mood_hub_grid.dart';
 import 'widgets/outbox_banner.dart';
@@ -189,6 +191,32 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
     // 살아있고 MoodHubGrid가 직접 그린다. 단면 진입·단면 간 전환만 _reload.
     if (_hubMode) return;
     _reload();
+  }
+
+  /// PR3 (2026-05-28): 인라인 무드 변경. 시트 결과 있을 때만 로컬 카드 새로고침.
+  Future<void> _changeMoods(Quote quote) async {
+    final result = await showChangeMoodsSheet(
+      context: context,
+      ref: ref,
+      quote: quote,
+    );
+    if (result == null || !mounted) return;
+    // 변경된 moods 반영 — _items의 해당 entry를 업데이트본으로 교체.
+    // (홈 피드·moodCounts·quoteById는 외부 단일 source로 invalidate.)
+    setState(() {
+      _items = [
+        for (final e in _items)
+          if (e.quote.id == quote.id)
+            (quote: e.quote.copyWith(moods: result.toList()), book: e.book)
+          else
+            e,
+      ];
+    });
+    ref
+      ..invalidate(quoteFeedProvider)
+      ..invalidate(moodCountsProvider)
+      ..invalidate(quoteByIdProvider(quote.id));
+    _loadCounts();
   }
 
   /// 낙관적 제거 + 5초 SnackBar [되돌리기] (PR1, 2026-05-28).
@@ -414,6 +442,8 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
           ),
           onShare: () => context.push('/quote/${e.quote.id}/share'),
           onMakeCard: () => context.push('/quote/${e.quote.id}/card'),
+          onEdit: () => context.push('/quote/new?quoteId=${e.quote.id}'),
+          onChangeMoods: () => _changeMoods(e.quote),
           onDelete: () => _deleteWithUndo(e),
           onOpenBook:
               e.book == null ? null : () => context.push('/book/${e.book!.id}'),

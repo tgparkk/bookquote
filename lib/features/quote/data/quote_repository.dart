@@ -311,6 +311,26 @@ class QuoteRepository {
     }
   }
 
+  /// PR3: 인용구 무드만 패치(인라인 [무드 변경] 시트용). `updateQuote`는 isPrivate
+  /// 인자를 caller가 매번 정확히 전달해야 평문/잠금 컬럼이 안 흔들리는 footgun이
+  /// 있어, 무드만 갱신할 때는 본 메서드로 위임 — `moods` 컬럼만 단일 patch.
+  Future<Quote> setMoods(String id, Set<QuoteMood> moods) async {
+    _requireUid();
+    try {
+      final row = await _client
+          .from(_table)
+          .update(<String, dynamic>{
+            'moods': moods.map((m) => m.name).toList(),
+          })
+          .eq('id', id)
+          .select()
+          .single();
+      return _decryptIfPrivate(Map<String, dynamic>.from(row));
+    } on PostgrestException catch (e) {
+      throw QuoteRepositoryException('UPDATE_FAILED', e.message);
+    }
+  }
+
   Future<void> deleteQuote(String id) async {
     _requireUid();
     try {
