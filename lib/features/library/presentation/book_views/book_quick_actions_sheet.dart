@@ -138,10 +138,17 @@ class _BookQuickActionsSheet extends ConsumerWidget {
   Future<void> _share(BuildContext context) async {
     final navigator = Navigator.of(context);
     final author = book.author;
+    final pageCount = book.pageCount;
     final url = buildBookPurchaseUrl(book.isbn13);
-    final lines = <String>[
+    // PR12 (2026-05-28): 책 정보 라인에 페이지 수 함께 (있을 때).
+    // "책 제목 · 김저자 · 423쪽" 한 줄로 묶고, 다음 줄에 구매 URL.
+    final headerParts = <String>[
       book.title,
       if (author != null && author.isNotEmpty) author,
+      if (pageCount != null) '$pageCount쪽',
+    ];
+    final lines = <String>[
+      headerParts.join(' · '),
       ?url,
     ];
     final text = lines.join('\n');

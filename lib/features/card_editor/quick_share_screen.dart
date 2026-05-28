@@ -157,6 +157,9 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
         shareText: _data!.quoteText,
         bookId: _data!.bookId,
         bookIsbn13: _data!.bookIsbn13,
+        bookTitle: _data!.bookTitle,
+        bookAuthor: _data!.bookAuthor,
+        quotePage: _data!.quotePage,
         senderUid: ref.read(currentUserIdProvider),
       );
     } on CardRenderException {

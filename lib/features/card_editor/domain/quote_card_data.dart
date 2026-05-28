@@ -12,6 +12,7 @@ class QuoteCardData {
     this.bookAuthor,
     this.bookPublisher,
     this.coverUrl,
+    this.quotePage,
     this.isPrivate = false,
   });
 
@@ -24,6 +25,11 @@ class QuoteCardData {
   final String? bookAuthor;
   final String? bookPublisher;
   final String? coverUrl;
+
+  /// PR12 (2026-05-28): 이 인용구의 책 페이지 번호(사용자 입력). 공유 텍스트에
+  /// `p.42` 형태로 출처를 명시한다. 카드 이미지엔 이미 박혀 있을 수 있으나
+  /// 텍스트 공유에선 누락돼 받는 쪽이 출처 페이지를 모르던 문제 해소.
+  final int? quotePage;
 
   /// PR16-C-2 — 잠금 인용구 여부. true면 공유 직전 평문 경고 모달 노출 +
   /// `quoteText`가 빈 문자열(키 없음)이면 카드 에디터/quick_share 잠금 안내 화면.

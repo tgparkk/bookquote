@@ -30,6 +30,9 @@ Future<void> showCardShareSheet({
   String? shareText,
   String? bookId,
   String? bookIsbn13,
+  String? bookTitle,
+  String? bookAuthor,
+  int? quotePage,
   String? senderUid,
 }) {
   return showModalBottomSheet<void>(
@@ -45,6 +48,9 @@ Future<void> showCardShareSheet({
       shareText: shareText,
       bookId: bookId,
       bookIsbn13: bookIsbn13,
+      bookTitle: bookTitle,
+      bookAuthor: bookAuthor,
+      quotePage: quotePage,
       senderUid: senderUid,
     ),
   );
@@ -77,15 +83,52 @@ String? buildAladinSearchUrl(String? isbn13) {
       '?SearchTarget=All&SearchWord=${Uri.encodeQueryComponent(v)}';
 }
 
-/// 공유 메시지 본문 — deep link(K-factor)와 책 구매 링크(있을 때)를 조립한다.
-/// 둘 다 없으면 null(이미지만 공유).
-String? buildShareMessage({String? deepLink, String? purchaseUrl}) {
+/// 공유 메시지 본문 — 책 출처(제목·저자·페이지) + deep link(K-factor) + 구매 링크
+/// 순서로 조립. PR12 (2026-05-28)에서 출처 라인 추가 — 카드 이미지엔 박혀 있어도
+/// 텍스트 공유에선 빠져 받는 쪽이 인용 출처를 모르던 문제 해소.
+///
+/// 모든 인자 비면 null(이미지만 공유).
+String? buildShareMessage({
+  String? bookTitle,
+  String? bookAuthor,
+  int? quotePage,
+  String? deepLink,
+  String? purchaseUrl,
+}) {
+  final citation = _buildCitationLine(
+    bookTitle: bookTitle,
+    bookAuthor: bookAuthor,
+    quotePage: quotePage,
+  );
   final parts = <String>[
+    ?citation,
     if (deepLink != null && deepLink.isNotEmpty) deepLink,
     if (purchaseUrl != null && purchaseUrl.isNotEmpty)
       '📖 이 책 보러 가기 · 교보문고\n$purchaseUrl',
   ];
   return parts.isEmpty ? null : parts.join('\n\n');
+}
+
+/// "— 〈책 제목〉 김저자 (p.42)" 같은 출처 한 줄. 세 요소 모두 비면 null.
+String? _buildCitationLine({
+  String? bookTitle,
+  String? bookAuthor,
+  int? quotePage,
+}) {
+  final title = bookTitle?.trim() ?? '';
+  final author = bookAuthor?.trim() ?? '';
+  if (title.isEmpty && author.isEmpty && quotePage == null) return null;
+  final buf = StringBuffer('— ');
+  if (title.isNotEmpty) buf.write('〈$title〉');
+  if (author.isNotEmpty) {
+    if (title.isNotEmpty) buf.write(' ');
+    buf.write(author);
+  }
+  if (quotePage != null) {
+    if (title.isNotEmpty || author.isNotEmpty) buf.write(' ');
+    buf.write('(p.$quotePage)');
+  }
+  return buf.toString();
 }
 
 class _CardShareSheet extends StatelessWidget {
@@ -94,6 +137,9 @@ class _CardShareSheet extends StatelessWidget {
     required this.shareText,
     required this.bookId,
     required this.bookIsbn13,
+    required this.bookTitle,
+    required this.bookAuthor,
+    required this.quotePage,
     required this.senderUid,
   });
 
@@ -101,6 +147,9 @@ class _CardShareSheet extends StatelessWidget {
   final String? shareText;
   final String? bookId;
   final String? bookIsbn13;
+  final String? bookTitle;
+  final String? bookAuthor;
+  final int? quotePage;
   final String? senderUid;
 
   Future<void> _share(BuildContext context, String? prefix) async {
@@ -108,6 +157,9 @@ class _CardShareSheet extends StatelessWidget {
     final navigator = Navigator.of(context);
     final deepLink = buildDeepLinkForShare(bookId: bookId, senderUid: senderUid);
     final text = buildShareMessage(
+      bookTitle: bookTitle,
+      bookAuthor: bookAuthor,
+      quotePage: quotePage,
       deepLink: deepLink,
       purchaseUrl: buildBookPurchaseUrl(bookIsbn13),
     );

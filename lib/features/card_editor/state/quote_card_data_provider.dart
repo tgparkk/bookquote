@@ -32,6 +32,7 @@ final quoteCardDataProvider = FutureProvider.autoDispose
     bookAuthor: book?.author,
     bookPublisher: book?.publisher,
     coverUrl: book?.coverUrl,
+    quotePage: quote.page,
     isPrivate: quote.isPrivate,
   );
 });
