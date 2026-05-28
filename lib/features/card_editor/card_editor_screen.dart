@@ -389,15 +389,16 @@ class _Editor extends ConsumerWidget {
         ));
     }
 
+    final fontBaseline = CardEditorState.initial.fontStep;
     void selectTemplate(CardTemplate t) {
-      final hadTweak = state.fontStep != 0;
+      final hadTweak = state.fontStep != fontBaseline;
       final willChange = state.templateId != t.id;
       controller.setTemplate(t.id);
       if (hadTweak && willChange) notifyFontReset();
     }
 
     void cycleTemplate() {
-      final hadTweak = state.fontStep != 0;
+      final hadTweak = state.fontStep != fontBaseline;
       final beforeId = state.templateId;
       controller.cycleTemplate(
         charCount: data.charCount,

@@ -59,10 +59,15 @@ class CardEditorState {
 
   /// 첫 진입 default — 사용자 인용구를 보기 전. screen이 데이터 도착 후
   /// `applyRecommended`로 갱신.
+  ///
+  /// `fontStep: 3` — 사용자 요청(2026-05-28)으로 인용구 기본 글자 크기를
+  /// max step으로 올림. `[A−]`로 작게 가능. `setTemplate`/`applyRecommended`도
+  /// 같은 baseline으로 리셋.
   static const CardEditorState initial = CardEditorState(
     templateId: 'minimal',
     ratio: CardRatio.story,
     watermarkEnabled: true,
+    fontStep: 3,
   );
 
   CardEditorState copyWith({
@@ -92,16 +97,17 @@ class CardEditorState {
       };
 
   factory CardEditorState.fromJson(Map<String, Object?> json) {
-    final ratioName = json['ratio'] as String? ?? CardRatio.story.name;
-    final rawStep = (json['fontStep'] as num?)?.toInt() ?? 0;
-    final rawSlot = (json['paletteSlotIndex'] as num?)?.toInt() ?? 0;
+    final ratioName = json['ratio'] as String? ?? initial.ratio.name;
+    final rawStep = (json['fontStep'] as num?)?.toInt() ?? initial.fontStep;
+    final rawSlot =
+        (json['paletteSlotIndex'] as num?)?.toInt() ?? initial.paletteSlotIndex;
     return CardEditorState(
-      templateId: json['templateId'] as String? ?? 'minimal',
+      templateId: json['templateId'] as String? ?? initial.templateId,
       ratio: CardRatio.values.firstWhere(
         (r) => r.name == ratioName,
-        orElse: () => CardRatio.story,
+        orElse: () => initial.ratio,
       ),
-      watermarkEnabled: json['watermarkEnabled'] as bool? ?? true,
+      watermarkEnabled: json['watermarkEnabled'] as bool? ?? initial.watermarkEnabled,
       fontStep: rawStep.clamp(fontStepMin, fontStepMax),
       paletteSlotIndex: rawSlot.clamp(0, paletteSlotCount - 1),
     );
@@ -179,11 +185,11 @@ class CardEditorController extends Notifier<CardEditorState> {
     if (state.templateId == templateId) return;
     _pushUndo(state);
     // F8: 템플릿마다 기본 폰트 스케일이 달라 같은 fontStep이라도 시각 점프 발생.
-    // 전환 시 fontStep 0으로 리셋해 일관된 출발점을 보장. 사용자 조정 손실은
-    // screen이 SnackBar로 안내(전환 직전 step != 0이었을 때만).
+    // 전환 시 baseline(initial.fontStep = +3)으로 리셋해 일관된 출발점 보장.
+    // 사용자 조정 손실은 screen이 SnackBar로 안내(전환 직전 != baseline일 때만).
     state = state.copyWith(
       templateId: templateId,
-      fontStep: 0,
+      fontStep: CardEditorState.initial.fontStep,
       undoDepth: _undoStack.length,
     );
     _persistDebounced();

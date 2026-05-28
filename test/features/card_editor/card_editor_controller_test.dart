@@ -2,6 +2,7 @@
 // shared_preferences는 setMockInitialValues로 in-memory.
 
 import 'package:bookquote/core/theme/tokens.dart';
+import 'package:bookquote/features/card_editor/domain/card_template.dart';
 import 'package:bookquote/features/card_editor/state/card_editor_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,7 +16,7 @@ void main() {
   group('CardEditorState', () {
     test('JSON round-trip 보존', () {
       const s = CardEditorState(
-        templateId: 'mono',
+        templateId: 'warm',
         ratio: CardRatio.feed,
         watermarkEnabled: false,
       );
@@ -25,6 +26,10 @@ void main() {
     test('빈/손상 JSON은 default로 채워짐', () {
       final s = CardEditorState.fromJson(<String, Object?>{});
       expect(s, CardEditorState.initial);
+    });
+
+    test('initial은 fontStep=3 (사용자 요청 baseline)', () {
+      expect(CardEditorState.initial.fontStep, 3);
     });
 
     test('모르는 ratio name은 story 폴백', () {
@@ -55,15 +60,16 @@ void main() {
     test('setTemplate/setRatio/toggleWatermark — 모두 반영', () {
       final ctrl = container.read(cardEditorControllerProvider.notifier);
       ctrl.attach('q1');
-      ctrl.setTemplate('mono');
+      ctrl.setTemplate('warm');
       ctrl.setRatio(CardRatio.feed);
       ctrl.toggleWatermark();
       expect(
         container.read(cardEditorControllerProvider),
-        const CardEditorState(
-          templateId: 'mono',
+        CardEditorState(
+          templateId: 'warm',
           ratio: CardRatio.feed,
           watermarkEnabled: false,
+          fontStep: CardEditorState.initial.fontStep,
           undoDepth: 3,
         ),
       );
@@ -81,17 +87,17 @@ void main() {
       );
     });
 
-    test('applyRecommended — 짧고 표지 없으면 Typography', () {
+    test('applyRecommended — 표지 없으면 Minimal (길이 무관)', () {
       final ctrl = container.read(cardEditorControllerProvider.notifier);
       ctrl.attach('q1');
       ctrl.applyRecommended(charCount: 10, hasCover: false);
       expect(
         container.read(cardEditorControllerProvider).templateId,
-        'typography',
+        'minimal',
       );
     });
 
-    test('applyRecommended — 표지 있고 길면 CoverExtract', () {
+    test('applyRecommended — 표지 있으면 CoverExtract', () {
       final ctrl = container.read(cardEditorControllerProvider.notifier);
       ctrl.attach('q1');
       ctrl.applyRecommended(charCount: 100, hasCover: true);
@@ -114,9 +120,9 @@ void main() {
     test('setTemplate 후 canUndo=true → undo로 원상복귀', () {
       final ctrl = container.read(cardEditorControllerProvider.notifier);
       ctrl.attach('q1');
-      ctrl.setTemplate('mono');
+      ctrl.setTemplate('warm');
       expect(container.read(cardEditorControllerProvider).canUndo, isTrue);
-      expect(container.read(cardEditorControllerProvider).templateId, 'mono');
+      expect(container.read(cardEditorControllerProvider).templateId, 'warm');
       ctrl.undo();
       final s = container.read(cardEditorControllerProvider);
       expect(s.templateId, 'minimal');
@@ -197,32 +203,37 @@ void main() {
     setUp(() => container = ProviderContainer());
     tearDown(() => container.dispose());
 
-    test('setTemplate은 fontStep을 0으로 리셋한다 — 시각 점프 방지', () {
+    test('setTemplate은 fontStep을 baseline(+3)으로 리셋한다 — 시각 점프 방지', () {
       final ctrl = container.read(cardEditorControllerProvider.notifier);
       ctrl.attach('q1');
+      // baseline 3에서 두 번 감소 → step=1
       ctrl
-        ..increaseFont()
-        ..increaseFont(); // step=2
-      expect(container.read(cardEditorControllerProvider).fontStep, 2);
+        ..decreaseFont()
+        ..decreaseFont();
+      expect(container.read(cardEditorControllerProvider).fontStep, 1);
 
-      ctrl.setTemplate('mono');
-      expect(container.read(cardEditorControllerProvider).fontStep, 0,
-          reason: '전환 시 시각 일관성 위해 fontStep 리셋');
+      ctrl.setTemplate('warm');
       expect(
-          container.read(cardEditorControllerProvider).templateId, 'mono');
+        container.read(cardEditorControllerProvider).fontStep,
+        CardEditorState.initial.fontStep,
+        reason: '전환 시 시각 일관성 위해 fontStep을 initial baseline으로 리셋',
+      );
+      expect(
+          container.read(cardEditorControllerProvider).templateId, 'warm');
     });
 
     test('undo는 setTemplate 직전 fontStep도 함께 복원한다', () {
       final ctrl = container.read(cardEditorControllerProvider.notifier);
       ctrl.attach('q1');
       ctrl
-        ..increaseFont()
-        ..increaseFont(); // step=2
-      ctrl.setTemplate('mono'); // step=0 + undo 푸시
-      expect(container.read(cardEditorControllerProvider).fontStep, 0);
+        ..decreaseFont()
+        ..decreaseFont(); // step=1
+      ctrl.setTemplate('warm'); // step=3 + undo 푸시
+      expect(container.read(cardEditorControllerProvider).fontStep,
+          CardEditorState.initial.fontStep);
 
       ctrl.undo();
-      expect(container.read(cardEditorControllerProvider).fontStep, 2,
+      expect(container.read(cardEditorControllerProvider).fontStep, 1,
           reason: 'undo로 직전 step 복원');
       expect(container.read(cardEditorControllerProvider).templateId,
           'minimal');
@@ -231,9 +242,9 @@ void main() {
     test('동일 templateId 재설정은 fontStep을 흔들지 않는다', () {
       final ctrl = container.read(cardEditorControllerProvider.notifier);
       ctrl.attach('q1');
-      ctrl.increaseFont(); // step=1
+      ctrl.decreaseFont(); // step=2
       ctrl.setTemplate('minimal'); // 동일 — no-op
-      expect(container.read(cardEditorControllerProvider).fontStep, 1);
+      expect(container.read(cardEditorControllerProvider).fontStep, 2);
     });
   });
 
@@ -242,11 +253,11 @@ void main() {
     setUp(() => container = ProviderContainer());
     tearDown(() => container.dispose());
 
-    test('모든 템플릿 enable 상태에서 5번 cycle → 원점', () {
+    test('모든 템플릿 enable 상태에서 3번 cycle → 원점', () {
       final ctrl = container.read(cardEditorControllerProvider.notifier);
       ctrl.attach('q1');
       ctrl.setTemplate('minimal');
-      for (var i = 0; i < 5; i++) {
+      for (var i = 0; i < CardTemplate.all.length; i++) {
         ctrl.cycleTemplate(charCount: 20, hasCover: true);
       }
       expect(
@@ -255,11 +266,11 @@ void main() {
       );
     });
 
-    test('표지 없고 long quote — coverExtract/typography 건너뛰기', () {
+    test('표지 없으면 coverExtract 건너뛰고 warm→minimal로 순환', () {
       final ctrl = container.read(cardEditorControllerProvider.notifier);
       ctrl.attach('q1');
-      ctrl.setTemplate('mono');
-      // 다음 = coverExtract(no cover 건너뜀) → typography(>50자 건너뜀) → minimal
+      ctrl.setTemplate('warm');
+      // 다음 = coverExtract(no cover 건너뜀) → minimal
       ctrl.cycleTemplate(charCount: 200, hasCover: false);
       expect(
         container.read(cardEditorControllerProvider).templateId,
@@ -284,10 +295,11 @@ void main() {
       final draft = await ctrl.readDraft();
       expect(
         draft,
-        const CardEditorState(
+        CardEditorState(
           templateId: 'warm',
           ratio: CardRatio.post,
           watermarkEnabled: false,
+          fontStep: CardEditorState.initial.fontStep,
         ),
       );
     });

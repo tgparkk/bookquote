@@ -1,4 +1,5 @@
-// 카드 골든 스냅샷 5종 × 3비율 = 15장 — PR12 부분(2026-05-16).
+// 카드 골든 스냅샷 활성 3종 × 3비율 = 9장 — PR12 부분(2026-05-16).
+// V1.0.x에서 mono/typography는 CardTemplate.all에서 빠져 골든 생성 대상 아님.
 //
 // 폰트 로드 보장: setUpAll에서 NotoSerifKR + Pretendard를 명시적으로 FontLoader로
 // 등록. flutter_test 기본 환경은 Ahem 폰트라 텍스트가 사각형으로 렌더돼 골든이

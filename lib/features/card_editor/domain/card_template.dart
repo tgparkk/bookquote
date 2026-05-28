@@ -23,13 +23,16 @@ sealed class CardTemplate {
   /// - 그 외: 항상 `true`
   bool supports({required int charCount, required bool hasCover}) => true;
 
-  /// 5종 const 싱글톤. 가로 한 줄 미리보기·이터레이션은 이 순서로.
+  /// 활성 템플릿 const 싱글톤. 가로 한 줄 미리보기·이터레이션은 이 순서로.
+  ///
+  /// V1.0.x에서 `MonoTemplate`/`TypographyTemplate`을 카탈로그에서 제외 — 사용자
+  /// 요청(2026-05-28). 위젯 클래스와 `byId` 폴백 경로는 dormant로 유지해 과거
+  /// draft(`templateId='mono'/'typography'`)는 `MinimalTemplate`으로 자연 폴백.
+  /// 재노출은 이 리스트에 한 줄 추가로 가능.
   static const List<CardTemplate> all = <CardTemplate>[
     MinimalTemplate(),
     WarmTemplate(),
-    MonoTemplate(),
     CoverExtractTemplate(),
-    TypographyTemplate(),
   ];
 
   /// id 문자열로 템플릿 인스턴스 조회 (잘못된 id면 미니멀로 폴백)
@@ -44,7 +47,6 @@ sealed class CardTemplate {
     required int charCount,
     required bool hasCover,
   }) {
-    if (charCount <= 30) return const TypographyTemplate();
     if (hasCover) return const CoverExtractTemplate();
     return const MinimalTemplate();
   }

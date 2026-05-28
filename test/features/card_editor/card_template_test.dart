@@ -7,12 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CardTemplate.supports', () {
-    test('Minimal/Warm/Mono — 항상 true', () {
-      const all = <CardTemplate>[
-        MinimalTemplate(),
-        WarmTemplate(),
-        MonoTemplate(),
-      ];
+    test('Minimal/Warm — 항상 true', () {
+      const all = <CardTemplate>[MinimalTemplate(), WarmTemplate()];
       for (final t in all) {
         expect(t.supports(charCount: 0, hasCover: false), isTrue);
         expect(t.supports(charCount: 1000, hasCover: false), isTrue);
@@ -25,7 +21,7 @@ void main() {
       expect(t.supports(charCount: 50, hasCover: true), isTrue);
     });
 
-    test('Typography — 50자 이하만 true (maxCharCount 경계)', () {
+    test('Typography — dormant. 50자 이하만 true (maxCharCount 경계)', () {
       const t = TypographyTemplate();
       expect(t.supports(charCount: 50, hasCover: false), isTrue);
       expect(t.supports(charCount: 51, hasCover: false), isFalse);
@@ -34,25 +30,22 @@ void main() {
   });
 
   group('CardTemplate.recommended', () {
-    test('짧은(≤30자) 인용구 → Typography', () {
+    test('표지 있음 → CoverExtract', () {
       expect(
-        CardTemplate.recommended(charCount: 10, hasCover: false),
-        isA<TypographyTemplate>(),
+        CardTemplate.recommended(charCount: 10, hasCover: true),
+        isA<CoverExtractTemplate>(),
       );
-      expect(
-        CardTemplate.recommended(charCount: 30, hasCover: true),
-        isA<TypographyTemplate>(),
-      );
-    });
-
-    test('중간 길이 + 표지 있음 → CoverExtract', () {
       expect(
         CardTemplate.recommended(charCount: 100, hasCover: true),
         isA<CoverExtractTemplate>(),
       );
     });
 
-    test('표지 없는 일반 길이 → Minimal', () {
+    test('표지 없음 → Minimal (길이 무관)', () {
+      expect(
+        CardTemplate.recommended(charCount: 10, hasCover: false),
+        isA<MinimalTemplate>(),
+      );
       expect(
         CardTemplate.recommended(charCount: 100, hasCover: false),
         isA<MinimalTemplate>(),
@@ -61,19 +54,20 @@ void main() {
   });
 
   group('CardTemplate registry', () {
-    test('all에는 5종이 정의된 순서대로 들어있다', () {
-      expect(CardTemplate.all.length, 5);
+    test('all에는 활성 3종이 정의된 순서대로 들어있다', () {
+      expect(CardTemplate.all.length, 3);
       expect(CardTemplate.all.map((t) => t.id).toList(), <String>[
         'minimal',
         'warm',
-        'mono',
         'coverExtract',
-        'typography',
       ]);
     });
 
-    test('byId — 알려진 id는 해당 인스턴스, 모르는 id는 Minimal로 폴백', () {
-      expect(CardTemplate.byId('mono'), isA<MonoTemplate>());
+    test('byId — 활성 id는 해당 인스턴스, 모르는/dormant id는 Minimal 폴백', () {
+      expect(CardTemplate.byId('warm'), isA<WarmTemplate>());
+      // 과거 draft 호환 — mono/typography는 카탈로그에서 빠졌지만 byId는 폴백.
+      expect(CardTemplate.byId('mono'), isA<MinimalTemplate>());
+      expect(CardTemplate.byId('typography'), isA<MinimalTemplate>());
       expect(CardTemplate.byId('non-existent'), isA<MinimalTemplate>());
     });
   });

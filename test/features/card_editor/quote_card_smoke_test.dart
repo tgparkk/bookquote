@@ -39,7 +39,7 @@ Widget _shrinkToFit(Widget card) {
 }
 
 void main() {
-  testWidgets('QuoteCard 디스패처 — 5종 × 9:16에서 예외 없이 빌드', (tester) async {
+  testWidgets('QuoteCard 디스패처 — 활성 템플릿 × 9:16에서 예외 없이 빌드', (tester) async {
     for (final t in CardTemplate.all) {
       final data = t is TypographyTemplate ? _shortQuote : _longQuote;
       await tester.pumpWidget(
