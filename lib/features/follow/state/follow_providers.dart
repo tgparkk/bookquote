@@ -82,3 +82,13 @@ final friendsAvgRatingProvider =
     return repo.friendsAvgRatingForBook(bookId);
   },
 );
+
+/// PR5-A: 친구 프로필 segment 라벨 — 책 수 + 인용구 수 한 RPC 호출.
+/// autoDispose — 친구 프로필 화면 떠나면 해제.
+final friendProfileAggregateProvider =
+    FutureProvider.autoDispose.family<({int books, int quotes}), String>(
+  (ref, userId) async {
+    final repo = ref.watch(followRepositoryProvider);
+    return repo.getFriendProfileAggregate(userId);
+  },
+);

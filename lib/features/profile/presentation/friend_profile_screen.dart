@@ -130,6 +130,7 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
     ref.invalidate(friendBooksProvider(widget.userId));
     ref.invalidate(friendFollowCountsProvider(widget.userId));
     ref.invalidate(isFollowingProvider(widget.userId));
+    ref.invalidate(friendProfileAggregateProvider(widget.userId));
     await _reloadQuotes();
   }
 
@@ -247,7 +248,11 @@ class _Body extends ConsumerWidget {
             )
           else ...[
             SliverToBoxAdapter(
-              child: _SegmentHeader(tab: tab, onChanged: onTabChanged),
+              child: _SegmentHeader(
+                userId: userId,
+                tab: tab,
+                onChanged: onTabChanged,
+              ),
             ),
             if (tab == 0)
               _BooksSliver(userId: userId)
@@ -453,6 +458,8 @@ class _FollowButtonState extends ConsumerState<_FollowButton> {
       ref.invalidate(myFollowingProvider);
       // 팔로우 토글로 친구 책·인용구 RLS 통과 여부가 바뀜 → 컨텐츠 즉시 invalidate.
       ref.invalidate(friendBooksProvider(widget.userId));
+      // segment 라벨도 갱신 (팔로우 전엔 0, 팔로우 직후 정확한 카운트).
+      ref.invalidate(friendProfileAggregateProvider(widget.userId));
       // (인용구는 screen state 기반이라 다음 reload 때 갱신)
     } on FollowRepositoryException catch (e) {
       if (!mounted) return;
@@ -528,14 +535,22 @@ class _FollowButtonState extends ConsumerState<_FollowButton> {
 
 // ─── Segment ────────────────────────────────────────────────
 
-class _SegmentHeader extends StatelessWidget {
-  const _SegmentHeader({required this.tab, required this.onChanged});
+class _SegmentHeader extends ConsumerWidget {
+  const _SegmentHeader({
+    required this.userId,
+    required this.tab,
+    required this.onChanged,
+  });
 
+  final String userId;
   final int tab;
   final ValueChanged<int> onChanged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final agg = ref.watch(friendProfileAggregateProvider(userId)).value;
+    final booksLabel = agg == null ? '책' : '책 ${agg.books}';
+    final quotesLabel = agg == null ? '인용구' : '인용구 ${agg.quotes}';
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.s4,
@@ -544,9 +559,9 @@ class _SegmentHeader extends StatelessWidget {
         AppSpacing.s2,
       ),
       child: SegmentedButton<int>(
-        segments: const [
-          ButtonSegment(value: 0, label: Text('책')),
-          ButtonSegment(value: 1, label: Text('인용구')),
+        segments: [
+          ButtonSegment(value: 0, label: Text(booksLabel)),
+          ButtonSegment(value: 1, label: Text(quotesLabel)),
         ],
         selected: {tab},
         showSelectedIcon: false,

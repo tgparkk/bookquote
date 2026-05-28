@@ -388,6 +388,31 @@ class FollowRepository {
       throw FollowRepositoryException('LIST_FAILED', e.message);
     }
   }
+
+  /// PR5-A (2026-05-28): 친구 프로필 segment 라벨용 — 책 수 + 인용구 수.
+  /// `friend_profile_aggregate` RPC 한 round-trip(SECURITY INVOKER이라 caller
+  /// RLS 자동 적용 — 잠금 인용구는 자연 제외, 비공개 친구는 0).
+  /// 미로그인이나 실패 시 `(books: 0, quotes: 0)` — 라벨에 "0"이 노출돼도 무해.
+  Future<({int books, int quotes})> getFriendProfileAggregate(
+    String targetUid,
+  ) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return (books: 0, quotes: 0);
+    try {
+      final rows = await _client.rpc(
+        'friend_profile_aggregate',
+        params: <String, dynamic>{'target_uid': targetUid},
+      ) as List<dynamic>;
+      if (rows.isEmpty) return (books: 0, quotes: 0);
+      final row = rows.first as Map<String, dynamic>;
+      return (
+        books: (row['book_count'] as num?)?.toInt() ?? 0,
+        quotes: (row['quote_count'] as num?)?.toInt() ?? 0,
+      );
+    } on PostgrestException {
+      return (books: 0, quotes: 0);
+    }
+  }
 }
 
 final followRepositoryProvider = Provider<FollowRepository>((ref) {
