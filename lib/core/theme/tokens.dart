@@ -299,25 +299,29 @@ enum CardRatio {
 /// 전 사용자 본인이 직접 가독성 문제 보고. 15px는 한 줄 공간을 약간 더 잡지만
 /// 200자대 인용구에서도 자연스럽다.
 ///
+/// PR9 (2026-05-28): 사용자 요청으로 base 전 구간 +6px 구조적 상향 — 짧은 인용구
+/// 22 → 28, 중간 17 → 23, 긴 15 → 21. clamp 한계도 36 → 44로 확장해 [A+]
+/// 단계가 그대로 비례 효과를 내게 한다.
+///
 /// [charCount] - 인용구 글자 수 (공백 포함)
 /// returns 권장 폰트 크기 (논리 픽셀, 소수점 가능 — round 해서 사용)
 double getQuoteFontSize(int charCount) {
-  if (charCount <= 50) return 22.0;
-  if (charCount >= 500) return 15.0;
+  if (charCount <= 50) return 28.0;
+  if (charCount >= 500) return 21.0;
   if (charCount <= 200) {
-    // 50 → 200자 구간: 22px → 17px 선형 보간
-    return 22.0 - ((charCount - 50) / 150.0) * 5.0;
+    // 50 → 200자 구간: 28px → 23px 선형 보간
+    return 28.0 - ((charCount - 50) / 150.0) * 5.0;
   } else {
-    // 200 → 500자 구간: 17px → 15px 선형 보간
-    return 17.0 - ((charCount - 200) / 300.0) * 2.0;
+    // 200 → 500자 구간: 23px → 21px 선형 보간
+    return 23.0 - ((charCount - 200) / 300.0) * 2.0;
   }
 }
 
 /// 사용자가 [A−]/[A+]로 미세조정한 step을 반영한 최종 인용구 폰트 크기.
-/// step 1당 2px 가감. 인용구 본문 가독 한계 clamp(15~36px) — PR29 하한 상향.
+/// step 1당 2px 가감. 인용구 본문 가독 한계 clamp(21~44px) — PR9 상향.
 double getEffectiveQuoteFontSize(int charCount, int fontStep) {
   final base = getQuoteFontSize(charCount);
-  return (base + fontStep * 2).clamp(15.0, 36.0);
+  return (base + fontStep * 2).clamp(21.0, 44.0);
 }
 
 /// 인용구 폰트 크기에 따라 최적 행간을 반환한다.
