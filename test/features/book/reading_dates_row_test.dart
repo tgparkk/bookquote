@@ -106,6 +106,16 @@ void main() {
     expect(find.text('함께 시작일도 오늘로 저장했어요'), findsNothing);
   });
 
+  testWidgets('날짜 chip은 탭 가능 — InkWell로 감싸져 picker로 수정 가능',
+      (tester) async {
+    await pump(
+      tester,
+      dates: ReadingDates(startedAt: DateTime(2026, 5, 12)),
+    );
+    // "5월 12일" 텍스트가 InkWell 자손으로 들어있어야 함
+    expect(find.widgetWithText(InkWell, '5월 12일'), findsOneWidget);
+  });
+
   testWidgets('[지우기] 탭 → setReadingDate(kind, null)', (tester) async {
     final fake = await pump(
       tester,

@@ -196,7 +196,10 @@ class _DateLine extends StatelessWidget {
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _DateChip(date: date!),
+                    _DateChip(
+                      date: date!,
+                      onTap: busy ? null : onPickDate,
+                    ),
                     const SizedBox(width: 4),
                     TextButton(
                       onPressed: busy ? null : onClear,
@@ -246,16 +249,20 @@ class _ChipButton extends StatelessWidget {
 }
 
 class _DateChip extends StatelessWidget {
-  const _DateChip({required this.date});
+  const _DateChip({required this.date, this.onTap});
   final DateTime date;
+
+  /// 칩 탭 시 호출. null이면 비활성(저장 중) — `busy` 상태에서.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final radius = BorderRadius.circular(AppRadius.full);
+    final body = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: AppColors.accent50,
-        borderRadius: BorderRadius.circular(AppRadius.full),
+        borderRadius: radius,
         border: Border.all(color: AppColors.accent200),
       ),
       child: Text(
@@ -267,6 +274,11 @@ class _DateChip extends StatelessWidget {
           color: AppColors.accent800,
         ),
       ),
+    );
+    return InkWell(
+      onTap: onTap,
+      borderRadius: radius,
+      child: body,
     );
   }
 }
