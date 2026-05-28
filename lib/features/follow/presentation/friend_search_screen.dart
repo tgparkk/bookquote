@@ -13,9 +13,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../../app/auth_state_provider.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
+import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/profile.dart';
 import '../data/follow_repository.dart';
 import '../state/follow_providers.dart';
@@ -55,8 +58,14 @@ class _FriendSearchScreenState extends ConsumerState<FriendSearchScreen> {
       body: SafeArea(
         child: Column(
           children: <Widget>[
+            const _MyProfileInviteCard(),
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.s4),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.s4,
+                AppSpacing.s2,
+                AppSpacing.s4,
+                AppSpacing.s4,
+              ),
               child: TextField(
                 controller: _controller,
                 onChanged: _onChanged,
@@ -89,6 +98,149 @@ class _FriendSearchScreenState extends ConsumerState<FriendSearchScreen> {
           itemBuilder: (_, i) => _ResultTile(profile: profiles[i]),
         );
       },
+    );
+  }
+}
+
+/// PR13: 친구 찾기 진입 시 상단 카드 — 내 프로필 공개 상태 + 공유 deep link.
+/// 비공개면 친구가 검색해도 못 찾는 catch-22를 화면 안에서 바로 안내·해소.
+class _MyProfileInviteCard extends ConsumerWidget {
+  const _MyProfileInviteCard();
+
+  static const String _kDeepLinkScheme = 'io.github.tgparkk.bookquote';
+
+  Future<void> _shareInvite(BuildContext context, String myUid) async {
+    final url = '$_kDeepLinkScheme://u/$myUid?from=invite';
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text: '책글귀에서 만나요. 같이 책 한 줄을 모아요.\n$url',
+          subject: '책글귀 친구 초대',
+        ),
+      );
+    } catch (_) {/* 공유 취소·실패는 침묵 */}
+  }
+
+  Future<void> _makePublic(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(profileRepositoryProvider).updateMine(isLibraryPublic: true);
+      ref.invalidate(myProfileProvider);
+      if (!context.mounted) return;
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(const SnackBar(
+          content: Text('내 프로필을 공개로 바꿨어요. 이제 친구가 찾을 수 있어요.'),
+        ));
+    } catch (_) {
+      if (!context.mounted) return;
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(content: Text('공개 설정을 바꾸지 못했어요. 다시 시도해 주세요.')),
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uid = ref.watch(currentUserIdProvider);
+    if (uid == null) return const SizedBox.shrink();
+    final profile = ref.watch(myProfileProvider).value;
+    final isPublic = profile?.isLibraryPublic ?? false;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.s4,
+        AppSpacing.s4,
+        AppSpacing.s4,
+        AppSpacing.s2,
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.s3),
+        decoration: BoxDecoration(
+          color: AppColors.accent50,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.accent200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    '내 프로필 공유하기',
+                    style: AppTextStyles.titleSmall
+                        .copyWith(color: AppColors.primary900),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.s2,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isPublic
+                        ? AppColors.semanticSuccessLight
+                        : AppColors.semanticWarningLight,
+                    borderRadius: BorderRadius.circular(AppRadius.full),
+                  ),
+                  child: Text(
+                    isPublic ? '공개' : '비공개',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: isPublic
+                          ? AppColors.semanticSuccess
+                          : AppColors.semanticWarning,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s2),
+            Text(
+              isPublic
+                  ? '링크를 보내면 친구가 1탭으로 내 프로필을 열어요.'
+                  : '비공개라 친구가 이름으로 검색해도 안 보여요. '
+                      '공개로 바꿔야 링크도 의미가 있어요.',
+              style: AppTextStyles.bodySmall
+                  .copyWith(color: AppColors.primary600),
+            ),
+            const SizedBox(height: AppSpacing.s3),
+            Row(
+              children: <Widget>[
+                if (!isPublic)
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => _makePublic(context, ref),
+                      icon: const Icon(Icons.visibility_outlined, size: 16),
+                      label: const Text('공개로 바꾸기'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.semanticWarning,
+                        foregroundColor: AppColors.secondary50,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => _shareInvite(context, uid),
+                      icon: const Icon(Icons.ios_share_rounded, size: 16),
+                      label: const Text('초대 링크 공유'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.accent500,
+                        foregroundColor: Colors.white,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -96,13 +96,15 @@ class DeepLinkHandler {
 
   /// 인앱 라우트로 매핑. `io.github.tgparkk.bookquote://book/:id?from=share`는
   /// Dart URI 파서가 `host='book'`, `path='/:id'`로 쪼갠다 → `/book/:id?from=share`.
-  /// 현재 지원: `/book/:id`. 그 외 경로는 null(무시).
+  /// 지원: `book/:id` · `u/:userId`(PR13 — 프로필 공유 invite 링크). 그 외 null.
+  /// 자기 자신 프로필 진입은 router `_redirect`가 `/me`로 보냄.
   String? _routeFor(Uri uri) {
     final segs = <String>[
       if (uri.host.isNotEmpty) uri.host,
       ...uri.pathSegments.where((s) => s.isNotEmpty),
     ];
-    if (segs.length < 2 || segs.first != 'book') return null;
+    if (segs.length < 2) return null;
+    if (segs.first != 'book' && segs.first != 'u') return null;
     final path = '/${segs.join('/')}';
     return uri.hasQuery ? '$path?${uri.query}' : path;
   }
