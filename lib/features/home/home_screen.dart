@@ -7,6 +7,9 @@
 //
 // 설계: docs/design/screens/home.md
 
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -40,21 +43,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   final _scrollController = ScrollController();
   String? _expandedId;
 
+  /// PR8 — 연결-회복 시 outbox flush 트리거. AppLifecycle.resumed만으로는
+  /// 앱이 열려 있는 동안 wifi가 끊겼다 돌아온 케이스를 못 잡는다.
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+  bool _wasOffline = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) => _flushOutbox());
+    _connectivitySub =
+        Connectivity().onConnectivityChanged.listen(_onConnectivityChanged);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _connectivitySub?.cancel();
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
     super.dispose();
+  }
+
+  void _onConnectivityChanged(List<ConnectivityResult> results) {
+    // v6: list 형태. 모두 none이면 오프라인. 하나라도 wifi/mobile/ethernet/vpn이면 online.
+    final isOffline = results.every((r) => r == ConnectivityResult.none);
+    if (_wasOffline && !isOffline) {
+      _flushOutbox(); // 오프라인 → 온라인 전환 시점에만 flush
+    }
+    _wasOffline = isOffline;
   }
 
   @override
