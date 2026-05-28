@@ -219,6 +219,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           onMakeCard: () => context.push('/quote/${e.quote.id}/card'),
           onEdit: () => context.push('/quote/new?quoteId=${e.quote.id}'),
           onChangeMoods: () => _changeMoods(e.quote),
+          onMoodTap: (m) =>
+              context.push('/library?tab=quotes&mood=${m.name}'),
           onDelete: () => _deleteWithUndo(e),
           onOpenBook:
               e.book == null ? null : () => context.push('/book/${e.book!.id}'),

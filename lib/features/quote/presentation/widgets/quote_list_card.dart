@@ -26,6 +26,7 @@ class QuoteListCard extends StatelessWidget {
     this.onDelete,
     this.onEdit,
     this.onChangeMoods,
+    this.onMoodTap,
     this.readOnly = false,
     this.onOpenBook,
     this.onReport,
@@ -45,6 +46,10 @@ class QuoteListCard extends StatelessWidget {
 
   /// PR3 — 펼침 상태에서 [무드 변경] → bottom sheet에서 무드 칩 토글.
   final VoidCallback? onChangeMoods;
+
+  /// PR4 — 카드 위 무드 뱃지 탭 → 그 무드 단면(`/library?tab=quotes&mood=`)으로
+  /// 이동. null이면 뱃지는 비-인터랙티브(readOnly·친구 인용구).
+  final ValueChanged<QuoteMood>? onMoodTap;
 
   /// PR18-C 친구 프로필 인용구 카드 — 액션 전부 숨김(공유·카드 디자인·삭제·수정).
   /// 펼침 시 [📕 책 보기 ▸]만(`onOpenBook` 있을 때).
@@ -177,7 +182,15 @@ class QuoteListCard extends StatelessWidget {
                         child: Wrap(
                           spacing: 4,
                           runSpacing: 4,
-                          children: [for (final m in quote.moods) _MoodBadge(m)],
+                          children: [
+                            for (final m in quote.moods)
+                              _MoodBadge(
+                                m,
+                                onTap: onMoodTap == null
+                                    ? null
+                                    : () => onMoodTap!(m),
+                              ),
+                          ],
                         ),
                       ),
                     if (expanded &&
@@ -342,13 +355,14 @@ class QuoteListCard extends StatelessWidget {
 }
 
 class _MoodBadge extends StatelessWidget {
-  const _MoodBadge(this.mood);
+  const _MoodBadge(this.mood, {this.onTap});
   final QuoteMood mood;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = moodColorOf(mood);
-    return Container(
+    final pill = Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
         color: c.light,
@@ -364,6 +378,14 @@ class _MoodBadge extends StatelessWidget {
           color: c.dark,
         ),
       ),
+    );
+    if (onTap == null) return pill;
+    // 카드 전체 InkWell(onTap=펼침 토글)과 nest 충돌 회피 → GestureDetector로
+    // hit을 흡수해 부모 InkWell까지 전파되지 않게.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: pill,
     );
   }
 }

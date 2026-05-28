@@ -1373,35 +1373,42 @@ class _MoodSummaryChips extends ConsumerWidget {
         runSpacing: 4,
         children: [
           for (final e in shown)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.s2,
-                vertical: 4,
+            // PR4 — 탭하면 서재 인용구 탭의 해당 무드 단면으로 navigation.
+            InkWell(
+              onTap: () => context.push(
+                '/library?tab=quotes&mood=${e.key.name}',
               ),
-              decoration: BoxDecoration(
-                color: AppColors.secondary100,
-                borderRadius: BorderRadius.circular(AppRadius.full),
-                border: Border.all(color: AppColors.primary200),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(e.key.icon, size: 14, color: AppColors.primary600),
-                  const SizedBox(width: 4),
-                  Text(
-                    e.key.label,
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.primary700,
-                      fontWeight: FontWeight.w500,
+              borderRadius: BorderRadius.circular(AppRadius.full),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.s2,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary100,
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  border: Border.all(color: AppColors.primary200),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(e.key.icon, size: 14, color: AppColors.primary600),
+                    const SizedBox(width: 4),
+                    Text(
+                      e.key.label,
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.primary700,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${e.value}',
-                    style: AppTextStyles.labelSmall
-                        .copyWith(color: AppColors.primary500),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      '${e.value}',
+                      style: AppTextStyles.labelSmall
+                          .copyWith(color: AppColors.primary500),
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
