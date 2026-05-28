@@ -68,6 +68,15 @@ String? buildBookPurchaseUrl(String? isbn13) {
       '?keyword=${Uri.encodeQueryComponent(v)}';
 }
 
+/// PR10 (2026-05-28): 알라딘 검색 링크. 책 상세 페이지 "구매처" chip에서 사용.
+/// 교보문고와 같은 패턴 — ISBN13 검색 결과 페이지로 연결.
+String? buildAladinSearchUrl(String? isbn13) {
+  final v = isbn13?.trim() ?? '';
+  if (v.isEmpty) return null;
+  return 'https://www.aladin.co.kr/search/wsearchresult.aspx'
+      '?SearchTarget=All&SearchWord=${Uri.encodeQueryComponent(v)}';
+}
+
 /// 공유 메시지 본문 — deep link(K-factor)와 책 구매 링크(있을 때)를 조립한다.
 /// 둘 다 없으면 null(이미지만 공유).
 String? buildShareMessage({String? deepLink, String? purchaseUrl}) {

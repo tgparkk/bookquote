@@ -11,11 +11,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/auth_state_provider.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/tokens.dart';
 import '../book_review/presentation/book_review_section.dart';
+import '../card_editor/presentation/widgets/share_sheet.dart'
+    show buildAladinSearchUrl, buildBookPurchaseUrl;
 import '../follow/state/follow_providers.dart';
 import '../profile/domain/profile.dart';
 import '../profile/state/friend_providers.dart';
@@ -142,6 +145,11 @@ class _BookBody extends ConsumerWidget {
         // 페이지 칸은 미수집 시 입력 BottomSheet로 열림.
         const SizedBox(height: AppSpacing.s8),
         _BookInfoGrid(book: book),
+        // PR10 (2026-05-28): ISBN 있을 때만 구매처 chip 2종. 직접 입력 책은 미노출.
+        if (book.isbn13.trim().isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.s3),
+          _PurchaseLinksRow(isbn13: book.isbn13),
+        ],
         // 설명 — 점진적 공개
         if (description != null && description.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.s6),
@@ -1154,6 +1162,65 @@ class _BookInfoGrid extends ConsumerWidget {
     if (t.length < 4) return t.isEmpty ? null : t;
     final yearLike = t.substring(0, 4);
     return RegExp(r'^\d{4}$').hasMatch(yearLike) ? yearLike : t;
+  }
+}
+
+/// PR10: 책 상세 구매처 chip 행 — 교보문고 + 알라딘 ISBN 검색 URL로 외부 브라우저.
+/// V1.0에선 제휴 ID/UTM 없이 plain 검색 링크. 출시 후 가입해 파라미터만 덧붙이는
+/// 비차단 항목 (백로그). 직접 입력 책(isbn13 없음)은 호출자가 미노출 가드.
+class _PurchaseLinksRow extends StatelessWidget {
+  const _PurchaseLinksRow({required this.isbn13});
+
+  final String isbn13;
+
+  Future<void> _open(BuildContext context, String? url, String name) async {
+    if (url == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && context.mounted) {
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text('$name 페이지를 열 수 없어요.')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final kyobo = buildBookPurchaseUrl(isbn13);
+    final aladin = buildAladinSearchUrl(isbn13);
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () => _open(context, kyobo, '교보문고'),
+            icon: const Icon(Icons.menu_book_outlined, size: 16),
+            label: const Text('교보문고'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary700,
+              side: const BorderSide(color: AppColors.primary200, width: 1.5),
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.s2),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () => _open(context, aladin, '알라딘'),
+            icon: const Icon(Icons.shopping_bag_outlined, size: 16),
+            label: const Text('알라딘'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary700,
+              side: const BorderSide(color: AppColors.primary200, width: 1.5),
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
