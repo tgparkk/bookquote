@@ -14,6 +14,7 @@ import '../../../book/domain/book.dart';
 import '../../../book/presentation/widgets/book_cover.dart';
 import '../../../card_editor/state/palette_providers.dart';
 import '_spine.dart';
+import 'book_quick_actions_sheet.dart';
 
 class BookStackView extends StatelessWidget {
   const BookStackView({super.key, required this.books});
@@ -139,6 +140,11 @@ class _StackedCapsule extends ConsumerWidget {
         shadowColor: AppColors.primary900.withValues(alpha: 0.15),
         child: InkWell(
           onTap: () => context.push('/book/${book.id}'),
+          onLongPress: () => showBookQuickActionsSheet(
+            context: context,
+            ref: ref,
+            book: book,
+          ),
           borderRadius: radius,
           child: ClipRRect(
             borderRadius: radius,

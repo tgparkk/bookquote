@@ -5,11 +5,13 @@
 // 페이지 수 미수집 책은 본문에서 제외되어 하단 "두께 미수집" 섹션에.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../book/domain/book.dart';
 import '_spine.dart';
+import 'book_quick_actions_sheet.dart';
 
 const double _kSpineHeight = 180;
 
@@ -78,18 +80,23 @@ class _Shelf extends StatelessWidget {
   }
 }
 
-class _Spine extends StatelessWidget {
+class _Spine extends ConsumerWidget {
   const _Spine({required this.book});
   final Book book;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final width = shelfWidthForPages(book.pageCount!);
     final color = spineColorOf(book.id);
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () => context.push('/book/${book.id}'),
+        onLongPress: () => showBookQuickActionsSheet(
+          context: context,
+          ref: ref,
+          book: book,
+        ),
         child: Container(
           width: width,
           height: _kSpineHeight,

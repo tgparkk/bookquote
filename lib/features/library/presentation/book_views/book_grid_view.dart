@@ -5,11 +5,13 @@
 // 책 제목 첫 글자를 표시하므로 식별 가능. 메타 정보가 필요하면 list 모드로.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../book/domain/book.dart';
 import '../../../book/presentation/widgets/book_cover.dart';
+import 'book_quick_actions_sheet.dart';
 
 class BookGridView extends StatelessWidget {
   const BookGridView({super.key, required this.books});
@@ -37,18 +39,23 @@ class BookGridView extends StatelessWidget {
   }
 }
 
-class _CoverCell extends StatelessWidget {
+class _CoverCell extends ConsumerWidget {
   const _CoverCell({required this.book});
   final Book book;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Semantics(
       button: true,
       label: book.title,
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.sm),
         onTap: () => context.push('/book/${book.id}'),
+        onLongPress: () => showBookQuickActionsSheet(
+          context: context,
+          ref: ref,
+          book: book,
+        ),
         child: LayoutBuilder(
           builder: (context, constraints) {
             return BookCover(

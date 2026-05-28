@@ -15,6 +15,7 @@ import '../../../follow/state/follow_providers.dart';
 import '../../../quote/domain/quote.dart';
 import '../../../quote/domain/quote_mood.dart';
 import '../../../quote/state/quote_providers.dart';
+import 'book_quick_actions_sheet.dart';
 
 class BookListView extends StatelessWidget {
   const BookListView({super.key, required this.books});
@@ -57,6 +58,11 @@ class _BookRow extends ConsumerWidget {
 
     return InkWell(
       onTap: () => context.push('/book/${book.id}'),
+      onLongPress: () => showBookQuickActionsSheet(
+        context: context,
+        ref: ref,
+        book: book,
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.s2),
         child: Row(
