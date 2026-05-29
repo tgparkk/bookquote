@@ -1,8 +1,11 @@
 // 책귀 — BottomNav 셸
 //
 // `StatefulShellRoute.indexedStack`의 `builder`가 받는 `navigationShell`을
-// `body`로 두고, 하단에 NavigationBar를 그린다. 가운데 [+] 슬롯은 실제
-// 라우트가 아닌 sentinel — 탭하면 root navigator에 `/quote/new`를 push한다.
+// `body`로 두고, 하단에 NavigationBar를 그린다. 4개 브랜치(홈/서재/활동/내정보)와
+// NavigationBar destination이 1:1 대응 — 인덱스 보정 없음.
+//
+// (구버전) 가운데 [+] '추가'는 라우트 아닌 sentinel이었으나, 인용구 추가 진입점이
+// 여러 곳(홈 FAB·서재 [인용구] 탭 FAB·책 상세 등)에 있어 탭 한 칸을 '활동'으로 교체.
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -12,28 +15,11 @@ class RootScaffold extends StatelessWidget {
 
   final StatefulNavigationShell navigationShell;
 
-  /// `[+]` 가상 탭의 시각적 인덱스. NavigationBar destination 순서와 일치해야 함.
-  static const int _createSentinelIndex = 2;
-
-  void _onDestinationSelected(BuildContext context, int index) {
-    if (index == _createSentinelIndex) {
-      context.push('/quote/new');
-      return;
-    }
-
-    // sentinel을 건너뛴 실제 branch 인덱스 매핑
-    final branchIndex = index < _createSentinelIndex ? index : index - 1;
+  void _onDestinationSelected(int index) {
     navigationShell.goBranch(
-      branchIndex,
-      initialLocation: branchIndex == navigationShell.currentIndex,
+      index,
+      initialLocation: index == navigationShell.currentIndex,
     );
-  }
-
-  int _selectedNavBarIndex() {
-    // navigationShell.currentIndex는 0,1,2 (홈/서재/내정보 branch). NavBar 슬롯
-    // 인덱스(2번이 sentinel)와 어긋나므로 보정.
-    final shellIndex = navigationShell.currentIndex;
-    return shellIndex < _createSentinelIndex ? shellIndex : shellIndex + 1;
   }
 
   @override
@@ -41,8 +27,8 @@ class RootScaffold extends StatelessWidget {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedNavBarIndex(),
-        onDestinationSelected: (i) => _onDestinationSelected(context, i),
+        selectedIndex: navigationShell.currentIndex,
+        onDestinationSelected: _onDestinationSelected,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
@@ -55,8 +41,9 @@ class RootScaffold extends StatelessWidget {
             label: '서재',
           ),
           NavigationDestination(
-            icon: Icon(Icons.add_circle_outline),
-            label: '추가',
+            icon: Icon(Icons.people_outline),
+            selectedIcon: Icon(Icons.people),
+            label: '활동',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),

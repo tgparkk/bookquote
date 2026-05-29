@@ -6,7 +6,7 @@
 //   /book/:id           게스트 미리보기 OK (top-level)
 //   /quote/new          풀스크린 (BottomNav 외부)
 //   /quote/:id/card     풀스크린 카드 편집기
-//   StatefulShellRoute  BottomNav 4 슬롯 (홈/서재/[+]/내정보)
+//   StatefulShellRoute  BottomNav 4 브랜치 (홈/서재/활동/내정보)
 //
 // V1에서 `/auth/callback`은 제거됨 — 매직링크 빠지면서 외부 callback URL이
 // 더 이상 필요 없다. OAuth(구글·카카오)는 SDK가 자체 채널로 처리.
@@ -20,6 +20,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/supabase/supabase_init.dart';
+import '../features/activity/presentation/activity_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/book/book_detail_screen.dart';
 import '../features/book_review/presentation/book_reviews_screen.dart';
@@ -121,6 +122,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(
               path: '/library',
               builder: (_, _) => const LibraryScreen(),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/activity',
+              builder: (_, _) => const ActivityScreen(),
             ),
           ]),
           StatefulShellBranch(routes: [

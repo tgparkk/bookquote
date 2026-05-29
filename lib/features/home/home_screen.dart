@@ -2,7 +2,7 @@
 //
 // 내가 모은 인용구가 시간순으로 쌓이는 곳. cursor-after 무한스크롤, pull-to-refresh,
 // 빈 상태 CTA. 친구 follow 타임라인은 V1.5에 여기 합류 — V1 홈은 내 인용구만, Realtime
-// 없음 (DECISIONS 2026-05-12). FAB 없음(BottomNav [＋] sentinel과 중복).
+// 없음 (DECISIONS 2026-05-12). '인용구' FAB로 작성 진입(구 BottomNav [＋] 대체).
 // 앱이 포그라운드로 돌아올 때 오프라인 아웃박스를 best-effort flush.
 //
 // 설계: docs/design/screens/home.md
@@ -15,7 +15,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/tokens.dart';
-import '../book_review/presentation/recent_public_reviews_row.dart';
 import '../quote/data/quote_outbox.dart';
 import '../quote/data/quote_repository.dart';
 import '../quote/domain/quote.dart';
@@ -190,9 +189,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           const OutboxBanner(),
           // PR20-D — 친구가 새 인용구 추가했음을 인지할 유일한 다리 (V1엔 Realtime 없음).
           const FriendActivityBanner(),
-          // PR29-I — 모든 공개 사용자의 최신 후기 가로 row. 친구 follow 없이도
-          // 모르는 책·사람의 발견 → K-factor. 0건이면 자체 숨김.
-          const RecentPublicReviewsRow(),
+          // (구 PR29-I "최근 독자 후기" row는 '활동' 탭으로 이전 — 홈 중복 제거.)
           // PR23 — "지금 읽고 있어요" 1행: 적기로 가는 retention ramp.
           const NowReadingRow(),
           const RecallCard(),
@@ -216,6 +213,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
           ),
         ],
+      ),
+      // 구버전 BottomNav 가운데 [+]가 '활동' 탭으로 교체되며, 핵심 인용구 작성 동선을
+      // 홈 FAB로 보강 (PR23 retention 액션 보호).
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/quote/new'),
+        icon: const Icon(Icons.edit_outlined),
+        label: const Text('인용구'),
       ),
     );
   }

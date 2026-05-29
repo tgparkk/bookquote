@@ -1,9 +1,12 @@
-// PR29-I: 홈 "최근 독자 후기" 가로 스크롤 row.
+// [보류 — 2026-05-29] 홈 "최근 독자 후기" 가로 row.
 //
-// 친구 follow 무관, 공개 프로필 사용자의 후기를 시간순 N개. 탭 → 책 상세.
-// 0건이면 자체적으로 SizedBox.shrink (홈 화면 길이 영향 0).
-// 카드 = 책 표지(좌측) + 작성자 아바타·닉네임·후기 본문 2줄(우측).
+// '활동' 탭(activity_screen.dart)으로 콘텐츠가 이전되며 홈에서 제거됨. 데이터
+// provider(recentPublicReviewsProvider)는 활동 탭이 계속 사용하므로 살아있고,
+// 이 위젯만 미사용. 삭제 대신 주석 보존 — 추후 홈 재배치/재사용 가능성 대비.
+// 되살리려면 아래 블록 주석을 풀고 home_screen.dart에 import + `const
+// RecentPublicReviewsRow()` 재배치하면 됨.
 
+/*
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -179,3 +182,4 @@ class _ReviewMiniCard extends StatelessWidget {
     );
   }
 }
+*/

@@ -146,6 +146,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         title: const Text('내 서재'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.library_add_outlined),
+            tooltip: '책 검색',
+            onPressed: _onAddBook,
+          ),
+          IconButton(
             icon: const Icon(Icons.search_rounded),
             tooltip: '인용구 검색',
             onPressed: () =>
@@ -168,10 +173,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
         ],
       ),
-      // PR24 옵션 C — [책]·[캘린더] 탭에 [+ 책 추가] FAB. [인용구] 탭은 FAB 없음
-      // (BottomNav 가운데 [+] 인용구 추가와 의미 충돌 회피).
+      // [책]·[캘린더] 탭은 [+ 책 추가] FAB, [인용구] 탭은 [+ 인용구] FAB.
+      // (구버전 BottomNav 가운데 [+]가 '활동' 탭으로 교체되며 인용구 추가 진입점
+      //  보강 — 인용구 탭에서도 바로 작성 가능하게 FAB 복원.)
       floatingActionButton: _tab == 1
-          ? null
+          ? FloatingActionButton.extended(
+              onPressed: () => context.push('/quote/new'),
+              icon: const Icon(Icons.add),
+              label: const Text('인용구 추가'),
+            )
           : FloatingActionButton.extended(
               onPressed: _onAddBook,
               icon: const Icon(Icons.add),
@@ -311,8 +321,8 @@ List<Book> _sortForMode(List<Book> books, LibraryViewMode mode) {
     case LibraryViewMode.grid:
       return books; // added_at desc (repo가 이미 반환)
     case LibraryViewMode.stack:
-      // 먼저 담은 책이 아래에 깔리는 메타포 — added_at asc.
-      return books.reversed.toList(growable: false);
+      // 최근 담은 책이 맨 위 — added_at desc (repo 기본값 그대로).
+      return books;
     case LibraryViewMode.shelf:
       // 실제 책장 — 제목 가나다순.
       final sorted = [...books];
