@@ -14,7 +14,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/tokens.dart';
 import '../book/data/book_repository.dart';
 import '../book/domain/book.dart';
+import '../book/domain/reading_dates.dart';
 import '../book/presentation/book_search_sheet.dart';
+import '../book/presentation/widgets/add_book_status_sheet.dart';
 import '../book/state/book_providers.dart';
 import '../quote/domain/quote_mood.dart';
 import '../quote/presentation/quote_list_view.dart';
@@ -90,16 +92,37 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   Future<void> _onAddBook() async {
     final book = await showBookSearchSheet(context);
     if (book == null || !mounted) return;
+
+    final status = await showAddBookStatusSheet(context, book: book);
+    if (status == null || !mounted) return;
+
     final messenger = ScaffoldMessenger.of(context);
+    final repo = ref.read(bookRepositoryProvider);
     try {
-      await ref.read(bookRepositoryProvider).addToLibrary(book.id);
+      await repo.addToLibrary(book.id);
+      if (status == ReadingStatus.reading) {
+        await repo.setReadingDate(
+          bookId: book.id,
+          kind: ReadingDateKind.started,
+          date: DateTime.now(),
+        );
+      }
       ref.invalidate(myLibraryProvider);
+      if (status == ReadingStatus.reading) {
+        ref.invalidate(currentlyReadingProvider);
+        ref.invalidate(readingDatesProvider(book.id));
+      }
       if (!mounted) return;
+      final snackText = switch (status) {
+        ReadingStatus.wishlist => '"${book.title}" 읽고 싶은 책으로 담았어요',
+        ReadingStatus.reading => '"${book.title}" 읽기 시작했어요',
+        ReadingStatus.finished => '"${book.title}" 읽은 책으로 담았어요',
+      };
       messenger
         ..clearSnackBars()
         ..showSnackBar(
           SnackBar(
-            content: Text('"${book.title}" 서재에 추가됐어요'),
+            content: Text(snackText),
             action: SnackBarAction(
               label: '열기',
               onPressed: () {
