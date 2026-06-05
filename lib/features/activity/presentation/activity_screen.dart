@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
 import '../../book/presentation/widgets/book_cover.dart';
@@ -117,7 +118,7 @@ class _QuickChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Material(
-        color: AppColors.secondary100,
+        color: context.colors.surface, // secondary100 → surface
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: InkWell(
           onTap: onTap,
@@ -126,11 +127,11 @@ class _QuickChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.s3),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(color: AppColors.secondary400),
+              border: Border.all(color: context.colors.border), // secondary400 → border
             ),
             child: Column(
               children: [
-                Icon(icon, size: 20, color: AppColors.accent700),
+                Icon(icon, size: 20, color: context.colors.accentDefault), // accent700 → accentDefault
                 const SizedBox(height: AppSpacing.s1),
                 Text(
                   label,
@@ -138,7 +139,7 @@ class _QuickChip extends StatelessWidget {
                     fontFamily: AppFonts.ui,
                     fontSize: AppFontSize.xs,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primary700,
+                    color: context.colors.onSurfaceMuted, // primary700 → onSurfaceMuted
                   ),
                 ),
               ],
@@ -167,7 +168,7 @@ class _SectionTitle extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppColors.accent700),
+          Icon(icon, size: 16, color: context.colors.accentDefault), // accent700 → accentDefault
           const SizedBox(width: AppSpacing.s2),
           Text(
             label,
@@ -175,7 +176,7 @@ class _SectionTitle extends StatelessWidget {
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.sm,
               fontWeight: FontWeight.w700,
-              color: AppColors.accent700,
+              color: context.colors.accentDefault, // accent700 → accentDefault
             ),
           ),
         ],
@@ -219,14 +220,14 @@ class _FriendActivityTile extends ConsumerWidget {
     return ListTile(
       leading: CircleAvatar(
         radius: 18,
-        backgroundColor: AppColors.accent200,
+        backgroundColor: context.colors.accentContainer, // accent200 → accentContainer
         backgroundImage: hasAvatar ? NetworkImage(activity.avatarUrl!) : null,
         child: hasAvatar
             ? null
             : Text(
                 initial,
                 style: AppTextStyles.labelSmall.copyWith(
-                  color: AppColors.primary900,
+                  color: context.colors.accentOnContainer, // primary900 → accentOnContainer
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -239,17 +240,17 @@ class _FriendActivityTile extends ConsumerWidget {
           fontFamily: AppFonts.ui,
           fontSize: AppFontSize.sm,
           fontWeight: FontWeight.w600,
-          color: AppColors.primary800,
+          color: context.colors.onSurface, // primary800 → onSurface
         ),
       ),
       subtitle: Text(
         '새 인용구 ${activity.count}개를 보탰어요',
-        style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary500),
+        style: AppTextStyles.bodySmall.copyWith(color: context.colors.onSurfaceMuted), // primary500 → onSurfaceMuted
       ),
-      trailing: const Icon(
+      trailing: Icon( // const 제거 — color가 런타임 context.colors.accentDefault
         Icons.chevron_right_rounded,
         size: 18,
-        color: AppColors.accent700,
+        color: context.colors.accentDefault, // accent700 → accentDefault
       ),
       onTap: () async {
         await markFriendActivitySeen();
@@ -321,7 +322,7 @@ class _FriendBookCard extends StatelessWidget {
                 fontFamily: AppFonts.ui,
                 fontSize: AppFontSize.xs,
                 fontWeight: FontWeight.w600,
-                color: AppColors.primary600,
+                color: context.colors.onSurfaceMuted, // primary600 → onSurfaceMuted
               ),
             ),
           ],
@@ -369,7 +370,7 @@ class _ReviewCard extends StatelessWidget {
         AppSpacing.s2,
       ),
       child: Material(
-        color: AppColors.secondary100,
+        color: context.colors.surface, // secondary100 → surface
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: InkWell(
           onTap: () => context.push('/book/${review.bookId}'),
@@ -378,7 +379,7 @@ class _ReviewCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.s3),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: AppColors.secondary400),
+              border: Border.all(color: context.colors.border), // secondary400 → border
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,7 +399,7 @@ class _ReviewCard extends StatelessWidget {
                         children: [
                           CircleAvatar(
                             radius: 10,
-                            backgroundColor: AppColors.accent200,
+                            backgroundColor: context.colors.accentContainer, // accent200 → accentContainer
                             backgroundImage: hasAvatar
                                 ? NetworkImage(review.avatarUrl!)
                                 : null,
@@ -407,7 +408,7 @@ class _ReviewCard extends StatelessWidget {
                                 : Text(
                                     initial,
                                     style: AppTextStyles.labelSmall.copyWith(
-                                      color: AppColors.primary900,
+                                      color: context.colors.accentOnContainer, // primary900 → accentOnContainer
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -422,7 +423,7 @@ class _ReviewCard extends StatelessWidget {
                                 fontFamily: AppFonts.ui,
                                 fontSize: AppFontSize.xs,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.primary600,
+                                color: context.colors.onSurfaceMuted, // primary600 → onSurfaceMuted
                               ),
                             ),
                           ),
@@ -437,7 +438,7 @@ class _ReviewCard extends StatelessWidget {
                           fontFamily: AppFonts.ui,
                           fontSize: AppFontSize.xs,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.primary500,
+                          color: context.colors.onSurfaceMuted, // primary500 → onSurfaceMuted
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -449,7 +450,7 @@ class _ReviewCard extends StatelessWidget {
                           fontFamily: AppFonts.quote,
                           fontSize: AppFontSize.sm,
                           height: 1.45,
-                          color: AppColors.primary800,
+                          color: context.colors.onSurface, // primary800 → onSurface
                         ),
                       ),
                     ],
@@ -482,7 +483,7 @@ class _ActivityEmptyHint extends StatelessWidget {
           Icon(
             Icons.diversity_3_outlined,
             size: 44,
-            color: AppColors.secondary700,
+            color: context.colors.iconMuted, // secondary700 → iconMuted
           ),
           const SizedBox(height: AppSpacing.s3),
           Text(
@@ -492,14 +493,14 @@ class _ActivityEmptyHint extends StatelessWidget {
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.md,
               fontWeight: FontWeight.w700,
-              color: AppColors.primary700,
+              color: context.colors.onSurfaceMuted, // primary700 → onSurfaceMuted
             ),
           ),
           const SizedBox(height: AppSpacing.s2),
           Text(
             '친구를 팔로우하면 친구가 읽은 책과 남긴 후기가 여기에 모여요.',
             textAlign: TextAlign.center,
-            style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary500),
+            style: AppTextStyles.bodySmall.copyWith(color: context.colors.onSurfaceMuted), // primary500 → onSurfaceMuted
           ),
           const SizedBox(height: AppSpacing.s4),
           FilledButton.icon(
