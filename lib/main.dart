@@ -8,12 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/deep_link_handler.dart';
 import 'app/router.dart';
 import 'core/config/env.dart';
 import 'core/supabase/supabase_init.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_mode_provider.dart';
 import 'features/book/data/book_repository.dart';
 import 'features/quote/data/quote_repository.dart';
 import 'features/widget/home_widget_service.dart';
@@ -43,7 +45,14 @@ Future<void> main() async {
   // 인앱 deep link(`io.github.tgparkk.bookquote://book/:id`) 처리.
   // 웹은 SDK가 URL을 자동 감지하므로 핸들러는 no-op.
   await DeepLinkHandler().start();
-  runApp(const ProviderScope(child: BookquoteApp()));
+  // DM-C: 저장된 테마 모드(시스템/라이트/다크)를 읽어 첫 프레임부터 적용 — 깜빡임 방지.
+  final prefs = await SharedPreferences.getInstance();
+  final initialThemeMode =
+      themeModeFromString(prefs.getString(themeModePrefsKey));
+  runApp(ProviderScope(
+    overrides: [initialThemeModeProvider.overrideWithValue(initialThemeMode)],
+    child: const BookquoteApp(),
+  ));
 }
 
 class BookquoteApp extends ConsumerStatefulWidget {
@@ -97,12 +106,13 @@ class _BookquoteAppState extends ConsumerState<BookquoteApp>
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
+    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp.router(
       title: '책글귀',
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      // DM-A: 시스템 테마 추종. 사용자 토글 영속(DM-C)은 별도 PR에서 구현.
-      themeMode: ThemeMode.system,
+      // DM-C: 앱 내 선택(시스템/라이트/다크) 영속값을 따른다. 설정 → 화면 테마.
+      themeMode: themeMode,
       routerConfig: router,
     );
   }

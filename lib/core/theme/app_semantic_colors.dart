@@ -192,27 +192,27 @@ final class AppSemanticColors {
     // 텍스트
     onSurface:        AppColors.secondary200,  // #FAFAF8 — 메인 텍스트 (light의 반전)
     onSurfaceMuted:   AppColors.secondary500,  // #E2D9C8 — 보조 텍스트
-    onSurfaceSubtle:  AppColors.primary400,    // #8C8478 — 힌트/플레이스홀더
+    onSurfaceSubtle:  AppColors.primary300,    // #B5ADA0 — 힌트/플레이스홀더 (시인성 보강 primary400→300)
 
-    // 보더
-    border:           AppColors.primary600,    // #4A4339 — dark 위 구분선
-    borderStrong:     AppColors.primary500,    // #635B50
+    // 보더 (시인성 보강 — 다크에서 카드 경계가 안 보이던 문제)
+    border:           AppColors.primary500,    // #635B50 — dark 위 구분선 (primary600→500)
+    borderStrong:     AppColors.primary400,    // #8C8478 (primary500→400)
 
     // 아이콘
     iconPrimary:      AppColors.secondary300,  // #F5F1EB
-    iconMuted:        AppColors.primary400,    // #8C8478
+    iconMuted:        AppColors.primary300,    // #B5ADA0 — 시인성 보강 (primary400→300)
 
     // 액센트 (Copper — dark 배경 대비 5.2:1 WCAG AA 통과)
     accentDefault:    AppColors.accent500,     // #B87333 — 재사용
     accentOnAccent:   AppColors.secondary50,   // #FFFFFF
-    accentContainer:  AppColors.accent900,     // #4A2D0E — 컨테이너는 반전
+    accentContainer:  AppColors.accent800,     // #613C16 — 컨테이너 반전 (accent900→800, 아바타·배너 존재감↑)
     accentOnContainer: AppColors.accent200,    // #F0D4AA
     accentBorder:     AppColors.accent700,     // #7D4D1E — dark 컨테이너 위 옅은 테두리
 
     // 네비게이션
     navBg:            AppColors.primary800,
     navSelected:      AppColors.accent400,     // dark 배경 위 더 밝은 copper
-    navUnselected:    AppColors.primary400,
+    navUnselected:    AppColors.primary300,    // 시인성 보강 (primary400→300)
 
     // 스낵바 (반전: dark 배경에서 스낵바는 밝게)
     snackBg:          AppColors.secondary300,
