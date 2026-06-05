@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../quote/data/quote_outbox.dart';
 import '../quote/data/quote_repository.dart';
@@ -203,8 +204,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 await ref.read(quoteFeedProvider.notifier).refresh();
               },
               child: feed.when(
-                loading: () => const Center(
-                  child: CircularProgressIndicator(color: AppColors.accent500),
+                loading: () => Center(
+                  child: CircularProgressIndicator(
+                    color: context.colors.accentDefault,
+                  ),
                 ),
                 error: (e, _) => _errorView(context),
                 data: (entries) =>
@@ -259,7 +262,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       padding: const EdgeInsets.all(AppSpacing.s6),
       children: [
         SizedBox(height: MediaQuery.sizeOf(context).height * 0.16),
-        Icon(Icons.format_quote, size: 48, color: AppColors.primary300),
+        Icon(Icons.format_quote, size: 48, color: context.colors.iconMuted),
         const SizedBox(height: AppSpacing.s4),
         Text('아직 인용구가 없어요',
             textAlign: TextAlign.center, style: textTheme.headlineSmall),
@@ -270,8 +273,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         Center(
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent500,
-              foregroundColor: AppColors.secondary50,
+              backgroundColor: context.colors.accentDefault,
+              foregroundColor: context.colors.accentOnAccent,
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.s8,
                 vertical: AppSpacing.s3,

@@ -33,6 +33,7 @@ final class AppSemanticColors {
     required this.accentOnAccent,
     required this.accentContainer,
     required this.accentOnContainer,
+    required this.accentBorder,
     required this.navBg,
     required this.navSelected,
     required this.navUnselected,
@@ -98,6 +99,9 @@ final class AppSemanticColors {
   /// 액센트 컨테이너 위 텍스트/아이콘
   final Color accentOnContainer;
 
+  /// 액센트 컨테이너의 테두리 (배너·CTA 가장자리)
+  final Color accentBorder;
+
   // ── 하단 네비게이션 ──────────────────────────────────────────────────────
   final Color navBg;
   final Color navSelected;
@@ -147,6 +151,7 @@ final class AppSemanticColors {
     accentOnAccent:   AppColors.secondary50,   // #FFFFFF
     accentContainer:  AppColors.accent100,     // #FAEBD6
     accentOnContainer: AppColors.accent900,    // #4A2D0E
+    accentBorder:     AppColors.accent200,     // #F0D4AA — 컨테이너 테두리
 
     // 네비게이션
     navBg:            AppColors.secondary100,
@@ -202,6 +207,7 @@ final class AppSemanticColors {
     accentOnAccent:   AppColors.secondary50,   // #FFFFFF
     accentContainer:  AppColors.accent900,     // #4A2D0E — 컨테이너는 반전
     accentOnContainer: AppColors.accent200,    // #F0D4AA
+    accentBorder:     AppColors.accent700,     // #7D4D1E — dark 컨테이너 위 옅은 테두리
 
     // 네비게이션
     navBg:            AppColors.primary800,
@@ -223,4 +229,19 @@ final class AppSemanticColors {
     // 진행
     progressTrack:    AppColors.primary700,
   );
+
+  // ── 소비 API (DM-B) ──────────────────────────────────────────────────────
+
+  /// 현재 테마 밝기에 맞는 시맨틱 색 집합. `ThemeMode.system`이면 OS 설정을 따른다.
+  /// AppTheme.light()/dark()가 각각 `Brightness.light/dark`를 박아두므로 정확히 분기된다.
+  ///
+  /// UI 위젯은 `AppColors.xxx` 직접 참조 대신 `AppSemanticColors.of(context)` 또는
+  /// 단축 getter `context.colors`를 쓴다. (카드 렌더러 `card_editor/**`는 예외 — 고정색)
+  static AppSemanticColors of(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? dark : light;
+}
+
+/// `context.colors.onSurface`처럼 위젯에서 시맨틱 색에 짧게 접근.
+extension AppSemanticColorsX on BuildContext {
+  AppSemanticColors get colors => AppSemanticColors.of(this);
 }

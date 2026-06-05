@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../book/data/book_repository.dart';
 import '../../../book/domain/reading_dates.dart';
@@ -52,7 +53,7 @@ class NowReadingRow extends ConsumerWidget {
                   Icon(
                     Icons.menu_book_rounded,
                     size: 18,
-                    color: AppColors.primary600,
+                    color: context.colors.onSurfaceMuted,
                   ),
                   const SizedBox(width: AppSpacing.s2),
                   Text(
@@ -61,7 +62,7 @@ class NowReadingRow extends ConsumerWidget {
                       fontFamily: AppFonts.ui,
                       fontSize: AppFontSize.sm,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.primary700,
+                      color: context.colors.onSurfaceMuted,
                     ),
                   ),
                 ],
@@ -133,7 +134,7 @@ class _BookTile extends StatelessWidget {
                 fontFamily: AppFonts.ui,
                 fontSize: AppFontSize.xs,
                 fontWeight: FontWeight.w500,
-                color: AppColors.primary800,
+                color: context.colors.onSurface,
                 height: 1.2,
               ),
             ),
@@ -160,9 +161,9 @@ class _AddCard extends ConsumerWidget {
               width: NowReadingRow._coverWidth,
               height: NowReadingRow._coverHeight,
               decoration: BoxDecoration(
-                color: AppColors.secondary100,
+                color: context.colors.surface,
                 border: Border.all(
-                  color: AppColors.primary200,
+                  color: context.colors.border,
                   width: 1.2,
                   style: BorderStyle.solid,
                 ),
@@ -171,7 +172,7 @@ class _AddCard extends ConsumerWidget {
               child: Icon(
                 Icons.add_rounded,
                 size: 28,
-                color: AppColors.primary500,
+                color: context.colors.onSurfaceSubtle,
               ),
             ),
             const SizedBox(height: AppSpacing.s1),
@@ -180,7 +181,7 @@ class _AddCard extends ConsumerWidget {
               style: TextStyle(
                 fontFamily: AppFonts.ui,
                 fontSize: AppFontSize.xs,
-                color: AppColors.primary500,
+                color: context.colors.onSurfaceSubtle,
                 height: 1.2,
               ),
             ),
@@ -197,9 +198,9 @@ class _EmptyState extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Material(
-      color: AppColors.secondary100,
+      color: context.colors.surface,
       shape: RoundedRectangleBorder(
-        side: BorderSide(color: AppColors.primary100),
+        side: BorderSide(color: context.colors.border),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: InkWell(
@@ -215,7 +216,7 @@ class _EmptyState extends ConsumerWidget {
               Icon(
                 Icons.book_outlined,
                 size: 28,
-                color: AppColors.primary400,
+                color: context.colors.iconMuted,
               ),
               const SizedBox(width: AppSpacing.s3),
               Expanded(
@@ -228,7 +229,7 @@ class _EmptyState extends ConsumerWidget {
                         fontFamily: AppFonts.ui,
                         fontSize: AppFontSize.sm,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.primary700,
+                        color: context.colors.onSurfaceMuted,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -237,7 +238,7 @@ class _EmptyState extends ConsumerWidget {
                       style: TextStyle(
                         fontFamily: AppFonts.ui,
                         fontSize: AppFontSize.xs,
-                        color: AppColors.accent600,
+                        color: context.colors.accentDefault,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

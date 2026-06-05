@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../follow/state/follow_providers.dart';
 
@@ -29,7 +30,7 @@ class FriendSearchCta extends ConsumerWidget {
         0,
       ),
       child: Material(
-        color: AppColors.accent50,
+        color: context.colors.accentContainer,
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: InkWell(
           onTap: () => context.push('/me/friend-search'),
@@ -43,10 +44,10 @@ class FriendSearchCta extends ConsumerWidget {
             ),
             child: Row(
               children: <Widget>[
-                const Icon(
+                Icon(
                   Icons.people_outline,
                   size: 20,
-                  color: AppColors.accent600,
+                  color: context.colors.accentDefault,
                 ),
                 const SizedBox(width: AppSpacing.s3),
                 Expanded(
@@ -56,7 +57,7 @@ class FriendSearchCta extends ConsumerWidget {
                       fontFamily: AppFonts.ui,
                       fontSize: AppFontSize.sm,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.accent700,
+                      color: context.colors.accentOnContainer,
                     ),
                   ),
                 ),
