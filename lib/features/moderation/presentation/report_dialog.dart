@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
 import '../data/moderation_repository.dart';
@@ -116,8 +117,10 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
           children: [
             Text(
               widget.targetLabel,
-              style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.primary400),
+              style: AppTextStyles.bodySmall.copyWith(
+                // onSurfaceSubtle: 힌트/플레이스홀더 수준 — 라이트 primary400 / 다크 primary400
+                color: context.colors.onSurfaceSubtle,
+              ),
             ),
             const SizedBox(height: 2),
             Text(
@@ -138,9 +141,10 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
                             ? Icons.radio_button_checked
                             : Icons.radio_button_unchecked,
                         size: 20,
+                        // 선택: accentDefault(copper) / 미선택: iconMuted(보조 아이콘)
                         color: _reason == r
-                            ? AppColors.accent500
-                            : AppColors.primary300,
+                            ? context.colors.accentDefault
+                            : context.colors.iconMuted,
                       ),
                       const SizedBox(width: AppSpacing.s2),
                       Expanded(

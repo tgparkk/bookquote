@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config/env.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
 import 'auth_controller.dart';
 
@@ -78,13 +79,14 @@ class LoginScreen extends ConsumerWidget {
               ],
               if (isLoading) ...[
                 const SizedBox(height: AppSpacing.s6),
-                const Center(
+                Center(
                   child: SizedBox(
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.4,
-                      color: AppColors.accent500,
+                      // accentDefault: 라이트/다크 모두 copper 액센트
+                      color: context.colors.accentDefault,
                     ),
                   ),
                 ),
@@ -96,7 +98,8 @@ class LoginScreen extends ConsumerWidget {
                   '로그인 키가 설정되지 않았습니다.\n'
                   '`flutter run --dart-define-from-file=.env.json`로 실행해 주세요.',
                   style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.primary500,
+                    // onSurfaceSubtle: 힌트/경고 수준 보조 텍스트
+                    color: context.colors.onSurfaceSubtle,
                   ),
                 ),
               ],
@@ -123,8 +126,10 @@ class _GoogleButton extends StatelessWidget {
         icon: const Icon(Icons.account_circle_outlined, size: 22),
         label: const Text('구글로 시작'),
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary800,
-          side: const BorderSide(color: AppColors.primary200),
+          // onSurface: 기본 텍스트/아이콘 — 다크에서 밝은 계열로 반전
+          foregroundColor: context.colors.onSurface,
+          // border: 라이트 primary200 / 다크 primary600 구분선 색
+          side: BorderSide(color: context.colors.border),
           textStyle: const TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 15,
