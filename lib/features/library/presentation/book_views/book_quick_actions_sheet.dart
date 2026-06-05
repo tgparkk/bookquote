@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../book/data/book_repository.dart';
 import '../../../book/domain/book.dart';
@@ -27,7 +28,7 @@ Future<void> showBookQuickActionsSheet({
 }) {
   return showModalBottomSheet<void>(
     context: context,
-    backgroundColor: AppColors.secondary100,
+    backgroundColor: context.colors.surfaceSheet,
     showDragHandle: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
@@ -175,14 +176,14 @@ class _ActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: AppColors.primary600),
+      leading: Icon(icon, color: context.colors.iconPrimary),
       title: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: AppFonts.ui,
           fontSize: AppFontSize.base,
           fontWeight: FontWeight.w500,
-          color: AppColors.primary700,
+          color: context.colors.onSurface,
         ),
       ),
       onTap: onTap,

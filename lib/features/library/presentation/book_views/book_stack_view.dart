@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../book/domain/book.dart';
 import '../../../book/presentation/widgets/book_cover.dart';
@@ -85,7 +86,7 @@ class _StackHeader extends StatelessWidget {
           Icon(
             Icons.auto_stories,
             size: 28,
-            color: AppColors.accent500,
+            color: context.colors.accentDefault,
           ),
           const SizedBox(height: AppSpacing.s2),
           Text(
@@ -94,7 +95,7 @@ class _StackHeader extends StatelessWidget {
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.md,
               fontWeight: FontWeight.w700,
-              color: AppColors.primary900,
+              color: context.colors.onSurface,
             ),
           ),
           const SizedBox(height: 2),
@@ -104,7 +105,7 @@ class _StackHeader extends StatelessWidget {
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.sm,
               fontWeight: FontWeight.w600,
-              color: AppColors.accent700,
+              color: context.colors.accentDefault,
             ),
           ),
         ],
@@ -217,7 +218,7 @@ class _StackEmptyHint extends StatelessWidget {
           Icon(
             Icons.auto_stories_outlined,
             size: 40,
-            color: AppColors.primary300,
+            color: context.colors.iconMuted,
           ),
           const SizedBox(height: AppSpacing.s3),
           Text(
@@ -227,7 +228,7 @@ class _StackEmptyHint extends StatelessWidget {
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.base,
               fontWeight: FontWeight.w600,
-              color: AppColors.primary700,
+              color: context.colors.onSurface,
             ),
           ),
           const SizedBox(height: AppSpacing.s2),
@@ -238,7 +239,7 @@ class _StackEmptyHint extends StatelessWidget {
             style: TextStyle(
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.sm,
-              color: AppColors.primary500,
+              color: context.colors.onSurfaceMuted,
               height: 1.5,
             ),
           ),

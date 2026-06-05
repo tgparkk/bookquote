@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../data/book_repository.dart';
 import '../../domain/book.dart';
@@ -25,7 +26,7 @@ Future<void> openPageCountInputSheet({
   final saved = await showModalBottomSheet<int>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: AppColors.secondary100,
+    backgroundColor: context.colors.surfaceSheet, // secondary100 → surfaceSheet
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
     ),
@@ -92,20 +93,20 @@ class _PageCountInputSheetState extends State<_PageCountInputSheet> {
             widget.book.title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle( // const 제거 — 런타임 색
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.md,
               fontWeight: FontWeight.w700,
-              color: AppColors.primary900,
+              color: context.colors.onSurface, // primary900 → onSurface
             ),
           ),
           const SizedBox(height: AppSpacing.s2),
-          const Text(
+          Text(
             '책 뒷표지나 판권면에 적힌 쪽수를 입력해주세요',
-            style: TextStyle(
+            style: TextStyle( // const 제거 — 런타임 색
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.sm,
-              color: AppColors.primary500,
+              color: context.colors.onSurfaceSubtle, // primary500 → onSurfaceSubtle
             ),
           ),
           const SizedBox(height: AppSpacing.s4),
@@ -132,8 +133,8 @@ class _PageCountInputSheetState extends State<_PageCountInputSheet> {
               const SizedBox(width: AppSpacing.s2),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent500,
-                  foregroundColor: AppColors.secondary50,
+                  backgroundColor: context.colors.accentDefault,   // accent500 → accentDefault
+                  foregroundColor: context.colors.accentOnAccent,  // secondary50 → accentOnAccent
                 ),
                 onPressed: _submit,
                 child: const Text('저장'),

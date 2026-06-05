@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
 import '../data/follow_repository.dart';
@@ -25,8 +26,8 @@ class FriendsReadingRankingScreen extends ConsumerWidget {
         child: RefreshIndicator(
           onRefresh: () async => ref.invalidate(friendsReadingRankingProvider),
           child: async.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.accent500),
+            loading: () => Center(
+              child: CircularProgressIndicator(color: context.colors.accentDefault),
             ),
             error: (_, _) => _ErrorView(
               onRetry: () => ref.invalidate(friendsReadingRankingProvider),
@@ -76,7 +77,7 @@ class _RankRow extends StatelessWidget {
             const SizedBox(width: AppSpacing.s2),
             CircleAvatar(
               radius: 14,
-              backgroundColor: AppColors.accent200,
+              backgroundColor: context.colors.accentContainer,
               backgroundImage:
                   hasAvatar ? NetworkImage(entry.avatarUrl!) : null,
               child: hasAvatar
@@ -84,7 +85,7 @@ class _RankRow extends StatelessWidget {
                   : Text(
                       initial,
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.primary900,
+                        color: context.colors.accentOnContainer,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -110,13 +111,13 @@ class _RankRow extends StatelessWidget {
                 vertical: 2,
               ),
               decoration: BoxDecoration(
-                color: AppColors.accent100,
+                color: context.colors.accentContainer,
                 borderRadius: BorderRadius.circular(AppRadius.full),
               ),
               child: Text(
                 '나',
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.accent700,
+                  color: context.colors.accentOnContainer,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -127,7 +128,7 @@ class _RankRow extends StatelessWidget {
       trailing: Text(
         '${entry.bookCount}권',
         style: AppTextStyles.titleMedium.copyWith(
-          color: AppColors.primary800,
+          color: context.colors.onSurface,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -143,10 +144,12 @@ class _RankBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg) = switch (rank) {
+      // 메달 색 고정 — 라이트·다크 무관하게 그대로 유지 (DM-B6 LEAVE 규칙)
       1 => (const Color(0xFFFFD54F), AppColors.primary900),
       2 => (const Color(0xFFCFD8DC), AppColors.primary900),
       3 => (const Color(0xFFE0B084), AppColors.primary900),
-      _ => (AppColors.secondary300, AppColors.primary600),
+      // 4등 이하 — 시맨틱 토큰으로 변환
+      _ => (context.colors.chipBg, context.colors.onSurfaceMuted),
     };
     return Container(
       width: 26,
@@ -182,10 +185,10 @@ class _EmptyView extends StatelessWidget {
         AppSpacing.s8,
       ),
       children: [
-        const Icon(
+        Icon(
           Icons.emoji_events_outlined,
           size: 48,
-          color: AppColors.primary300,
+          color: context.colors.iconMuted,
         ),
         const SizedBox(height: AppSpacing.s4),
         Text(
@@ -197,7 +200,7 @@ class _EmptyView extends StatelessWidget {
         Text(
           '서재를 공개로 설정한 친구를 팔로우하면 함께 권수를 비교할 수 있어요.',
           textAlign: TextAlign.center,
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary500),
+          style: AppTextStyles.bodyMedium.copyWith(color: context.colors.onSurfaceSubtle),
         ),
       ],
     );

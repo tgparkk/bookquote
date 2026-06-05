@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../book/data/book_repository.dart';
 import '../book/domain/book.dart';
@@ -530,7 +531,8 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
                     router.push('/quote/$quoteId/share');
                   },
                   style: TextButton.styleFrom(
-                    foregroundColor: AppColors.accent400,
+                    // 스낵바 위 액션 버튼: snackAction 토큰(라이트=accent300, 다크=accent500)
+                    foregroundColor: AppSemanticColors.of(context).snackAction,
                     visualDensity: VisualDensity.compact,
                   ),
                   child: const Text('바로 공유'),
@@ -541,7 +543,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
                     router.push('/quote/$quoteId/card');
                   },
                   style: TextButton.styleFrom(
-                    foregroundColor: AppColors.secondary50,
+                    foregroundColor: AppSemanticColors.of(context).snackAction,
                     visualDensity: VisualDensity.compact,
                   ),
                   child: const Text('카드 디자인'),
@@ -553,7 +555,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
                       router.push('/quote/new?bookId=$savedBookId');
                     },
                     style: TextButton.styleFrom(
-                      foregroundColor: AppColors.secondary50,
+                      foregroundColor: AppSemanticColors.of(context).snackAction,
                       visualDensity: VisualDensity.compact,
                     ),
                     child: const Text('이 책에 한 줄 더'),
@@ -607,14 +609,15 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final textTheme = Theme.of(context).textTheme;
     final len = _textController.text.runes.length;
     final overLimit = len > _maxLen;
     final counterColor = overLimit
-        ? AppColors.semanticError
+        ? AppColors.semanticError          // 상태색 — 변환 안 함
         : len >= _warnLen
-            ? AppColors.accent500
-            : AppColors.primary400;
+            ? colors.accentDefault          // 경고 단계: 액센트 CTA 토큰
+            : colors.onSurfaceSubtle;       // 평상시 힌트 색
     final canSave = _textController.text.trim().isNotEmpty && !overLimit;
     final saving = ref.watch(createQuoteControllerProvider).isLoading;
 
@@ -664,7 +667,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
                   fontFamily: AppFonts.quote,
                   fontSize: AppFontSize.md,
                   height: AppLineHeight.relaxed,
-                  color: AppColors.primary800,
+                  color: colors.onSurface,
                 ),
                 decoration: const InputDecoration(
                   hintText: "좋아하는 한 줄을 입력하거나, 아래 '붙여넣기'를 눌러보세요",
@@ -738,20 +741,22 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
               // 분기는 저장 직후 SnackBar action으로 위임 (UX#1 PR20-A).
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent500,
-                  foregroundColor: AppColors.secondary50,
-                  disabledBackgroundColor: AppColors.secondary600,
-                  disabledForegroundColor: AppColors.primary400,
+                  backgroundColor: colors.accentDefault,
+                  foregroundColor: colors.accentOnAccent,
+                  // disabled 배경: surfaceCard 토큰(라이트=secondary300, 다크=primary700)
+                  disabledBackgroundColor: colors.surfaceCard,
+                  disabledForegroundColor: colors.onSurfaceSubtle,
                   minimumSize: const Size.fromHeight(48),
                 ),
                 onPressed: (canSave && !saving) ? _submit : null,
                 child: saving
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 18,
                         width: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: AppColors.secondary50,
+                          // const 제거: color가 런타임 colors.accentOnAccent 참조
+                          color: colors.accentOnAccent,
                         ),
                       )
                     : Text(_isEditMode ? '수정 저장' : '저장'),
@@ -774,21 +779,23 @@ class _PasteBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final textTheme = Theme.of(context).textTheme;
     return Material(
-      color: AppColors.secondary300,
+      // 붙여넣기 배너 배경: surfaceCard 토큰(라이트=secondary300, 다크=primary700)
+      color: colors.surfaceCard,
       borderRadius: BorderRadius.circular(AppRadius.sm),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.s3, AppSpacing.s2, AppSpacing.s2, AppSpacing.s2),
         child: Row(
           children: [
-            Icon(Icons.content_paste, size: 18, color: AppColors.primary500),
+            Icon(Icons.content_paste, size: 18, color: colors.iconMuted),
             const SizedBox(width: AppSpacing.s2),
             Expanded(
               child: Text(
                 '클립보드에 텍스트가 있어요',
-                style: textTheme.bodySmall?.copyWith(color: AppColors.primary600),
+                style: textTheme.bodySmall?.copyWith(color: colors.onSurfaceMuted),
               ),
             ),
             TextButton(onPressed: onPaste, child: const Text('붙여넣기')),
@@ -813,13 +820,15 @@ class _BookField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final textTheme = Theme.of(context).textTheme;
     final book = this.book;
     final author = book?.author;
     return Material(
-      color: AppColors.secondary100,
+      // 책 연결 필드 배경: surface 토큰(라이트=secondary100, 다크=primary800)
+      color: colors.surface,
       shape: RoundedRectangleBorder(
-        side: BorderSide(color: AppColors.primary100),
+        side: BorderSide(color: colors.border),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: InkWell(
@@ -830,11 +839,11 @@ class _BookField extends StatelessWidget {
           child: book == null
               ? Row(
                   children: [
-                    Icon(Icons.add, size: 20, color: AppColors.accent600),
+                    Icon(Icons.add, size: 20, color: colors.accentDefault),
                     const SizedBox(width: AppSpacing.s2),
                     Text('책 연결',
                         style: textTheme.bodyMedium
-                            ?.copyWith(color: AppColors.accent700)),
+                            ?.copyWith(color: colors.accentOnContainer)),
                   ],
                 )
               : Row(
@@ -859,7 +868,7 @@ class _BookField extends StatelessWidget {
                     ),
                     Text('변경 ▸',
                         style: textTheme.labelMedium
-                            ?.copyWith(color: AppColors.accent600)),
+                            ?.copyWith(color: colors.accentDefault)),
                   ],
                 ),
         ),

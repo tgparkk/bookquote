@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../data/quote_repository.dart';
 import '../../domain/quote.dart';
@@ -25,9 +26,11 @@ Future<Set<QuoteMood>?> showChangeMoodsSheet({
   required WidgetRef ref,
   required Quote quote,
 }) {
+  // 바텀시트 배경: 라이트=secondary100, 다크=primary800(surfaceSheet 토큰)
+  final sheetBg = AppSemanticColors.of(context).surfaceSheet;
   return showModalBottomSheet<Set<QuoteMood>>(
     context: context,
-    backgroundColor: AppColors.secondary100,
+    backgroundColor: sheetBg,
     showDragHandle: true,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
@@ -100,6 +103,7 @@ class _ChangeMoodsSheetState extends State<_ChangeMoodsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final textTheme = Theme.of(context).textTheme;
     return SafeArea(
       top: false,
@@ -118,7 +122,8 @@ class _ChangeMoodsSheetState extends State<_ChangeMoodsSheet> {
             const SizedBox(height: AppSpacing.s1),
             Text(
               '최대 $_kMaxMoods개까지 선택할 수 있어요.',
-              style: textTheme.bodySmall?.copyWith(color: AppColors.primary500),
+              // 보조 텍스트: 라이트=primary500, 다크=primary400(onSurfaceSubtle 토큰)
+              style: textTheme.bodySmall?.copyWith(color: colors.onSurfaceSubtle),
             ),
             const SizedBox(height: AppSpacing.s4),
             MoodChips(selected: _selected, onToggle: _toggle),
@@ -126,9 +131,11 @@ class _ChangeMoodsSheetState extends State<_ChangeMoodsSheet> {
             FilledButton(
               onPressed: _saving || !_changed ? null : _save,
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.accent500,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: AppColors.primary200,
+                // CTA: accentDefault 토큰
+                backgroundColor: colors.accentDefault,
+                foregroundColor: colors.accentOnAccent,
+                // disabled 배경: border 토큰(primary200/primary600)으로 대체
+                disabledBackgroundColor: colors.border,
                 minimumSize: const Size.fromHeight(48),
               ),
               child: _saving

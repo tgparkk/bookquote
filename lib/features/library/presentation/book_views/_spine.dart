@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../book/domain/book.dart';
 import '../../../book/presentation/widgets/page_count_input_sheet.dart';
@@ -71,7 +72,7 @@ class PendingThicknessSection extends StatelessWidget {
               Icon(
                 Icons.help_outline_rounded,
                 size: 16,
-                color: AppColors.primary500,
+                color: context.colors.onSurfaceMuted,
               ),
               const SizedBox(width: AppSpacing.s2),
               Text(
@@ -80,7 +81,7 @@ class PendingThicknessSection extends StatelessWidget {
                   fontFamily: AppFonts.ui,
                   fontSize: AppFontSize.sm,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.primary600,
+                  color: context.colors.onSurfaceMuted,
                 ),
               ),
             ],
@@ -91,7 +92,7 @@ class PendingThicknessSection extends StatelessWidget {
             style: TextStyle(
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.xs,
-              color: AppColors.primary400,
+              color: context.colors.onSurfaceSubtle,
             ),
           ),
           const SizedBox(height: AppSpacing.s3),
@@ -118,7 +119,7 @@ class _PendingChip extends ConsumerWidget {
       avatar: Icon(
         Icons.edit_outlined,
         size: 14,
-        color: AppColors.primary600,
+        color: context.colors.iconPrimary,
       ),
       label: Text(
         book.title,
@@ -127,10 +128,10 @@ class _PendingChip extends ConsumerWidget {
       labelStyle: TextStyle(
         fontFamily: AppFonts.ui,
         fontSize: AppFontSize.xs,
-        color: AppColors.primary700,
+        color: context.colors.onSurface,
       ),
-      backgroundColor: AppColors.secondary300,
-      side: BorderSide(color: AppColors.secondary500),
+      backgroundColor: context.colors.chipBg,
+      side: BorderSide(color: context.colors.border),
       shape: const StadiumBorder(),
       visualDensity: VisualDensity.compact,
       onPressed: () =>

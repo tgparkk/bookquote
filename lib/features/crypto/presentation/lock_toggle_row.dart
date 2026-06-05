@@ -9,6 +9,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
 
 class LockToggleRow extends StatelessWidget {
@@ -31,21 +32,24 @@ class LockToggleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final active = value && enabled;
+    // 아이콘: disabled → iconMuted, active → accentDefault, inactive → iconMuted
     final iconColor = !enabled
-        ? AppColors.primary300
+        ? context.colors.iconMuted
         : active
-            ? AppColors.accent600
-            : AppColors.primary500;
+            ? context.colors.accentDefault
+            : context.colors.iconMuted;
+    // 제목 텍스트: disabled → onSurfaceSubtle, active → accentOnContainer, inactive → onSurfaceMuted
     final titleColor = !enabled
-        ? AppColors.primary300
+        ? context.colors.onSurfaceSubtle
         : active
-            ? AppColors.accent700
-            : AppColors.primary700;
+            ? context.colors.accentOnContainer
+            : context.colors.onSurfaceMuted;
+    // 서브타이틀: disabled → onSurfaceSubtle, active → accentDefault, inactive → onSurfaceSubtle
     final subtitleColor = !enabled
-        ? AppColors.primary300
+        ? context.colors.onSurfaceSubtle
         : active
-            ? AppColors.accent600
-            : AppColors.primary400;
+            ? context.colors.accentDefault
+            : context.colors.onSurfaceSubtle;
     final tap =
         (enabled && onChanged != null) ? () => onChanged!(!value) : null;
 
@@ -56,10 +60,12 @@ class LockToggleRow extends StatelessWidget {
           ? '잠금 켜짐. 본문이 암호화되어 본인만 볼 수 있어요.'
           : '잠금 꺼짐. 본문이 일반 인용구로 저장돼요.',
       child: Material(
-        color: active ? AppColors.accent50 : AppColors.secondary100,
+        // active: 액센트 컨테이너 배경 / inactive: 일반 surface
+      color: active ? context.colors.accentContainer : context.colors.surface,
         shape: RoundedRectangleBorder(
           side: BorderSide(
-            color: active ? AppColors.accent200 : AppColors.primary100,
+            // active: 액센트 테두리 / inactive: 기본 보더
+            color: active ? context.colors.accentBorder : context.colors.border,
           ),
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
@@ -108,7 +114,7 @@ class LockToggleRow extends StatelessWidget {
                   child: Switch.adaptive(
                     value: value,
                     onChanged: enabled ? onChanged : null,
-                    activeThumbColor: AppColors.accent500,
+                    activeThumbColor: context.colors.accentDefault,
                   ),
                 ),
               ],

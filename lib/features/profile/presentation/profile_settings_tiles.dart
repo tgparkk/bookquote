@@ -9,6 +9,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
 import '../data/profile_repository.dart';
@@ -66,22 +67,26 @@ class _ProfilePublicToggleTileState
             ? '현재 공개 — 닉네임 없음(설정 권장)'
             : '현재 공개 — "$displayName"로 검색됨')
         : '현재 비공개 — 검색에 표시 안 됨';
+    final colors = context.colors;
     return ListTile(
       leading: Icon(
         isPublic ? Icons.public : Icons.lock_outline,
-        color: isPublic ? AppColors.accent500 : AppColors.primary500,
+        // 공개: accent500 → accentDefault, 비공개: primary500 → iconPrimary
+        color: isPublic ? colors.accentDefault : colors.iconPrimary,
         size: 22,
       ),
       title: Text('내 프로필 공개', style: AppTextStyles.bodyLarge),
       subtitle: Text(
         subtitle,
-        style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary400),
+        // 부제목: primary400 → onSurfaceSubtle
+        style: AppTextStyles.bodySmall.copyWith(color: colors.onSurfaceSubtle),
       ),
       trailing: Switch.adaptive(
         value: isPublic,
         onChanged:
             _busy || profile == null ? null : (v) => _onChanged(v, profile),
-        activeThumbColor: AppColors.accent500,
+        // Switch 썸: accent500 → accentDefault
+        activeThumbColor: colors.accentDefault,
       ),
     );
   }
@@ -105,13 +110,15 @@ Future<bool> _confirmNicknamePattern(
             Text(
               '"${displayName ?? '(없음)'}" 닉네임이 친구 검색·서재 공개 시 그대로 노출돼요. '
               '이메일 이름이 그대로면 본명·직장 이메일이 노출될 수 있어요.',
+              // 본문: primary700 → onSurfaceMuted
               style: textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.primary700),
+                  ?.copyWith(color: AppSemanticColors.of(ctx).onSurfaceMuted),
             ),
             const SizedBox(height: AppSpacing.s2),
             Text(
               '※ 먼저 닉네임을 바꾸시기를 권해요.',
               style: textTheme.bodySmall?.copyWith(
+                // LEAVE: semanticError — 경고 강조색
                 color: AppColors.semanticError,
                 fontWeight: FontWeight.w600,
               ),
@@ -183,10 +190,12 @@ class DisplayNameTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(myProfileProvider);
     final displayName = profileAsync.value?.displayName ?? '';
+    final colors = context.colors;
     return ListTile(
-      leading: const Icon(
+      leading: Icon(
         Icons.badge_outlined,
-        color: AppColors.primary500,
+        // 아이콘: primary500 → iconPrimary
+        color: colors.iconPrimary,
         size: 22,
       ),
       title: Text('공개 닉네임', style: AppTextStyles.bodyLarge),
@@ -195,13 +204,15 @@ class DisplayNameTile extends ConsumerWidget {
         children: [
           Text(
             displayName.isEmpty ? '미설정' : displayName,
+            // 값: primary400 → onSurfaceSubtle
             style: AppTextStyles.bodyMedium
-                .copyWith(color: AppColors.primary400),
+                .copyWith(color: colors.onSurfaceSubtle),
           ),
           const SizedBox(width: AppSpacing.s1),
-          const Icon(
+          Icon(
             Icons.chevron_right,
-            color: AppColors.primary300,
+            // chevron: primary300 → iconMuted
+            color: colors.iconMuted,
             size: 20,
           ),
         ],
@@ -260,8 +271,9 @@ class _DisplayNameEditDialogState extends State<_DisplayNameEditDialog> {
           children: [
             Text(
               '친구 검색과 친구 프로필 헤더에 노출돼요. 본명·이메일은 피해주세요.',
+              // 설명 텍스트: primary700 → onSurfaceMuted
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.primary700,
+                    color: context.colors.onSurfaceMuted,
                   ),
             ),
             const SizedBox(height: AppSpacing.s4),

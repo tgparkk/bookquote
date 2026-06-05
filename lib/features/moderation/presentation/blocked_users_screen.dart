@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
 import '../../profile/domain/profile.dart';
@@ -23,8 +24,9 @@ class BlockedUsersScreen extends ConsumerWidget {
         child: RefreshIndicator(
           onRefresh: () async => ref.invalidate(blockedListProvider),
           child: async.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.accent500),
+            loading: () => Center(
+              // accentDefault: 로딩 스피너 — 다크/라이트 copper 액센트
+              child: CircularProgressIndicator(color: context.colors.accentDefault),
             ),
             error: (_, _) => _ErrorView(
               onRetry: () => ref.invalidate(blockedListProvider),
@@ -91,14 +93,16 @@ class _BlockedTileState extends ConsumerState<_BlockedTile> {
     final initial = name.isEmpty ? '?' : String.fromCharCode(name.runes.first);
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: AppColors.accent200,
+        // accentContainer: 라이트 accent100(#FAEBD6) / 다크 accent900(#4A2D0E)
+        backgroundColor: context.colors.accentContainer,
         backgroundImage: hasAvatar ? NetworkImage(p.avatarUrl!) : null,
         child: hasAvatar
             ? null
             : Text(
                 initial,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.primary900,
+                  // onSurface: 라이트 primary900 / 다크 secondary200 — 배경 위 기본 텍스트
+                  color: context.colors.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -134,7 +138,8 @@ class _EmptyView extends StatelessWidget {
         AppSpacing.s8,
       ),
       children: [
-        const Icon(Icons.block, size: 48, color: AppColors.primary300),
+        // iconMuted: 라이트 primary400 / 다크 primary400 — 보조 아이콘
+        Icon(Icons.block, size: 48, color: context.colors.iconMuted),
         const SizedBox(height: AppSpacing.s4),
         Text(
           '차단한 사용자가 없어요',
@@ -145,7 +150,8 @@ class _EmptyView extends StatelessWidget {
         Text(
           '차단한 사용자는 여기서 다시 해제할 수 있어요.',
           textAlign: TextAlign.center,
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary500),
+          // onSurfaceMuted: 라이트 primary600 / 다크 secondary500 — 보조 텍스트
+          style: AppTextStyles.bodyMedium.copyWith(color: context.colors.onSurfaceMuted),
         ),
       ],
     );

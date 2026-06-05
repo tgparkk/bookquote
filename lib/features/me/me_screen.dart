@@ -2,7 +2,7 @@
 // · 계정(로그아웃 · 회원 탈퇴). 섹션형 ListView.
 //
 // 설계: docs/design/screens/me.md
-// - "친구 찾기"는 V1엔 숨김(렌더 안 함). 다크모드 토글은 V1.5.
+// - "친구 찾기"는 V1엔 숨김(렌더 안 함). 화면 테마(시스템/라이트/다크) 토글은 설정 섹션(DM-C).
 // - 출시 블로커: in-app 계정 삭제(Edge Function `delete-account`), 이용약관·개인정보처리방침
 //   호스팅 URL — 아래 상수의 TODO 참고 / STAGES Stage 5.
 
@@ -11,7 +11,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/theme/theme_mode_provider.dart';
 import '../../core/theme/tokens.dart';
 import '../account/account_deletion.dart';
 import '../auth/auth_controller.dart';
@@ -107,11 +109,7 @@ class MeScreen extends ConsumerWidget {
               onTap: () => context.push('/me/lock-password'),
             ),
           ],
-          const _ValueTile(
-            icon: Icons.brightness_6_outlined,
-            title: '다크 모드',
-            value: '시스템 설정',
-          ),
+          const _ThemeModeTile(),
           const _ValueTile(
             icon: Icons.notifications_none,
             title: '알림',
@@ -222,6 +220,7 @@ class _ProfileHeader extends StatelessWidget {
     final initial =
         loggedIn && primary.isNotEmpty ? primary[0].toUpperCase() : '?';
 
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.s6,
@@ -233,14 +232,16 @@ class _ProfileHeader extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: AppColors.accent100,
+            // 프로필 배경: accent100 → accentContainer (다크에서 반전 대응)
+            backgroundColor: colors.accentContainer,
             child: Text(
               initial,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: AppFonts.ui,
                 fontWeight: FontWeight.w600,
                 fontSize: 18,
-                color: AppColors.accent700,
+                // 이니셜 글자: accent700 → accentOnContainer
+                color: colors.accentOnContainer,
               ),
             ),
           ),
@@ -253,16 +254,18 @@ class _ProfileHeader extends StatelessWidget {
                   loggedIn ? primary : '로그인 정보 없음',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  // 메인 텍스트: primary800 → onSurface
                   style: AppTextStyles.bodyLarge
-                      .copyWith(color: AppColors.primary800),
+                      .copyWith(color: colors.onSurface),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   loggedIn ? secondary : '아래에서 다시 로그인할 수 있어요',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  // 보조 텍스트: primary400 → onSurfaceSubtle
                   style: AppTextStyles.bodySmall
-                      .copyWith(color: AppColors.primary400),
+                      .copyWith(color: colors.onSurfaceSubtle),
                 ),
               ],
             ),
@@ -290,7 +293,8 @@ class _SectionHeader extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary400),
+        // 섹션 헤더: primary400 → onSurfaceSubtle
+        style: AppTextStyles.labelMedium.copyWith(color: context.colors.onSurfaceSubtle),
       ),
     );
   }
@@ -319,18 +323,22 @@ class _CountTile extends StatelessWidget {
       loading: () => '…',
       error: (_, _) => '—',
     );
+    final colors = context.colors;
     return ListTile(
-      leading: Icon(icon, color: AppColors.primary500, size: 22),
+      // 아이콘: primary500 → iconPrimary
+      leading: Icon(icon, color: colors.iconPrimary, size: 22),
       title: Text(title, style: AppTextStyles.bodyLarge),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             label,
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary400),
+            // 카운트 텍스트: primary400 → onSurfaceSubtle
+            style: AppTextStyles.bodyMedium.copyWith(color: colors.onSurfaceSubtle),
           ),
           const SizedBox(width: AppSpacing.s1),
-          const Icon(Icons.chevron_right, color: AppColors.primary300, size: 20),
+          // chevron: primary300 → iconMuted
+          Icon(Icons.chevron_right, color: colors.iconMuted, size: 20),
         ],
       ),
       onTap: onTap,
@@ -346,10 +354,13 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return ListTile(
-      leading: Icon(icon, color: AppColors.primary500, size: 22),
+      // 아이콘: primary500 → iconPrimary
+      leading: Icon(icon, color: colors.iconPrimary, size: 22),
       title: Text(title, style: AppTextStyles.bodyLarge),
-      trailing: const Icon(Icons.chevron_right, color: AppColors.primary300, size: 20),
+      // chevron: primary300 → iconMuted
+      trailing: Icon(Icons.chevron_right, color: colors.iconMuted, size: 20),
       onTap: onTap,
     );
   }
@@ -369,18 +380,97 @@ class _ValueTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titleColor = disabled ? AppColors.primary300 : AppColors.primary800;
-    final iconColor = disabled ? AppColors.primary300 : AppColors.primary500;
+    final colors = context.colors;
+    // disabled 시: primary300 → iconMuted / primary800 → onSurface
+    final titleColor = disabled ? colors.iconMuted : colors.onSurface;
+    final iconColor  = disabled ? colors.iconMuted : colors.iconPrimary;
     return ListTile(
       leading: Icon(icon, color: iconColor, size: 22),
       title: Text(title, style: AppTextStyles.bodyLarge.copyWith(color: titleColor)),
       trailing: Text(
         value,
         style: AppTextStyles.bodyMedium.copyWith(
-          color: disabled ? AppColors.primary300 : AppColors.primary400,
+          // trailing 값: disabled → iconMuted, 활성 → onSurfaceSubtle
+          color: disabled ? colors.iconMuted : colors.onSurfaceSubtle,
         ),
       ),
     );
+  }
+}
+
+/// 화면 테마 선택 타일 (DM-C) — 시스템/라이트/다크. 현재 값 표시 + 탭하면 시트.
+class _ThemeModeTile extends ConsumerWidget {
+  const _ThemeModeTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(themeModeProvider);
+    final colors = context.colors;
+    return ListTile(
+      leading: Icon(Icons.brightness_6_outlined, color: colors.iconPrimary, size: 22),
+      title: Text('화면 테마', style: AppTextStyles.bodyLarge),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            themeModeLabel(mode),
+            style: AppTextStyles.bodyMedium.copyWith(color: colors.onSurfaceSubtle),
+          ),
+          const SizedBox(width: AppSpacing.s1),
+          Icon(Icons.chevron_right, color: colors.iconMuted, size: 20),
+        ],
+      ),
+      onTap: () => _showThemeModeSheet(context, ref, mode),
+    );
+  }
+}
+
+/// 화면 테마 선택 바텀시트 — 선택 시 즉시 반영 + 영속(ThemeModeNotifier.set).
+Future<void> _showThemeModeSheet(
+  BuildContext context,
+  WidgetRef ref,
+  ThemeMode current,
+) async {
+  final selected = await showModalBottomSheet<ThemeMode>(
+    context: context,
+    builder: (ctx) {
+      final colors = ctx.colors;
+      return SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.s6,
+                AppSpacing.s4,
+                AppSpacing.s6,
+                AppSpacing.s2,
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '화면 테마',
+                  style: AppTextStyles.labelMedium
+                      .copyWith(color: colors.onSurfaceSubtle),
+                ),
+              ),
+            ),
+            for (final m in ThemeMode.values)
+              ListTile(
+                title: Text(themeModeLabel(m), style: AppTextStyles.bodyLarge),
+                trailing: m == current
+                    ? Icon(Icons.check, color: colors.accentDefault)
+                    : null,
+                onTap: () => Navigator.pop(ctx, m),
+              ),
+            const SizedBox(height: AppSpacing.s4),
+          ],
+        ),
+      );
+    },
+  );
+  if (selected != null) {
+    await ref.read(themeModeProvider.notifier).set(selected);
   }
 }
 
@@ -395,12 +485,15 @@ class _AppVersionTile extends StatelessWidget {
       loading: () => '…',
       error: (_, _) => '—',
     );
+    final colors = context.colors;
     return ListTile(
-      leading: const Icon(Icons.info_outline, color: AppColors.primary500, size: 22),
+      // 아이콘: primary500 → iconPrimary
+      leading: Icon(Icons.info_outline, color: colors.iconPrimary, size: 22),
       title: Text('앱 버전', style: AppTextStyles.bodyLarge),
       trailing: Text(
         label,
-        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary400),
+        // 버전 값: primary400 → onSurfaceSubtle
+        style: AppTextStyles.bodyMedium.copyWith(color: colors.onSurfaceSubtle),
       ),
     );
   }

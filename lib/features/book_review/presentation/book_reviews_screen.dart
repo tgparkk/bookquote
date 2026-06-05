@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/auth_state_provider.dart';
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
 import '../state/book_review_providers.dart';
@@ -28,8 +29,10 @@ class BookReviewsScreen extends ConsumerWidget {
           onRefresh: () async =>
               ref.invalidate(publicBookReviewsByBookProvider(bookId)),
           child: asyncReviews.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.accent500),
+            loading: () => Center(
+              child: CircularProgressIndicator(
+                color: context.colors.accentDefault,
+              ),
             ),
             error: (_, _) => _ErrorView(
               onRetry: () =>
@@ -62,6 +65,7 @@ class _EmptyView extends StatelessWidget {
   const _EmptyView();
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors; // 시맨틱 색
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.s6,
@@ -70,10 +74,10 @@ class _EmptyView extends StatelessWidget {
         AppSpacing.s8,
       ),
       children: [
-        const Icon(
+        Icon(
           Icons.rate_review_outlined,
           size: 48,
-          color: AppColors.primary300,
+          color: colors.onSurfaceSubtle, // primary300 → onSurfaceSubtle
         ),
         const SizedBox(height: AppSpacing.s4),
         Text(

@@ -10,6 +10,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../domain/book.dart';
 
@@ -41,7 +42,7 @@ Future<ReadingStatus?> showAddBookStatusSheet(
 }) {
   return showModalBottomSheet<ReadingStatus>(
     context: context,
-    backgroundColor: AppColors.secondary100,
+    backgroundColor: context.colors.surfaceSheet, // secondary100 → surfaceSheet
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
     ),
@@ -65,7 +66,7 @@ class _AddBookStatusBody extends StatelessWidget {
           width: 36,
           height: 4,
           decoration: BoxDecoration(
-            color: AppColors.primary200,
+            color: context.colors.border, // primary200 → border
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -81,7 +82,7 @@ class _AddBookStatusBody extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: textTheme.bodySmall?.copyWith(
-                  color: AppColors.primary500,
+                  color: context.colors.onSurfaceSubtle, // primary500 → onSurfaceSubtle
                 ),
               ),
             ],
@@ -105,6 +106,7 @@ class _StatusTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colors = context.colors;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -125,15 +127,15 @@ class _StatusTile extends StatelessWidget {
                   Text(
                     status.hint,
                     style: textTheme.bodySmall?.copyWith(
-                      color: AppColors.primary500,
+                      color: colors.onSurfaceSubtle, // primary500 → onSurfaceSubtle
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
-              color: AppColors.primary400,
+              color: colors.iconMuted, // primary400 → iconMuted
             ),
           ],
         ),

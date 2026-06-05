@@ -42,7 +42,37 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="io.github.tgparkk.bookquote" />
             </intent-filter>
+            <!-- HW-A: home_widget 탭 → 앱 실행(HomeWidgetLaunchIntent). 위젯 클릭 데이터를
+                 Dart에서 받아 딥링크로 라우팅하는 것은 HW-B. -->
+            <intent-filter>
+                <action android:name="es.antonborri.home_widget.action.LAUNCH" />
+            </intent-filter>
         </activity>
+
+        <!-- HW-A: 홈 화면 위젯 '이 책의 한 줄' provider. 데이터는 home_widget이
+             SharedPreferences로 전달하며, 미설정 시 Kotlin 기본값이 렌더된다. -->
+        <receiver
+            android:name=".BookQuoteWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/bookquote_widget_info" />
+        </receiver>
+
+        <!-- HW-D: 홈 화면 위젯 '읽고 있는 책' provider (표지 + N일째). -->
+        <receiver
+            android:name=".ReadingBookWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/reading_book_widget_info" />
+        </receiver>
         <!-- PR21: 카카오 OAuth Custom Tabs 콜백 액티비티.
              scheme `kakao{NATIVE_APP_KEY}`는 빌드 시 strings.xml의
              `kakao_native_app_key`를 참조하도록 manifestPlaceholder로 주입한다

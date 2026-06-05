@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../state/friend_activity_provider.dart';
 
@@ -39,7 +40,7 @@ class FriendActivityBanner extends ConsumerWidget {
         AppSpacing.s1,
       ),
       child: Material(
-        color: AppColors.accent50,
+        color: context.colors.accentContainer,
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: InkWell(
           onTap: () async {
@@ -56,29 +57,29 @@ class FriendActivityBanner extends ConsumerWidget {
             ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(color: AppColors.accent200),
+              border: Border.all(color: context.colors.accentBorder),
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.auto_awesome_rounded,
                   size: 16,
-                  color: AppColors.accent700,
+                  color: context.colors.accentOnContainer,
                 ),
                 const SizedBox(width: AppSpacing.s2),
                 Expanded(
                   child: Text(
                     text,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.accent800,
+                      color: context.colors.accentOnContainer,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
                   size: 16,
-                  color: AppColors.accent700,
+                  color: context.colors.accentOnContainer,
                 ),
               ],
             ),

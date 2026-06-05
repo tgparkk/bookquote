@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HW-A: 홈 화면 위젯 '이 책의 한 줄' 레이아웃 (RemoteViews).
+     색은 브랜드 토큰 하드코딩(RemoteViews는 Theme 미참조): paper #FAFAF8 / ink #1C1917 /
+     muted #635B50 / copper #B87333. OS 다크 테마 추종은 HW-C에서 values-night로. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bookquote_widget_background"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widget_book_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="#1C1917"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            tools:text="데미안" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="읽는 중"
+            android:textColor="#B87333"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/widget_quote"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="10dp"
+        android:maxLines="3"
+        android:ellipsize="end"
+        android:textColor="#241F18"
+        android:textSize="16sp"
+        android:lineSpacingMultiplier="1.3"
+        tools:text="“새는 알을 깨고 나오려고 싸운다.”" />
+
+    <TextView
+        android:id="@+id/widget_book_author"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="end"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="#635B50"
+        android:textSize="12sp"
+        tools:text="— 헤르만 헤세" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="＋ 이 책에 한 줄 적기"
+        android:textColor="#B87333"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+</LinearLayout>

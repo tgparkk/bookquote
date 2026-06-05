@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/auth_state_provider.dart';
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
 import '../data/book_review_repository.dart';
 import '../state/book_review_providers.dart';
@@ -27,6 +28,7 @@ class BookReviewSection extends ConsumerWidget {
     final asyncReviews = ref.watch(publicBookReviewsByBookProvider(bookId));
     final myUid = ref.watch(currentUserIdProvider);
     final textTheme = Theme.of(context).textTheme;
+    final colors = context.colors; // 시맨틱 색
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,7 +41,7 @@ class BookReviewSection extends ConsumerWidget {
               data: (rs) => Text(
                 '${rs.length}',
                 style: textTheme.titleMedium
-                    ?.copyWith(color: AppColors.primary400),
+                    ?.copyWith(color: colors.onSurfaceSubtle),
               ),
               orElse: () => const SizedBox.shrink(),
             ),
@@ -47,10 +49,10 @@ class BookReviewSection extends ConsumerWidget {
         ),
         const SizedBox(height: AppSpacing.s3),
         asyncReviews.when(
-          loading: () => const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSpacing.s4),
+          loading: () => Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
             child: Center(
-              child: CircularProgressIndicator(color: AppColors.accent500),
+              child: CircularProgressIndicator(color: colors.accentDefault),
             ),
           ),
           error: (_, _) => Row(
@@ -131,11 +133,12 @@ class BookReviewSection extends ConsumerWidget {
     WidgetRef ref,
     String initialText,
   ) async {
+    final colors = context.colors; // 시맨틱 색
     final messenger = ScaffoldMessenger.of(context);
     final saved = await showModalBottomSheet<String?>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.secondary100,
+      backgroundColor: colors.surfaceSheet,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
@@ -178,7 +181,7 @@ class BookReviewSection extends ConsumerWidget {
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(
               '삭제',
-              style: TextStyle(color: AppColors.semanticError),
+              style: TextStyle(color: AppColors.semanticError), // LEAVE: 상태색
             ),
           ),
         ],
@@ -206,19 +209,20 @@ class _WriteCta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors; // 시맨틱 색
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadius.lg),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.s3),
         decoration: BoxDecoration(
-          color: AppColors.accent50,
+          color: colors.accentContainer,
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.accent200),
+          border: Border.all(color: colors.accentBorder),
         ),
         child: Row(
           children: [
-            Icon(Icons.edit_outlined, size: 18, color: AppColors.accent700),
+            Icon(Icons.edit_outlined, size: 18, color: colors.accentOnContainer),
             const SizedBox(width: AppSpacing.s2),
             Expanded(
               child: Text(
@@ -227,11 +231,11 @@ class _WriteCta extends StatelessWidget {
                   fontFamily: AppFonts.ui,
                   fontSize: AppFontSize.sm,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.accent800,
+                  color: colors.accentOnContainer,
                 ),
               ),
             ),
-            Icon(Icons.chevron_right, size: 18, color: AppColors.accent700),
+            Icon(Icons.chevron_right, size: 18, color: colors.accentOnContainer),
           ],
         ),
       ),
@@ -246,12 +250,13 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colors = context.colors; // 시맨틱 색
     return Container(
       padding: const EdgeInsets.all(AppSpacing.s4),
       decoration: BoxDecoration(
-        color: AppColors.secondary300,
+        color: colors.surfaceCard,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.secondary500),
+        border: Border.all(color: colors.borderStrong),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,7 +264,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             '이 책을 어떻게 읽었나요?',
             style: textTheme.bodyLarge?.copyWith(
-              color: AppColors.primary800,
+              color: colors.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -267,7 +272,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             '다 읽고 남는 감상을 1~5문단 자유롭게 적어보세요.',
             style: textTheme.bodySmall
-                ?.copyWith(color: AppColors.primary500),
+                ?.copyWith(color: colors.onSurfaceMuted),
           ),
           if (onWrite != null) ...[
             const SizedBox(height: AppSpacing.s3),
@@ -275,8 +280,8 @@ class _EmptyState extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent500,
-                  foregroundColor: AppColors.secondary50,
+                  backgroundColor: colors.accentDefault,
+                  foregroundColor: colors.accentOnAccent,
                 ),
                 onPressed: onWrite,
                 icon: const Icon(Icons.edit_outlined, size: 16),
@@ -289,4 +294,3 @@ class _EmptyState extends StatelessWidget {
     );
   }
 }
-

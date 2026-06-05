@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../book/domain/book.dart';
 import '_spine.dart';
@@ -65,7 +66,8 @@ class _Shelf extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: AppColors.primary500.withValues(alpha: 0.35),
+            // 책장 받침대 선 — 다크에서도 borderStrong으로 충분히 대비
+            color: context.colors.borderStrong.withValues(alpha: 0.6),
             width: 2,
           ),
         ),
@@ -143,7 +145,7 @@ class _ShelfEmptyHint extends StatelessWidget {
           Icon(
             Icons.shelves,
             size: 40,
-            color: AppColors.primary300,
+            color: context.colors.iconMuted,
           ),
           const SizedBox(height: AppSpacing.s3),
           Text(
@@ -153,7 +155,7 @@ class _ShelfEmptyHint extends StatelessWidget {
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.base,
               fontWeight: FontWeight.w600,
-              color: AppColors.primary700,
+              color: context.colors.onSurface,
             ),
           ),
           const SizedBox(height: AppSpacing.s2),
@@ -164,7 +166,7 @@ class _ShelfEmptyHint extends StatelessWidget {
             style: TextStyle(
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.sm,
-              color: AppColors.primary500,
+              color: context.colors.onSurfaceMuted,
               height: 1.5,
             ),
           ),

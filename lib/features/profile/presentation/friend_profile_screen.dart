@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
 import '../../book/domain/book.dart';
@@ -138,7 +139,7 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(friendProfileProvider(widget.userId));
     return Scaffold(
-      backgroundColor: AppColors.secondary50,
+      backgroundColor: context.colors.scaffoldBg,
       appBar: AppBar(
         title: profileAsync.when(
           data: (p) => Text(p?.displayName ?? ''),
@@ -160,7 +161,7 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
       ),
       body: profileAsync.when(
         loading: () =>
-            const Center(child: CircularProgressIndicator(color: AppColors.accent500)),
+            Center(child: CircularProgressIndicator(color: context.colors.accentDefault)),
         error: (_, _) => _ErrorView(onRetry: () => ref.invalidate(friendProfileProvider(widget.userId))),
         data: (profile) {
           if (profile == null) return const _NotFoundView();
@@ -301,7 +302,7 @@ class _Header extends ConsumerWidget {
             label: '$name 프로필 사진',
             child: CircleAvatar(
               radius: 32,
-              backgroundColor: AppColors.accent200,
+              backgroundColor: context.colors.accentContainer,
               backgroundImage: (profile.avatarUrl?.isNotEmpty ?? false)
                   ? NetworkImage(profile.avatarUrl!)
                   : null,
@@ -309,11 +310,11 @@ class _Header extends ConsumerWidget {
                   ? null
                   : Text(
                       initial,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: AppFonts.ui,
                         fontWeight: FontWeight.w600,
                         fontSize: AppFontSize.xl,
-                        color: AppColors.primary900,
+                        color: context.colors.accentOnContainer,
                       ),
                     ),
             ),
@@ -400,7 +401,7 @@ class _CountTap extends StatelessWidget {
           child: Text(
             '$label $count',
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.primary700,
+              color: context.colors.onSurfaceMuted,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -514,8 +515,8 @@ class _FollowButtonState extends ConsumerState<_FollowButton> {
         icon: const Icon(Icons.check_rounded, size: 16),
         label: const Text('팔로잉'),
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary700,
-          side: const BorderSide(color: AppColors.primary300, width: 1.5),
+          foregroundColor: context.colors.onSurfaceMuted,
+          side: BorderSide(color: context.colors.border, width: 1.5),
           visualDensity: VisualDensity.compact,
         ),
       );
@@ -525,8 +526,8 @@ class _FollowButtonState extends ConsumerState<_FollowButton> {
       icon: const Icon(Icons.add_rounded, size: 16),
       label: const Text('팔로우'),
       style: FilledButton.styleFrom(
-        backgroundColor: AppColors.accent500,
-        foregroundColor: AppColors.secondary50,
+        backgroundColor: context.colors.accentDefault,
+        foregroundColor: context.colors.accentOnAccent,
         visualDensity: VisualDensity.compact,
       ),
     );
@@ -582,10 +583,10 @@ class _BooksSliver extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(friendBooksProvider(userId));
     return async.when(
-      loading: () => const SliverToBoxAdapter(
+      loading: () => SliverToBoxAdapter(
         child: Padding(
-          padding: EdgeInsets.all(AppSpacing.s8),
-          child: Center(child: CircularProgressIndicator(color: AppColors.accent500)),
+          padding: const EdgeInsets.all(AppSpacing.s8),
+          child: Center(child: CircularProgressIndicator(color: context.colors.accentDefault)),
         ),
       ),
       error: (_, _) => SliverToBoxAdapter(
@@ -680,10 +681,10 @@ class _EmptyBooksView extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          const Icon(
+          Icon(
             Icons.menu_book_outlined,
             size: 48,
-            color: AppColors.primary300,
+            color: context.colors.iconMuted,
           ),
           const SizedBox(height: AppSpacing.s4),
           Text(
@@ -723,11 +724,11 @@ class _QuotesSliver extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const SliverToBoxAdapter(
+      return SliverToBoxAdapter(
         child: Padding(
-          padding: EdgeInsets.all(AppSpacing.s8),
+          padding: const EdgeInsets.all(AppSpacing.s8),
           child: Center(
-            child: CircularProgressIndicator(color: AppColors.accent500),
+            child: CircularProgressIndicator(color: context.colors.accentDefault),
           ),
         ),
       );
@@ -804,10 +805,10 @@ class _EmptyQuotesView extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          const Icon(
+          Icon(
             Icons.format_quote_outlined,
             size: 48,
-            color: AppColors.primary300,
+            color: context.colors.iconMuted,
           ),
           const SizedBox(height: AppSpacing.s4),
           Text(
@@ -844,17 +845,17 @@ class _LockedLibraryView extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.lock_outline_rounded,
             size: 48,
-            color: AppColors.primary400,
+            color: context.colors.iconMuted,
           ),
           const SizedBox(height: AppSpacing.s4),
           Text(
             '이 서재는 비공개예요',
             textAlign: TextAlign.center,
             style: AppTextStyles.headlineSmall.copyWith(
-              color: AppColors.primary600,
+              color: context.colors.onSurfaceMuted,
             ),
           ),
           const SizedBox(height: AppSpacing.s2),
@@ -862,7 +863,7 @@ class _LockedLibraryView extends ConsumerWidget {
             subtitle,
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.primary500,
+              color: context.colors.onSurfaceSubtle,
             ),
           ),
         ],
@@ -886,10 +887,10 @@ class _NicknameGateView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.badge_outlined,
               size: 48,
-              color: AppColors.primary400,
+              color: context.colors.iconMuted,
             ),
             const SizedBox(height: AppSpacing.s4),
             Text(
@@ -902,15 +903,15 @@ class _NicknameGateView extends StatelessWidget {
               '본명이 친구에게 노출되지 않도록\n공개 닉네임을 먼저 정해주세요.',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.primary500,
+                color: context.colors.onSurfaceSubtle,
               ),
             ),
             const SizedBox(height: AppSpacing.s6),
             FilledButton(
               onPressed: () => context.go('/me'),
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.accent500,
-                foregroundColor: AppColors.secondary50,
+                backgroundColor: context.colors.accentDefault,
+                foregroundColor: context.colors.accentOnAccent,
               ),
               child: const Text('내 정보로 이동'),
             ),
@@ -958,7 +959,7 @@ class _FollowersSheet extends ConsumerWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.primary300,
+              color: context.colors.border,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -968,14 +969,14 @@ class _FollowersSheet extends ConsumerWidget {
           ),
           Expanded(
             child: async.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: AppColors.accent500),
+              loading: () => Center(
+                child: CircularProgressIndicator(color: context.colors.accentDefault),
               ),
               error: (_, _) => Center(
                 child: Text(
                   '목록을 불러오지 못했어요.',
                   style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.primary500),
+                      .copyWith(color: context.colors.onSurfaceSubtle),
                 ),
               ),
               data: (profiles) {
@@ -986,7 +987,7 @@ class _FollowersSheet extends ConsumerWidget {
                           ? '아직 팔로워가 없어요'
                           : '팔로우 중인 사람이 없어요',
                       style: AppTextStyles.bodyMedium
-                          .copyWith(color: AppColors.primary500),
+                          .copyWith(color: context.colors.onSurfaceSubtle),
                     ),
                   );
                 }
@@ -1016,7 +1017,7 @@ class _FollowSheetTile extends StatelessWidget {
     final initial = name.isEmpty ? '?' : String.fromCharCode(name.runes.first);
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: AppColors.accent200,
+        backgroundColor: context.colors.accentContainer,
         backgroundImage: (profile.avatarUrl?.isNotEmpty ?? false)
             ? NetworkImage(profile.avatarUrl!)
             : null,
@@ -1025,7 +1026,7 @@ class _FollowSheetTile extends StatelessWidget {
             : Text(
                 initial,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.primary900,
+                  color: context.colors.accentOnContainer,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1074,10 +1075,10 @@ class _NotFoundView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.person_off_outlined,
               size: 48,
-              color: AppColors.primary400,
+              color: context.colors.iconMuted,
             ),
             const SizedBox(height: AppSpacing.s4),
             Text(

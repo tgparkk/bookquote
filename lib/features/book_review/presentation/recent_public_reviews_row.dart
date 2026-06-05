@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
 import '../../book/presentation/widgets/book_cover.dart';
@@ -44,7 +45,7 @@ class RecentPublicReviewsRow extends ConsumerWidget {
                 Icon(
                   Icons.rate_review_outlined,
                   size: 16,
-                  color: AppColors.accent700,
+                  color: context.colors.accentOnContainer,
                 ),
                 const SizedBox(width: AppSpacing.s2),
                 Text(
@@ -53,7 +54,7 @@ class RecentPublicReviewsRow extends ConsumerWidget {
                     fontFamily: AppFonts.ui,
                     fontSize: AppFontSize.sm,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.accent700,
+                    color: context.colors.accentOnContainer,
                   ),
                 ),
               ],
@@ -82,11 +83,12 @@ class _ReviewMiniCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors; // 시맨틱 색
     final name = review.displayName ?? '(이름 없음)';
     final hasAvatar = review.avatarUrl?.isNotEmpty ?? false;
     final initial = name.isEmpty ? '?' : String.fromCharCode(name.runes.first);
     return Material(
-      color: AppColors.secondary100,
+      color: colors.surface,
       borderRadius: BorderRadius.circular(AppRadius.lg),
       elevation: 0,
       child: InkWell(
@@ -97,7 +99,7 @@ class _ReviewMiniCard extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.s3),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.secondary400),
+            border: Border.all(color: colors.border),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,7 +119,7 @@ class _ReviewMiniCard extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 10,
-                          backgroundColor: AppColors.accent200,
+                          backgroundColor: colors.accentBorder,
                           backgroundImage:
                               hasAvatar ? NetworkImage(review.avatarUrl!) : null,
                           child: hasAvatar
@@ -125,7 +127,7 @@ class _ReviewMiniCard extends StatelessWidget {
                               : Text(
                                   initial,
                                   style: AppTextStyles.labelSmall.copyWith(
-                                    color: AppColors.primary900,
+                                    color: colors.onSurface,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -140,7 +142,7 @@ class _ReviewMiniCard extends StatelessWidget {
                               fontFamily: AppFonts.ui,
                               fontSize: AppFontSize.xs,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.primary600,
+                              color: colors.onSurfaceMuted,
                             ),
                           ),
                         ),
@@ -155,7 +157,7 @@ class _ReviewMiniCard extends StatelessWidget {
                         fontFamily: AppFonts.ui,
                         fontSize: AppFontSize.xs,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.primary500,
+                        color: colors.onSurfaceMuted,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -168,7 +170,7 @@ class _ReviewMiniCard extends StatelessWidget {
                           fontFamily: AppFonts.quote,
                           fontSize: AppFontSize.sm,
                           height: 1.45,
-                          color: AppColors.primary800,
+                          color: colors.onSurface,
                         ),
                       ),
                     ),

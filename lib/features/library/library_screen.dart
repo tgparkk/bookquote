@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../book/data/book_repository.dart';
 import '../book/domain/book.dart';
@@ -241,7 +242,7 @@ class _SegmentHeader extends ConsumerWidget {
     final current = ref.read(libraryViewModeProvider).value ?? LibraryViewMode.list;
     final picked = await showModalBottomSheet<LibraryViewMode>(
       context: context,
-      backgroundColor: AppColors.secondary100,
+      backgroundColor: context.colors.surfaceSheet,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
@@ -256,7 +257,7 @@ class _SegmentHeader extends ConsumerWidget {
                 fontFamily: AppFonts.ui,
                 fontSize: AppFontSize.md,
                 fontWeight: FontWeight.w700,
-                color: AppColors.primary900,
+                color: context.colors.onSurface,
               ),
             ),
             const SizedBox(height: AppSpacing.s2),
@@ -266,7 +267,7 @@ class _SegmentHeader extends ConsumerWidget {
                 title: Text(m.label),
                 subtitle: Text(m.description),
                 trailing: m == current
-                    ? Icon(Icons.check, color: AppColors.accent700)
+                    ? Icon(Icons.check, color: context.colors.accentDefault)
                     : null,
                 onTap: () => Navigator.of(ctx).pop(m),
               ),
@@ -304,8 +305,8 @@ class _BookTab extends ConsumerWidget {
             LibraryViewMode.shelf => BookShelfView(books: sorted),
           };
         },
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.accent500),
+        loading: () => Center(
+          child: CircularProgressIndicator(color: context.colors.accentDefault),
         ),
         error: (e, _) => _ErrorView(onRetry: () => ref.invalidate(myLibraryProvider)),
       ),
@@ -345,7 +346,7 @@ class _EmptyView extends StatelessWidget {
         AppSpacing.s8,
       ),
       children: [
-        Icon(Icons.menu_book_outlined, size: 48, color: AppColors.primary300),
+        Icon(Icons.menu_book_outlined, size: 48, color: context.colors.iconMuted),
         const SizedBox(height: AppSpacing.s4),
         Text('아직 책이 없어요',
             textAlign: TextAlign.center, style: textTheme.headlineSmall),

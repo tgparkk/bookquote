@@ -14,6 +14,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/auth_state_provider.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/tokens.dart';
 import '../book_review/presentation/book_review_section.dart';
@@ -72,8 +73,9 @@ class BookDetailScreen extends ConsumerWidget {
         data: (book) => book == null
             ? const _NotFoundView()
             : _BookBody(book: book, fromShare: _fromShare, sender: sender),
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.accent500),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+              color: context.colors.accentDefault), // accent500 → accentDefault
         ),
         error: (_, _) => _ErrorView(
           onRetry: () => ref.invalidate(bookByIdProvider(bookId)),
@@ -184,12 +186,13 @@ class _SharedBanner extends ConsumerWidget {
     final text = senderName != null && senderName.isNotEmpty
         ? '$senderName님이 이 책의 한 줄을 보냈어요.'
         : '누군가 이 책의 한 줄을 보냈어요. 마음에 들면 서재에 담아보세요.';
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.s3),
       decoration: BoxDecoration(
-        color: AppColors.accent50,
+        color: colors.accentContainer,           // accent50 → accentContainer
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.accent200),
+        border: Border.all(color: colors.accentBorder), // accent200 → accentBorder
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,12 +205,12 @@ class _SharedBanner extends ConsumerWidget {
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(
+                  style: TextStyle( // const 제거 — 런타임 색
                     fontFamily: AppFonts.ui,
                     fontSize: AppFontSize.sm,
                     fontWeight: FontWeight.w600,
                     height: AppLineHeight.normal,
-                    color: AppColors.accent800,
+                    color: colors.accentOnContainer, // accent800 → accentOnContainer
                   ),
                 ),
               ),
@@ -222,7 +225,7 @@ class _SharedBanner extends ConsumerWidget {
                 icon: const Icon(Icons.chevron_right_rounded, size: 16),
                 label: const Text('이 사람 서재 보기'),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.accent700,
+                  foregroundColor: colors.accentDefault, // accent700 → accentDefault
                   visualDensity: VisualDensity.compact,
                 ),
               ),
@@ -244,10 +247,11 @@ class _AddQuoteButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // `/quote/new`는 인증 가드라 미로그인이면 라우터가 로그인으로 보냈다 복귀시킨다.
+    final colors = context.colors;
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.accent500,
-        foregroundColor: AppColors.secondary50,
+        backgroundColor: colors.accentDefault,   // accent500 → accentDefault
+        foregroundColor: colors.accentOnAccent,  // secondary50 → accentOnAccent
         minimumSize: const Size(double.infinity, 48),
         textStyle: const TextStyle(
           fontFamily: AppFonts.ui,
@@ -354,21 +358,23 @@ class _LibraryActionButtonState extends ConsumerState<_LibraryActionButton> {
       );
     }
 
+    final colors = context.colors;
     final onPressed = _busy ? null : _onPressed;
     final spinner = SizedBox(
       width: 16,
       height: 16,
       child: CircularProgressIndicator(
         strokeWidth: 2,
-        color: widget.prominent ? AppColors.secondary50 : AppColors.accent600,
+        // secondary50 → accentOnAccent, accent600 → accentDefault
+        color: widget.prominent ? colors.accentOnAccent : colors.accentDefault,
       ),
     );
 
     if (widget.prominent) {
       return ElevatedButton.icon(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.accent500,
-          foregroundColor: AppColors.secondary50,
+          backgroundColor: colors.accentDefault,   // accent500 → accentDefault
+          foregroundColor: colors.accentOnAccent,  // secondary50 → accentOnAccent
           minimumSize: const Size(double.infinity, 52),
           textStyle: const TextStyle(
             fontFamily: AppFonts.ui,
@@ -383,8 +389,8 @@ class _LibraryActionButtonState extends ConsumerState<_LibraryActionButton> {
     }
     return OutlinedButton.icon(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.accent600,
-        side: const BorderSide(color: AppColors.accent500),
+        foregroundColor: colors.accentDefault,               // accent600 → accentDefault
+        side: BorderSide(color: colors.accentDefault),       // accent500 → accentDefault, const 제거
         minimumSize: const Size(double.infinity, 44),
       ),
       icon: _busy ? spinner : const Icon(Icons.library_add_outlined, size: 18),
@@ -451,10 +457,11 @@ class _BookQuotesSectionState extends ConsumerState<_BookQuotesSection> {
     final asyncQuotes = ref.watch(bookQuotesProvider(widget.bookId));
 
     return asyncQuotes.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSpacing.s4),
+      loading: () => Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
         child: Center(
-          child: CircularProgressIndicator(color: AppColors.accent500),
+          child: CircularProgressIndicator(
+              color: context.colors.accentDefault), // accent500 → accentDefault
         ),
       ),
       // 책 정보·표지·메타는 그대로 두고 인용 섹션만 인라인 실패 처리(부분 실패 격리).
@@ -487,8 +494,8 @@ class _BookQuotesSectionState extends ConsumerState<_BookQuotesSection> {
                   const SizedBox(width: AppSpacing.s2),
                   Text(
                     '${quotes.length}',
-                    style: textTheme.titleMedium
-                        ?.copyWith(color: AppColors.primary400),
+                    style: textTheme.titleMedium?.copyWith(
+                        color: context.colors.onSurfaceSubtle), // primary400 → onSurfaceSubtle
                   ),
                 ],
                 const Spacer(),
@@ -501,8 +508,8 @@ class _BookQuotesSectionState extends ConsumerState<_BookQuotesSection> {
             if (quotes.isEmpty)
               Text(
                 '아직 이 책에서 모은 구절이 없어요.',
-                style: textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.primary500),
+                style: textTheme.bodyMedium?.copyWith(
+                    color: context.colors.onSurfaceMuted), // primary500 → onSurfaceMuted
               )
             else
               for (final q in quotes.take(_maxShown))
@@ -577,7 +584,7 @@ class _DescriptionTextState extends State<_DescriptionText> {
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(0, 32),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  foregroundColor: AppColors.accent600,
+                  foregroundColor: context.colors.accentDefault, // accent600 → accentDefault
                 ),
                 onPressed: () => setState(() => _expanded = !_expanded),
                 child: Text(_expanded ? '접기' : '더 보기'),
@@ -601,7 +608,9 @@ class _NotFoundView extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.s8),
       children: [
         SizedBox(height: MediaQuery.sizeOf(context).height * 0.18),
-        Icon(Icons.menu_book_outlined, size: 48, color: AppColors.primary300),
+        Icon(Icons.menu_book_outlined,
+            size: 48,
+            color: context.colors.onSurfaceSubtle), // primary300 → onSurfaceSubtle
         const SizedBox(height: AppSpacing.s4),
         Text(
           '이 책을 더 이상 볼 수 없어요',
@@ -848,7 +857,8 @@ class _BookRatingBlockState extends ConsumerState<_BookRatingBlock> {
           const SizedBox(height: 2),
           Text(
             '$rating / 5',
-            style: textTheme.bodySmall?.copyWith(color: AppColors.primary500),
+            style: textTheme.bodySmall?.copyWith(
+                color: context.colors.onSurfaceMuted), // primary500 → onSurfaceMuted
           ),
         ],
       ],
@@ -909,23 +919,24 @@ class _HeroQuoteFromUser extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final text = (quote.text ?? '').trim();
     final page = quote.page;
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.s4),
       decoration: BoxDecoration(
-        color: AppColors.accent50,
+        color: colors.accentContainer,           // accent50 → accentContainer
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.accent200),
+        border: Border.all(color: colors.accentBorder), // accent200 → accentBorder
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '“',
-            style: TextStyle(
+          Text(
+            '”',
+            style: TextStyle( // const 제거 — 런타임 색
               fontFamily: AppFonts.quote,
               fontSize: 36,
               height: 1,
-              color: AppColors.accent400,
+              color: colors.accentDefault,       // accent400 → accentDefault
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -934,11 +945,11 @@ class _HeroQuoteFromUser extends StatelessWidget {
             text,
             maxLines: 4,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle( // const 제거 — 런타임 색
               fontFamily: AppFonts.quote,
               fontSize: AppFontSize.base,
               height: AppLineHeight.relaxed,
-              color: AppColors.accent800,
+              color: colors.accentOnContainer,   // accent800 → accentOnContainer
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -948,8 +959,8 @@ class _HeroQuoteFromUser extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: Text(
                 'p.$page',
-                style: textTheme.labelSmall
-                    ?.copyWith(color: AppColors.accent700),
+                style: textTheme.labelSmall?.copyWith(
+                    color: colors.accentOnContainer), // accent700 → accentOnContainer
               ),
             ),
           ],
@@ -967,20 +978,21 @@ class _HeroQuoteFromDescription extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.s4),
       decoration: BoxDecoration(
-        color: AppColors.secondary50,
+        color: colors.surface,                        // secondary50 → surface
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.primary200),
+        border: Border.all(color: colors.border),    // primary200 → border
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '출판사 소개',
-            style: textTheme.labelSmall
-                ?.copyWith(color: AppColors.primary500),
+            style: textTheme.labelSmall?.copyWith(
+                color: colors.onSurfaceMuted), // primary500 → onSurfaceMuted
           ),
           const SizedBox(height: AppSpacing.s2),
           Text(
@@ -989,7 +1001,7 @@ class _HeroQuoteFromDescription extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: textTheme.bodyMedium?.copyWith(
               height: AppLineHeight.relaxed,
-              color: AppColors.primary800,
+              color: colors.onSurface, // primary800 → onSurface
             ),
           ),
         ],
@@ -1013,18 +1025,18 @@ class _HeroQuoteEmpty extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.s4),
         decoration: BoxDecoration(
-          color: AppColors.accent50,
+          color: context.colors.accentContainer,       // accent50 → accentContainer
           borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
-            color: AppColors.accent200,
+            color: context.colors.accentBorder,        // accent200 → accentBorder
             style: BorderStyle.solid,
           ),
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.format_quote_rounded,
-              color: AppColors.accent500,
+              color: context.colors.accentDefault,     // accent500 → accentDefault
               size: 28,
             ),
             const SizedBox(width: AppSpacing.s3),
@@ -1034,21 +1046,21 @@ class _HeroQuoteEmpty extends StatelessWidget {
                 children: [
                   Text(
                     '이 책의 첫 인용구를 남겨주세요',
-                    style: textTheme.titleSmall
-                        ?.copyWith(color: AppColors.accent800),
+                    style: textTheme.titleSmall?.copyWith(
+                        color: context.colors.accentOnContainer), // accent800 → accentOnContainer
                   ),
                   const SizedBox(height: 2),
                   Text(
                     loggedIn ? '읽다 마음에 든 한 줄을 한 손에 모아둘 수 있어요.' : '로그인하면 한 줄을 모을 수 있어요.',
-                    style: textTheme.bodySmall
-                        ?.copyWith(color: AppColors.primary600),
+                    style: textTheme.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceMuted), // primary600 → onSurfaceMuted
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
-              color: AppColors.accent500,
+              color: context.colors.accentDefault,     // accent500 → accentDefault
               size: 22,
             ),
           ],
@@ -1190,6 +1202,7 @@ class _PurchaseLinksRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final kyobo = buildBookPurchaseUrl(isbn13);
     final aladin = buildAladinSearchUrl(isbn13);
+    final colors = context.colors;
     return Row(
       children: <Widget>[
         Expanded(
@@ -1198,8 +1211,8 @@ class _PurchaseLinksRow extends StatelessWidget {
             icon: const Icon(Icons.menu_book_outlined, size: 16),
             label: const Text('교보문고'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primary700,
-              side: const BorderSide(color: AppColors.primary200, width: 1.5),
+              foregroundColor: colors.onSurfaceMuted,              // primary700 → onSurfaceMuted
+              side: BorderSide(color: colors.border, width: 1.5), // primary200 → border, const 제거
               visualDensity: VisualDensity.compact,
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3),
             ),
@@ -1212,8 +1225,8 @@ class _PurchaseLinksRow extends StatelessWidget {
             icon: const Icon(Icons.shopping_bag_outlined, size: 16),
             label: const Text('알라딘'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primary700,
-              side: const BorderSide(color: AppColors.primary200, width: 1.5),
+              foregroundColor: colors.onSurfaceMuted,              // primary700 → onSurfaceMuted
+              side: BorderSide(color: colors.border, width: 1.5), // primary200 → border, const 제거
               visualDensity: VisualDensity.compact,
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3),
             ),
@@ -1243,13 +1256,14 @@ class _InfoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colors = context.colors;
     final tile = Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.s3,
         vertical: AppSpacing.s2,
       ),
       decoration: BoxDecoration(
-        color: AppColors.secondary100,
+        color: colors.surfaceCard,               // secondary100 → surfaceCard
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
@@ -1258,7 +1272,8 @@ class _InfoTile extends StatelessWidget {
         children: [
           Text(
             label,
-            style: textTheme.labelSmall?.copyWith(color: AppColors.primary500),
+            style: textTheme.labelSmall?.copyWith(
+                color: colors.onSurfaceMuted), // primary500 → onSurfaceMuted
           ),
           const SizedBox(height: 2),
           Text(
@@ -1266,7 +1281,8 @@ class _InfoTile extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: textTheme.bodyMedium?.copyWith(
-              color: emphasized ? AppColors.accent600 : AppColors.primary800,
+              // accent600 → accentDefault, primary800 → onSurface
+              color: emphasized ? colors.accentDefault : colors.onSurface,
               fontWeight: emphasized ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
@@ -1298,6 +1314,7 @@ class _FriendsAvgRatingChip extends ConsumerWidget {
     final data = async.value;
     if (data == null || data.n < 3) return const SizedBox.shrink();
     final avg = data.avg.toStringAsFixed(1);
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.s3),
       child: Container(
@@ -1306,31 +1323,31 @@ class _FriendsAvgRatingChip extends ConsumerWidget {
           vertical: 4,
         ),
         decoration: BoxDecoration(
-          color: AppColors.secondary100,
+          color: colors.surfaceCard,                    // secondary100 → surfaceCard
           borderRadius: BorderRadius.circular(AppRadius.full),
-          border: Border.all(color: AppColors.primary200),
+          border: Border.all(color: colors.border),    // primary200 → border
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.star_rounded,
               size: 16,
-              color: AppColors.accent500,
+              color: colors.accentDefault,              // accent500 → accentDefault
             ),
             const SizedBox(width: 4),
             Text(
               '친구만의 평균 $avg',
               style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.primary700,
+                color: colors.onSurfaceMuted,           // primary700 → onSurfaceMuted
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(width: 4),
             Text(
               '(N=${data.n})',
-              style: AppTextStyles.labelSmall
-                  .copyWith(color: AppColors.primary500),
+              style: AppTextStyles.labelSmall.copyWith(
+                  color: colors.onSurfaceSubtle),       // primary500 → onSurfaceSubtle
             ),
           ],
         ),
@@ -1360,6 +1377,7 @@ class _ReadingProgressStrip extends ConsumerWidget {
     final today = DateTime(now.year, now.month, now.day);
     final days = today.difference(started).inDays + 1; // 시작 당일을 1일째로
 
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.s3),
       child: Container(
@@ -1368,30 +1386,30 @@ class _ReadingProgressStrip extends ConsumerWidget {
           vertical: AppSpacing.s2,
         ),
         decoration: BoxDecoration(
-          color: AppColors.accent50,
+          color: colors.accentContainer,               // accent50 → accentContainer
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.accent200),
+          border: Border.all(color: colors.accentBorder), // accent200 → accentBorder
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.menu_book_rounded,
               size: 16,
-              color: AppColors.accent600,
+              color: colors.accentDefault,             // accent600 → accentDefault
             ),
             const SizedBox(width: AppSpacing.s2),
             Expanded(
               child: Text(
                 '$days일째 읽는 중',
                 style: AppTextStyles.labelMedium.copyWith(
-                  color: AppColors.accent800,
+                  color: colors.accentOnContainer,     // accent800 → accentOnContainer
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
             TextButton(
               style: TextButton.styleFrom(
-                foregroundColor: AppColors.accent600,
+                foregroundColor: colors.accentDefault, // accent600 → accentDefault
                 padding:
                     const EdgeInsets.symmetric(horizontal: AppSpacing.s2),
                 minimumSize: const Size(0, 32),
@@ -1452,27 +1470,28 @@ class _MoodSummaryChips extends ConsumerWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.secondary100,
+                  color: context.colors.chipBg,              // secondary100 → chipBg
                   borderRadius: BorderRadius.circular(AppRadius.full),
-                  border: Border.all(color: AppColors.primary200),
+                  border: Border.all(color: context.colors.border), // primary200 → border
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(e.key.icon, size: 14, color: AppColors.primary600),
+                    Icon(e.key.icon, size: 14,
+                        color: context.colors.iconPrimary), // primary600 → iconPrimary
                     const SizedBox(width: 4),
                     Text(
                       e.key.label,
                       style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.primary700,
+                        color: context.colors.onSurfaceMuted, // primary700 → onSurfaceMuted
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '${e.value}',
-                      style: AppTextStyles.labelSmall
-                          .copyWith(color: AppColors.primary500),
+                      style: AppTextStyles.labelSmall.copyWith(
+                          color: context.colors.onSurfaceSubtle), // primary500 → onSurfaceSubtle
                     ),
                   ],
                 ),
@@ -1498,6 +1517,7 @@ class _FriendsWithBookChip extends ConsumerWidget {
     final asyncCount = ref.watch(friendsWithBookCountProvider(bookId));
     final n = asyncCount.value ?? 0;
     if (n <= 0) return const SizedBox.shrink();
+    final colors = context.colors;
     return InkWell(
       onTap: () => _openFriendsWithBookSheet(context, bookId),
       borderRadius: BorderRadius.circular(AppRadius.full),
@@ -1507,31 +1527,31 @@ class _FriendsWithBookChip extends ConsumerWidget {
           vertical: 4,
         ),
         decoration: BoxDecoration(
-          color: AppColors.secondary100,
+          color: colors.chipBg,                         // secondary100 → chipBg
           borderRadius: BorderRadius.circular(AppRadius.full),
-          border: Border.all(color: AppColors.primary200),
+          border: Border.all(color: colors.border),    // primary200 → border
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.group_outlined,
               size: 14,
-              color: AppColors.primary600,
+              color: colors.iconPrimary,               // primary600 → iconPrimary
             ),
             const SizedBox(width: 4),
             Text(
               '친구 $n명도 담음',
               style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.primary700,
+                color: colors.onSurfaceMuted,          // primary700 → onSurfaceMuted
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(width: 2),
-            const Icon(
+            Icon(
               Icons.chevron_right_rounded,
               size: 14,
-              color: AppColors.primary500,
+              color: colors.onSurfaceSubtle,           // primary500 → onSurfaceSubtle
             ),
           ],
         ),
@@ -1563,12 +1583,14 @@ class _FriendsWithBookSheet extends ConsumerWidget {
       builder: (_, scrollController) => Column(
         children: [
           const SizedBox(height: AppSpacing.s2),
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.primary300,
-              borderRadius: BorderRadius.circular(2),
+          Builder(
+            builder: (context) => Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: context.colors.borderStrong, // primary300 → borderStrong
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           Padding(
@@ -1577,14 +1599,15 @@ class _FriendsWithBookSheet extends ConsumerWidget {
           ),
           Expanded(
             child: async.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: AppColors.accent500),
+              loading: () => Center(
+                child: CircularProgressIndicator(
+                    color: context.colors.accentDefault), // accent500 → accentDefault
               ),
               error: (_, _) => Center(
                 child: Text(
                   '목록을 불러오지 못했어요.',
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.primary500),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                      color: context.colors.onSurfaceMuted), // primary500 → onSurfaceMuted
                 ),
               ),
               data: (profiles) {
@@ -1592,8 +1615,8 @@ class _FriendsWithBookSheet extends ConsumerWidget {
                   return Center(
                     child: Text(
                       '아직 이 책을 담은 친구가 없어요',
-                      style: AppTextStyles.bodyMedium
-                          .copyWith(color: AppColors.primary500),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                          color: context.colors.onSurfaceMuted), // primary500 → onSurfaceMuted
                     ),
                   );
                 }
@@ -1622,9 +1645,10 @@ class _FriendsWithBookTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = profile.displayName ?? '(이름 없음)';
     final initial = name.isEmpty ? '?' : String.fromCharCode(name.runes.first);
+    final colors = context.colors;
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: AppColors.accent200,
+        backgroundColor: colors.accentContainer,       // accent200 → accentContainer
         backgroundImage: (profile.avatarUrl?.isNotEmpty ?? false)
             ? NetworkImage(profile.avatarUrl!)
             : null,
@@ -1633,7 +1657,7 @@ class _FriendsWithBookTile extends StatelessWidget {
             : Text(
                 initial,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.primary900,
+                  color: colors.onSurface,             // primary900 → onSurface
                   fontWeight: FontWeight.w600,
                 ),
               ),

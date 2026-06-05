@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HW-D: '읽고 있는 책' 위젯 레이아웃 (RemoteViews). 표지 + 제목·저자 + N일째 + CTA.
+     색은 브랜드 토큰 하드코딩: paper #FAFAF8 / ink #1C1917 / muted #635B50 / copper #B87333.
+     OS 다크 테마 추종은 HW-C(values-night)에서. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/reading_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bookquote_widget_background"
+    android:padding="16dp">
+
+    <ImageView
+        android:id="@+id/reading_cover"
+        android:layout_width="60dp"
+        android:layout_height="88dp"
+        android:scaleType="centerCrop"
+        android:adjustViewBounds="true"
+        android:visibility="gone"
+        android:contentDescription="책 표지" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/reading_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:textColor="#1C1917"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            tools:text="데미안" />
+
+        <TextView
+            android:id="@+id/reading_author"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="#635B50"
+            android:textSize="12sp"
+            tools:text="헤르만 헤세" />
+
+        <TextView
+            android:id="@+id/reading_days"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="#B87333"
+            android:textSize="12sp"
+            tools:text="12일째 읽는 중" />
+
+        <TextView
+            android:id="@+id/reading_cta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="#B87333"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            tools:text="＋ 한 줄 적기" />
+    </LinearLayout>
+</LinearLayout>

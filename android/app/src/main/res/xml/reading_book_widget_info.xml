@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HW-D: '읽고 있는 책' 위젯 메타. 4x2 셀, 일 1회 자동 갱신(+ 앱 resume 시 푸시). -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:minResizeWidth="140dp"
+    android:minResizeHeight="80dp"
+    android:maxResizeWidth="320dp"
+    android:maxResizeHeight="280dp"
+    android:updatePeriodMillis="86400000"
+    android:initialLayout="@layout/reading_book_widget"
+    android:previewLayout="@layout/reading_book_widget"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen" />

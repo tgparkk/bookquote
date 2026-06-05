@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
 import '../../profile/domain/profile.dart';
@@ -26,8 +27,8 @@ class MyFollowingScreen extends ConsumerWidget {
         child: RefreshIndicator(
           onRefresh: () async => ref.invalidate(myFollowingProvider),
           child: async.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.accent500),
+            loading: () => Center(
+              child: CircularProgressIndicator(color: context.colors.accentDefault),
             ),
             error: (_, _) => _ErrorView(
               onRetry: () => ref.invalidate(myFollowingProvider),
@@ -71,22 +72,22 @@ class _FollowingTile extends StatelessWidget {
     return ListTile(
       onTap: () => context.push('/u/${profile.id}'),
       leading: CircleAvatar(
-        backgroundColor: AppColors.accent200,
+        backgroundColor: context.colors.accentContainer,
         backgroundImage: hasAvatar ? NetworkImage(profile.avatarUrl!) : null,
         child: hasAvatar
             ? null
             : Text(
                 initial,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.primary900,
+                  color: context.colors.accentOnContainer,
                   fontWeight: FontWeight.w600,
                 ),
               ),
       ),
       title: Text(name, style: AppTextStyles.bodyLarge),
-      trailing: const Icon(
+      trailing: Icon(
         Icons.chevron_right,
-        color: AppColors.primary300,
+        color: context.colors.iconMuted,
         size: 20,
       ),
     );
@@ -107,10 +108,10 @@ class _EmptyView extends StatelessWidget {
         AppSpacing.s8,
       ),
       children: [
-        const Icon(
+        Icon(
           Icons.group_outlined,
           size: 48,
-          color: AppColors.primary300,
+          color: context.colors.iconMuted,
         ),
         const SizedBox(height: AppSpacing.s4),
         Text(
@@ -122,7 +123,7 @@ class _EmptyView extends StatelessWidget {
         Text(
           '친구를 찾아 서재를 구경해 보세요.',
           textAlign: TextAlign.center,
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary500),
+          style: AppTextStyles.bodyMedium.copyWith(color: context.colors.onSurfaceSubtle),
         ),
         const SizedBox(height: AppSpacing.s6),
         Center(

@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
 import '../state/quote_providers.dart';
@@ -81,8 +82,11 @@ class QuoteSearchDelegate extends SearchDelegate<void> {
           builder: (context, ref, _) {
             final async = ref.watch(quoteSearchProvider(effectiveQuery));
             return async.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: AppColors.accent500),
+              loading: () => Center(
+                child: CircularProgressIndicator(
+                  // accentDefault: 라이트=accent500, 다크=accent500(동일)
+                  color: context.colors.accentDefault,
+                ),
               ),
               error: (_, _) => const _ErrorView(),
               data: (items) {
@@ -131,16 +135,19 @@ class _Hint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.s8),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            // const 제거: Icon이 런타임 colors.iconMuted 참조
+            Icon(
               Icons.search_rounded,
               size: 56,
-              color: AppColors.primary300,
+              // 힌트 아이콘: 라이트=primary300, 다크=primary400(iconMuted 토큰)
+              color: colors.iconMuted,
             ),
             const SizedBox(height: AppSpacing.s4),
             Text(
@@ -152,7 +159,7 @@ class _Hint extends StatelessWidget {
               '본문 또는 책 제목 일부를 입력하세요.\n잠금 인용구는 검색에서 제외돼요.',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.primary500),
+                  .copyWith(color: colors.onSurfaceSubtle),
             ),
           ],
         ),
@@ -168,16 +175,18 @@ class _ZeroResult extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.s8),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            // const 제거: Icon이 런타임 colors.iconMuted 참조
+            Icon(
               Icons.search_off_rounded,
               size: 56,
-              color: AppColors.primary300,
+              color: colors.iconMuted,
             ),
             const SizedBox(height: AppSpacing.s4),
             Text(
@@ -188,7 +197,7 @@ class _ZeroResult extends StatelessWidget {
             Text(
               '다른 단어로 검색해보세요.',
               style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.primary500),
+                  .copyWith(color: colors.onSurfaceSubtle),
             ),
           ],
         ),
@@ -205,7 +214,9 @@ class _ErrorView extends StatelessWidget {
     return Center(
       child: Text(
         '검색 중 오류가 발생했어요.',
-        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary500),
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: context.colors.onSurfaceSubtle,
+        ),
       ),
     );
   }

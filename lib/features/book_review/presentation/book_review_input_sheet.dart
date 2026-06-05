@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
 import '../domain/book_review.dart';
 
@@ -42,6 +43,7 @@ class _BookReviewInputSheetState extends State<BookReviewInputSheet> {
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.viewInsetsOf(context);
     final isEdit = widget.initialText.trim().isNotEmpty;
+    final colors = context.colors; // 시맨틱 색
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.s6,
@@ -59,7 +61,7 @@ class _BookReviewInputSheetState extends State<BookReviewInputSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.primary300,
+                color: colors.borderStrong, // primary300 → borderStrong
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -71,7 +73,7 @@ class _BookReviewInputSheetState extends State<BookReviewInputSheet> {
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.md,
               fontWeight: FontWeight.w700,
-              color: AppColors.primary900,
+              color: colors.onSurface,
             ),
           ),
           const SizedBox(height: AppSpacing.s1),
@@ -80,7 +82,7 @@ class _BookReviewInputSheetState extends State<BookReviewInputSheet> {
             style: TextStyle(
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.sm,
-              color: AppColors.primary500,
+              color: colors.onSurfaceMuted,
             ),
           ),
           const SizedBox(height: AppSpacing.s4),
@@ -100,20 +102,20 @@ class _BookReviewInputSheetState extends State<BookReviewInputSheet> {
                 fontFamily: AppFonts.quote,
                 fontSize: AppFontSize.base,
                 height: AppLineHeight.loose,
-                color: AppColors.primary900,
+                color: colors.onSurface,
               ),
               decoration: InputDecoration(
                 hintText: '이 책이 어떻게 읽혔는지…',
                 hintStyle: TextStyle(
                   fontFamily: AppFonts.quote,
-                  color: AppColors.primary400,
+                  color: colors.onSurfaceSubtle,
                 ),
                 errorText: _error,
                 border: const OutlineInputBorder(),
                 alignLabelWithHint: true,
                 counterStyle: TextStyle(
                   fontFamily: AppFonts.ui,
-                  color: AppColors.primary400,
+                  color: colors.onSurfaceSubtle,
                 ),
               ),
             ),
@@ -129,8 +131,8 @@ class _BookReviewInputSheetState extends State<BookReviewInputSheet> {
               const SizedBox(width: AppSpacing.s2),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent500,
-                  foregroundColor: AppColors.secondary50,
+                  backgroundColor: colors.accentDefault,
+                  foregroundColor: colors.accentOnAccent,
                 ),
                 onPressed: _submit,
                 child: const Text('저장'),
