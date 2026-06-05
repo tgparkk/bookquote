@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
 import '../data/quote_repository.dart';
 import '../domain/quote.dart';
@@ -343,10 +344,11 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
   }
 
   Widget _body(BuildContext context) {
+    final colors = context.colors;
     final textTheme = Theme.of(context).textTheme;
     if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.accent500),
+      return Center(
+        child: CircularProgressIndicator(color: colors.accentDefault),
       );
     }
     if (_error != null) {
@@ -377,12 +379,13 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
           Container(
             padding: const EdgeInsets.all(AppSpacing.s6),
             decoration: BoxDecoration(
-              color: AppColors.secondary300,
+              // 빈상태 카드 배경: 라이트=secondary300, 다크=primary700(surfaceCard 토큰)
+              color: colors.surfaceCard,
               borderRadius: BorderRadius.circular(AppRadius.xl),
             ),
             child: Column(
               children: [
-                Icon(Icons.format_quote, size: 40, color: AppColors.accent500),
+                Icon(Icons.format_quote, size: 40, color: colors.accentDefault),
                 const SizedBox(height: AppSpacing.s3),
                 Text(
                   _mood == null
@@ -390,7 +393,7 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
                       : '이 무드의 인용구가 아직 없어요',
                   textAlign: TextAlign.center,
                   style: textTheme.titleMedium?.copyWith(
-                    color: AppColors.primary800,
+                    color: colors.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -401,7 +404,7 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
                     '무드를 3가지 이상 쌓으면 무드별로 모아볼 수 있어요.',
                     textAlign: TextAlign.center,
                     style: textTheme.bodyMedium?.copyWith(
-                      color: AppColors.primary500,
+                      color: colors.onSurfaceSubtle,
                       height: 1.6,
                     ),
                   ),
@@ -410,8 +413,8 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
                 _mood == null
                     ? ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent500,
-                          foregroundColor: AppColors.secondary50,
+                          backgroundColor: colors.accentDefault,
+                          foregroundColor: colors.accentOnAccent,
                         ),
                         onPressed: () => context.push('/quote/new'),
                         child: const Text('＋ 첫 인용구 저장하기'),
@@ -459,6 +462,7 @@ class _MoodHubHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final moodCount = snapshots.length;
     final totalQuotes =
         snapshots.fold<int>(0, (sum, s) => sum + s.count);
@@ -474,7 +478,8 @@ class _MoodHubHeader extends StatelessWidget {
           Icon(
             Icons.collections_bookmark_outlined,
             size: 16,
-            color: AppColors.accent700,
+            // accentOnContainer: 라이트=accent900, 다크=accent200
+            color: colors.accentOnContainer,
           ),
           const SizedBox(width: AppSpacing.s2),
           Expanded(
@@ -485,20 +490,20 @@ class _MoodHubHeader extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: AppFonts.ui,
                   fontSize: AppFontSize.sm,
-                  color: AppColors.primary700,
+                  color: colors.onSurfaceMuted,
                 ),
                 children: [
                   TextSpan(
                     text: '무드별로 모아 봐요',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.accent700,
+                      color: colors.accentOnContainer,
                     ),
                   ),
                   TextSpan(
                     text: '  ·  $moodCount개 무드 · $totalQuotes개 인용구',
                     style: TextStyle(
-                      color: AppColors.primary500,
+                      color: colors.onSurfaceSubtle,
                     ),
                   ),
                 ],
@@ -517,6 +522,7 @@ class _HubBreadcrumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -533,7 +539,7 @@ class _HubBreadcrumb extends StatelessWidget {
               Icon(
                 Icons.arrow_back_rounded,
                 size: 16,
-                color: AppColors.accent700,
+                color: colors.accentDefault,
               ),
               const SizedBox(width: AppSpacing.s2),
               Text(
@@ -542,7 +548,7 @@ class _HubBreadcrumb extends StatelessWidget {
                   fontFamily: AppFonts.ui,
                   fontSize: AppFontSize.sm,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.accent700,
+                  color: colors.accentDefault,
                 ),
               ),
             ],
@@ -612,12 +618,15 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semanticColors = context.colors;
+    // 선택된 칩: chipSelected(라이트=accent200, 다크=accent800) 배경 +
+    // onSurface 글자. 무드 정체성 색(moodColorOf)은 범위 밖이라 그대로 유지.
     final bg = selected
-        ? AppColors.primary900
-        : colors?.light ?? AppColors.secondary300;
+        ? semanticColors.chipSelected
+        : colors?.light ?? semanticColors.chipBg;
     final fg = selected
-        ? AppColors.secondary50
-        : colors?.dark ?? AppColors.primary600;
+        ? semanticColors.onSurface
+        : colors?.dark ?? semanticColors.onSurfaceMuted;
     // F9 일관 가드 — 시스템 1.3x 시 필터 칩도 줄바꿈 마찰. mood_chips와 동일 정책.
     final clamped =
         MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.15);
@@ -627,8 +636,8 @@ class _Chip extends StatelessWidget {
       showCheckmark: false,
       onSelected: (_) => onTap(),
       backgroundColor: bg,
-      selectedColor: AppColors.primary900,
-      side: BorderSide(color: selected ? AppColors.primary900 : bg),
+      selectedColor: semanticColors.chipSelected,
+      side: BorderSide(color: selected ? semanticColors.chipSelected : bg),
       shape: const StadiumBorder(),
       labelStyle: TextStyle(
         fontFamily: AppFonts.ui,

@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../book/domain/book.dart';
 import '../../../book/presentation/widgets/book_cover.dart';
@@ -65,6 +66,7 @@ class QuoteListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final textTheme = Theme.of(context).textTheme;
     final coverUrl = book?.coverUrl;
     final author = book?.author;
@@ -86,9 +88,11 @@ class QuoteListCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: const BorderSide(color: AppColors.primary100, width: 1),
+        // border: 라이트=primary100, 다크=primary600(border 토큰)
+        side: BorderSide(color: colors.border, width: 1),
       ),
-      color: AppColors.secondary100,
+      // 카드 배경: 라이트=secondary100, 다크=primary700(surfaceCard 토큰)
+      color: colors.surfaceCard,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -120,20 +124,21 @@ class QuoteListCard extends StatelessWidget {
                         padding: const EdgeInsets.only(bottom: AppSpacing.s1),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const <Widget>[
+                          // const 제거: Icon·Text가 런타임 colors.accentDefault 참조
+                          children: <Widget>[
                             Icon(
                               Icons.lock_outline_rounded,
                               size: 12,
-                              color: AppColors.accent600,
+                              color: colors.accentDefault,
                             ),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Text(
                               '잠금',
                               style: TextStyle(
                                 fontFamily: AppFonts.ui,
                                 fontSize: AppFontSize.xxs,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.accent600,
+                                color: colors.accentDefault,
                                 letterSpacing: 0.4,
                               ),
                             ),
@@ -152,8 +157,8 @@ class QuoteListCard extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                         height: AppLineHeight.relaxed,
                         color: hasReadableText
-                            ? AppColors.primary800
-                            : AppColors.primary400,
+                            ? colors.onSurface
+                            : colors.onSurfaceSubtle,
                         fontStyle: hasReadableText
                             ? FontStyle.normal
                             : FontStyle.italic,
@@ -172,7 +177,7 @@ class QuoteListCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: textTheme.labelSmall
-                                ?.copyWith(color: AppColors.primary400),
+                                ?.copyWith(color: colors.onSurfaceSubtle),
                           ),
                         ),
                       ),
@@ -208,7 +213,7 @@ class QuoteListCard extends StatelessWidget {
                               ),
                               label: const Text('책 보기'),
                               style: TextButton.styleFrom(
-                                foregroundColor: AppColors.accent700,
+                                foregroundColor: colors.accentOnContainer,
                                 visualDensity: VisualDensity.compact,
                               ),
                             ),
@@ -222,8 +227,10 @@ class QuoteListCard extends StatelessWidget {
                               ),
                               label: const Text('신고'),
                               style: TextButton.styleFrom(
-                                foregroundColor: AppColors.primary400,
+                                foregroundColor: colors.onSurfaceSubtle,
                                 visualDensity: VisualDensity.compact,
+                                // const 제거: TextStyle이 런타임 colors 없는 불변 값이지만
+                                // styleFrom 자체가 런타임이라 const 불필요
                                 textStyle: const TextStyle(
                                   fontFamily: AppFonts.ui,
                                   fontSize: AppFontSize.sm,
@@ -253,8 +260,8 @@ class QuoteListCard extends StatelessWidget {
                               ),
                               label: const Text('바로 공유'),
                               style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.accent500,
-                                foregroundColor: Colors.white,
+                                backgroundColor: colors.accentDefault,
+                                foregroundColor: colors.accentOnAccent,
                                 visualDensity: VisualDensity.compact,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: AppSpacing.s3,
@@ -275,9 +282,9 @@ class QuoteListCard extends StatelessWidget {
                               ),
                               label: const Text('카드 디자인'),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primary700,
-                                side: const BorderSide(
-                                  color: AppColors.primary200,
+                                foregroundColor: colors.onSurfaceMuted,
+                                side: BorderSide(
+                                  color: colors.border,
                                   width: 1.5,
                                 ),
                                 visualDensity: VisualDensity.compact,
@@ -297,7 +304,7 @@ class QuoteListCard extends StatelessWidget {
                               icon: const Icon(Icons.edit_outlined, size: 14),
                               label: const Text('수정'),
                               style: TextButton.styleFrom(
-                                foregroundColor: AppColors.primary600,
+                                foregroundColor: colors.onSurfaceMuted,
                                 visualDensity: VisualDensity.compact,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: AppSpacing.s2,
@@ -318,7 +325,7 @@ class QuoteListCard extends StatelessWidget {
                               ),
                               label: const Text('무드'),
                               style: TextButton.styleFrom(
-                                foregroundColor: AppColors.primary600,
+                                foregroundColor: colors.onSurfaceMuted,
                                 visualDensity: VisualDensity.compact,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: AppSpacing.s2,
@@ -336,6 +343,7 @@ class QuoteListCard extends StatelessWidget {
                               child: Text(
                                 '삭제',
                                 style: TextStyle(
+                                  // semanticError — 상태색이라 변환 안 함
                                   color: AppColors.semanticError,
                                 ),
                               ),

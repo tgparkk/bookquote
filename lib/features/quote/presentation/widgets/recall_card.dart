@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../domain/quote_mood.dart';
 import '../../state/quote_providers.dart';
@@ -89,6 +90,7 @@ class _RecallCardState extends ConsumerState<RecallCard> {
   }
 
   Widget _buildCard(BuildContext context, QuoteMood mood, int count) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.s4,
@@ -97,7 +99,8 @@ class _RecallCardState extends ConsumerState<RecallCard> {
         0,
       ),
       child: Material(
-        color: AppColors.accent50,
+        // 액센트 배경 컨테이너: 라이트=accent100, 다크=accent900(accentContainer 토큰)
+        color: colors.accentContainer,
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: InkWell(
           onTap: () =>
@@ -112,10 +115,11 @@ class _RecallCardState extends ConsumerState<RecallCard> {
             ),
             child: Row(
               children: <Widget>[
-                const Icon(
+                // const 제거: Icon이 런타임 colors.accentDefault 참조
+                Icon(
                   Icons.bookmark_rounded,
                   size: 20,
-                  color: AppColors.accent600,
+                  color: colors.accentDefault,
                 ),
                 const SizedBox(width: AppSpacing.s3),
                 Expanded(
@@ -124,7 +128,8 @@ class _RecallCardState extends ConsumerState<RecallCard> {
                       style: TextStyle(
                         fontFamily: AppFonts.ui,
                         fontSize: AppFontSize.sm,
-                        color: AppColors.primary700,
+                        // accentContainer 위 텍스트: accentOnContainer 토큰
+                        color: colors.accentOnContainer,
                       ),
                       children: <InlineSpan>[
                         const TextSpan(text: '가장 많이 모은 '),
@@ -132,7 +137,7 @@ class _RecallCardState extends ConsumerState<RecallCard> {
                           text: '"${mood.label}" ',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: AppColors.accent700,
+                            color: colors.accentOnContainer,
                           ),
                         ),
                         TextSpan(text: '$count구절 다시 보기 →'),
@@ -142,8 +147,9 @@ class _RecallCardState extends ConsumerState<RecallCard> {
                 ),
                 IconButton(
                   tooltip: '7일 동안 숨기기',
+                  // const 제거: Icon이 런타임 colors.iconMuted 참조
                   icon: const Icon(Icons.close_rounded, size: 18),
-                  color: AppColors.primary400,
+                  color: colors.iconMuted,
                   visualDensity: VisualDensity.compact,
                   onPressed: _dismissForWeek,
                 ),
