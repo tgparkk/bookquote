@@ -16,6 +16,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../app/auth_state_provider.dart';
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
 import '../../profile/data/profile_repository.dart';
@@ -159,9 +160,9 @@ class _MyProfileInviteCard extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.s3),
         decoration: BoxDecoration(
-          color: AppColors.accent50,
+          color: context.colors.accentContainer,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.accent200),
+          border: Border.all(color: context.colors.accentBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,7 +173,7 @@ class _MyProfileInviteCard extends ConsumerWidget {
                   child: Text(
                     '내 프로필 공유하기',
                     style: AppTextStyles.titleSmall
-                        .copyWith(color: AppColors.primary900),
+                        .copyWith(color: context.colors.onSurface),
                   ),
                 ),
                 Container(
@@ -205,7 +206,7 @@ class _MyProfileInviteCard extends ConsumerWidget {
                   : '비공개라 친구가 이름으로 검색해도 안 보여요. '
                       '공개로 바꿔야 링크도 의미가 있어요.',
               style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.primary600),
+                  .copyWith(color: context.colors.onSurfaceMuted),
             ),
             const SizedBox(height: AppSpacing.s3),
             Row(
@@ -230,8 +231,8 @@ class _MyProfileInviteCard extends ConsumerWidget {
                       icon: const Icon(Icons.ios_share_rounded, size: 16),
                       label: const Text('초대 링크 공유'),
                       style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.accent500,
-                        foregroundColor: Colors.white,
+                        backgroundColor: context.colors.accentDefault,
+                        foregroundColor: context.colors.accentOnAccent,
                         visualDensity: VisualDensity.compact,
                       ),
                     ),
@@ -270,7 +271,7 @@ class _DiscoverList extends ConsumerWidget {
               child: Text(
                 '둘러보기',
                 style: AppTextStyles.labelMedium
-                    .copyWith(color: AppColors.primary400),
+                    .copyWith(color: context.colors.onSurfaceSubtle),
               ),
             ),
             Expanded(
@@ -298,10 +299,10 @@ class _DiscoverEmpty extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(
+            Icon(
               Icons.person_search_outlined,
               size: 56,
-              color: AppColors.primary400,
+              color: context.colors.iconMuted,
             ),
             const SizedBox(height: AppSpacing.s4),
             Text(
@@ -313,7 +314,7 @@ class _DiscoverEmpty extends StatelessWidget {
               '친구 이름을 알면 위에서 검색해보세요.',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.primary500),
+                  .copyWith(color: context.colors.onSurfaceSubtle),
             ),
           ],
         ),
@@ -335,10 +336,10 @@ class _ZeroResult extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(
+            Icon(
               Icons.search_off_rounded,
               size: 56,
-              color: AppColors.primary400,
+              color: context.colors.iconMuted,
             ),
             const SizedBox(height: AppSpacing.s4),
             Text(
@@ -350,7 +351,7 @@ class _ZeroResult extends StatelessWidget {
               '이름이 정확한지 확인하거나,\n친구가 공개 설정을 켰는지 확인해주세요.',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.primary500),
+                  .copyWith(color: context.colors.onSurfaceSubtle),
             ),
           ],
         ),
@@ -367,7 +368,7 @@ class _ErrorView extends StatelessWidget {
     return Center(
       child: Text(
         '검색 중 오류가 발생했어요.',
-        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary500),
+        style: AppTextStyles.bodyMedium.copyWith(color: context.colors.onSurfaceSubtle),
       ),
     );
   }
@@ -422,7 +423,7 @@ class _ResultTileState extends ConsumerState<_ResultTile> {
     return ListTile(
       onTap: () => context.push('/u/${p.id}'),
       leading: CircleAvatar(
-        backgroundColor: AppColors.accent200,
+        backgroundColor: context.colors.accentContainer,
         backgroundImage: (p.avatarUrl?.isNotEmpty ?? false)
             ? NetworkImage(p.avatarUrl!)
             : null,
@@ -431,7 +432,7 @@ class _ResultTileState extends ConsumerState<_ResultTile> {
             : Text(
                 initial,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.primary900,
+                  color: context.colors.accentOnContainer,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -451,7 +452,7 @@ class _ResultTileState extends ConsumerState<_ResultTile> {
                   icon: const Icon(Icons.check_rounded, size: 16),
                   label: const Text('팔로잉'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary700,
+                    foregroundColor: context.colors.onSurfaceMuted,
                     visualDensity: VisualDensity.compact,
                   ),
                 )
@@ -460,8 +461,8 @@ class _ResultTileState extends ConsumerState<_ResultTile> {
                   icon: const Icon(Icons.add_rounded, size: 16),
                   label: const Text('팔로우'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.accent500,
-                    foregroundColor: AppColors.secondary50,
+                    backgroundColor: context.colors.accentDefault,
+                    foregroundColor: context.colors.accentOnAccent,
                     visualDensity: VisualDensity.compact,
                   ),
                 ),
