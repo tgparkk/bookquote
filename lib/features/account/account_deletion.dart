@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/supabase/supabase_init.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../me/data/quote_export.dart';
 
@@ -154,7 +155,9 @@ class _ConfirmTypeDialogState extends State<_ConfirmTypeDialog> {
           child: Text(
             '탈퇴',
             style: TextStyle(
-              color: _ok ? AppColors.semanticError : AppColors.primary300,
+              // LEAVE: semanticError(활성) — 탈퇴 확인 빨강 유지
+              // 비활성: primary300 → onSurfaceSubtle
+              color: _ok ? AppColors.semanticError : context.colors.onSurfaceSubtle,
             ),
           ),
         ),
@@ -168,7 +171,8 @@ class _DeletingDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const PopScope(
+    // const 제거: CircularProgressIndicator.color가 런타임 context.colors 참조
+    return PopScope(
       canPop: false,
       child: AlertDialog(
         content: Row(
@@ -179,11 +183,12 @@ class _DeletingDialog extends StatelessWidget {
               height: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2.5,
-                color: AppColors.accent500,
+                // spinner: accent500 → accentDefault
+                color: context.colors.accentDefault,
               ),
             ),
-            SizedBox(width: AppSpacing.s4),
-            Text('탈퇴 처리 중…'),
+            const SizedBox(width: AppSpacing.s4),
+            const Text('탈퇴 처리 중…'),
           ],
         ),
       ),

@@ -15,6 +15,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
 import '../../quote/data/quote_repository.dart';
 import 'markdown_exporter.dart';
@@ -116,7 +117,8 @@ Future<void> _maybeShowSovereigntyHint(
     if (!context.mounted) return;
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.secondary100,
+      // 시트 배경: secondary100 → surfaceSheet (다크 대응)
+      backgroundColor: AppSemanticColors.of(context).surfaceSheet,
       showDragHandle: true,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -136,6 +138,7 @@ class _SovereigntyHintSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colors = context.colors;
     return SafeArea(
       top: false,
       child: Padding(
@@ -149,10 +152,12 @@ class _SovereigntyHintSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const Icon(
+            // const 제거: 런타임 colors 참조
+            Icon(
               Icons.lock_open_rounded,
               size: 36,
-              color: AppColors.accent500,
+              // 아이콘: accent500 → accentDefault
+              color: colors.accentDefault,
             ),
             const SizedBox(height: AppSpacing.s3),
             Text(
@@ -165,15 +170,17 @@ class _SovereigntyHintSheet extends StatelessWidget {
               '책글귀는 언제든 비워두고 떠날 수 있어요.\n'
               '내 데이터는 항상 내가 가져갈 수 있도록 Markdown으로 받았어요.',
               textAlign: TextAlign.center,
+              // 본문: primary600 → onSurfaceMuted
               style: textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.primary600),
+                  ?.copyWith(color: colors.onSurfaceMuted),
             ),
             const SizedBox(height: AppSpacing.s6),
             FilledButton(
               onPressed: () => Navigator.of(context).maybePop(),
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.accent500,
-                foregroundColor: Colors.white,
+                // 버튼 배경: accent500 → accentDefault
+                backgroundColor: colors.accentDefault,
+                foregroundColor: colors.accentOnAccent,
                 minimumSize: const Size.fromHeight(48),
               ),
               child: const Text('확인'),

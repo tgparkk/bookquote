@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/tokens.dart';
 import '../account/account_deletion.dart';
@@ -222,6 +223,7 @@ class _ProfileHeader extends StatelessWidget {
     final initial =
         loggedIn && primary.isNotEmpty ? primary[0].toUpperCase() : '?';
 
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.s6,
@@ -233,14 +235,16 @@ class _ProfileHeader extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: AppColors.accent100,
+            // 프로필 배경: accent100 → accentContainer (다크에서 반전 대응)
+            backgroundColor: colors.accentContainer,
             child: Text(
               initial,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: AppFonts.ui,
                 fontWeight: FontWeight.w600,
                 fontSize: 18,
-                color: AppColors.accent700,
+                // 이니셜 글자: accent700 → accentOnContainer
+                color: colors.accentOnContainer,
               ),
             ),
           ),
@@ -253,16 +257,18 @@ class _ProfileHeader extends StatelessWidget {
                   loggedIn ? primary : '로그인 정보 없음',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  // 메인 텍스트: primary800 → onSurface
                   style: AppTextStyles.bodyLarge
-                      .copyWith(color: AppColors.primary800),
+                      .copyWith(color: colors.onSurface),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   loggedIn ? secondary : '아래에서 다시 로그인할 수 있어요',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  // 보조 텍스트: primary400 → onSurfaceSubtle
                   style: AppTextStyles.bodySmall
-                      .copyWith(color: AppColors.primary400),
+                      .copyWith(color: colors.onSurfaceSubtle),
                 ),
               ],
             ),
@@ -290,7 +296,8 @@ class _SectionHeader extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary400),
+        // 섹션 헤더: primary400 → onSurfaceSubtle
+        style: AppTextStyles.labelMedium.copyWith(color: context.colors.onSurfaceSubtle),
       ),
     );
   }
@@ -319,18 +326,22 @@ class _CountTile extends StatelessWidget {
       loading: () => '…',
       error: (_, _) => '—',
     );
+    final colors = context.colors;
     return ListTile(
-      leading: Icon(icon, color: AppColors.primary500, size: 22),
+      // 아이콘: primary500 → iconPrimary
+      leading: Icon(icon, color: colors.iconPrimary, size: 22),
       title: Text(title, style: AppTextStyles.bodyLarge),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             label,
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary400),
+            // 카운트 텍스트: primary400 → onSurfaceSubtle
+            style: AppTextStyles.bodyMedium.copyWith(color: colors.onSurfaceSubtle),
           ),
           const SizedBox(width: AppSpacing.s1),
-          const Icon(Icons.chevron_right, color: AppColors.primary300, size: 20),
+          // chevron: primary300 → iconMuted
+          Icon(Icons.chevron_right, color: colors.iconMuted, size: 20),
         ],
       ),
       onTap: onTap,
@@ -346,10 +357,13 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return ListTile(
-      leading: Icon(icon, color: AppColors.primary500, size: 22),
+      // 아이콘: primary500 → iconPrimary
+      leading: Icon(icon, color: colors.iconPrimary, size: 22),
       title: Text(title, style: AppTextStyles.bodyLarge),
-      trailing: const Icon(Icons.chevron_right, color: AppColors.primary300, size: 20),
+      // chevron: primary300 → iconMuted
+      trailing: Icon(Icons.chevron_right, color: colors.iconMuted, size: 20),
       onTap: onTap,
     );
   }
@@ -369,15 +383,18 @@ class _ValueTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titleColor = disabled ? AppColors.primary300 : AppColors.primary800;
-    final iconColor = disabled ? AppColors.primary300 : AppColors.primary500;
+    final colors = context.colors;
+    // disabled 시: primary300 → iconMuted / primary800 → onSurface
+    final titleColor = disabled ? colors.iconMuted : colors.onSurface;
+    final iconColor  = disabled ? colors.iconMuted : colors.iconPrimary;
     return ListTile(
       leading: Icon(icon, color: iconColor, size: 22),
       title: Text(title, style: AppTextStyles.bodyLarge.copyWith(color: titleColor)),
       trailing: Text(
         value,
         style: AppTextStyles.bodyMedium.copyWith(
-          color: disabled ? AppColors.primary300 : AppColors.primary400,
+          // trailing 값: disabled → iconMuted, 활성 → onSurfaceSubtle
+          color: disabled ? colors.iconMuted : colors.onSurfaceSubtle,
         ),
       ),
     );
@@ -395,12 +412,15 @@ class _AppVersionTile extends StatelessWidget {
       loading: () => '…',
       error: (_, _) => '—',
     );
+    final colors = context.colors;
     return ListTile(
-      leading: const Icon(Icons.info_outline, color: AppColors.primary500, size: 22),
+      // 아이콘: primary500 → iconPrimary
+      leading: Icon(Icons.info_outline, color: colors.iconPrimary, size: 22),
       title: Text('앱 버전', style: AppTextStyles.bodyLarge),
       trailing: Text(
         label,
-        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary400),
+        // 버전 값: primary400 → onSurfaceSubtle
+        style: AppTextStyles.bodyMedium.copyWith(color: colors.onSurfaceSubtle),
       ),
     );
   }
