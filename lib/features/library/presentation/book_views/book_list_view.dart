@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../book/domain/book.dart';
 import '../../../book/presentation/widgets/book_cover.dart';
@@ -97,14 +98,14 @@ class _BookRow extends ConsumerWidget {
                         if (showAvg)
                           _MiniChip(
                             icon: Icons.star_rounded,
-                            iconColor: AppColors.accent500,
+                            iconColor: context.colors.accentDefault,
                             text:
                                 '${avg.avg.toStringAsFixed(1)} 친구 ${avg.n}',
                           ),
                         for (final m in moods)
                           _MiniChip(
                             icon: m.mood.icon,
-                            iconColor: AppColors.primary600,
+                            iconColor: context.colors.iconPrimary,
                             text: '${m.mood.label} ${m.count}',
                           ),
                       ],
@@ -155,9 +156,9 @@ class _MiniChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.secondary100,
+        color: context.colors.surfaceCard,
         borderRadius: BorderRadius.circular(AppRadius.full),
-        border: Border.all(color: AppColors.primary200),
+        border: Border.all(color: context.colors.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -166,11 +167,11 @@ class _MiniChip extends StatelessWidget {
           const SizedBox(width: 3),
           Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: AppFonts.ui,
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: AppColors.primary700,
+              color: context.colors.onSurface,
             ),
           ),
         ],

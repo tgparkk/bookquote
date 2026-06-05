@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
 import '../../book/domain/user_book_on_day.dart';
 import '../../book/presentation/widgets/book_cover.dart';
@@ -75,63 +76,74 @@ class _CalendarSegmentState extends ConsumerState<CalendarSegment> {
                 const [];
           },
           calendarStyle: CalendarStyle(
+            // 오늘: 액센트 테두리만, 채움 없음
             todayDecoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.accent500, width: 1.5),
+              border: Border.all(
+                color: context.colors.accentDefault,
+                width: 1.5,
+              ),
             ),
-            todayTextStyle: const TextStyle(
+            todayTextStyle: TextStyle(
               fontFamily: AppFonts.ui,
               fontWeight: FontWeight.w600,
-              color: AppColors.accent700,
+              color: context.colors.accentDefault,
             ),
+            // 선택일: 액센트 채움 + 액센트 위 글자
             selectedDecoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.accent50,
-              border: Border.all(color: AppColors.accent500, width: 1.5),
+              color: context.colors.accentDefault,
+              border: Border.all(
+                color: context.colors.accentDefault,
+                width: 1.5,
+              ),
             ),
-            selectedTextStyle: const TextStyle(
+            selectedTextStyle: TextStyle(
               fontFamily: AppFonts.ui,
               fontWeight: FontWeight.w600,
-              color: AppColors.primary900,
+              color: context.colors.accentOnAccent,
             ),
-            outsideTextStyle: const TextStyle(
+            // 이번 달 밖 날짜 — 약한 색
+            outsideTextStyle: TextStyle(
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.sm,
-              color: AppColors.primary300,
+              color: context.colors.onSurfaceSubtle,
             ),
-            defaultTextStyle: const TextStyle(
+            // 평일
+            defaultTextStyle: TextStyle(
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.sm,
-              color: AppColors.primary700,
+              color: context.colors.onSurface,
             ),
-            weekendTextStyle: const TextStyle(
+            // 주말
+            weekendTextStyle: TextStyle(
               fontFamily: AppFonts.ui,
               fontSize: AppFontSize.sm,
-              color: AppColors.primary700,
+              color: context.colors.onSurface,
             ),
           ),
-          headerStyle: const HeaderStyle(
+          headerStyle: HeaderStyle(
             formatButtonVisible: false,
             titleCentered: true,
             titleTextStyle: TextStyle(
               fontFamily: AppFonts.ui,
               fontWeight: FontWeight.w600,
               fontSize: AppFontSize.base,
-              color: AppColors.primary900,
+              color: context.colors.onSurface,
             ),
           ),
-          daysOfWeekStyle: const DaysOfWeekStyle(
+          daysOfWeekStyle: DaysOfWeekStyle(
             weekdayStyle: TextStyle(
               fontFamily: AppFonts.ui,
               fontWeight: FontWeight.w500,
               fontSize: AppFontSize.xs,
-              color: AppColors.primary500,
+              color: context.colors.onSurfaceMuted,
             ),
             weekendStyle: TextStyle(
               fontFamily: AppFonts.ui,
               fontWeight: FontWeight.w500,
               fontSize: AppFontSize.xs,
-              color: AppColors.primary500,
+              color: context.colors.onSurfaceMuted,
             ),
           ),
           calendarBuilders: CalendarBuilders<UserBookOnDay>(
@@ -172,9 +184,12 @@ class _Markers extends StatelessWidget {
           const SizedBox(width: 2),
         ],
         if (extra > 0)
-          const Text(
+          Text(
             '⋯',
-            style: TextStyle(fontSize: 10, color: AppColors.primary400),
+            style: TextStyle(
+              fontSize: 10,
+              color: context.colors.onSurfaceSubtle,
+            ),
           ),
       ],
     );
@@ -188,29 +203,35 @@ class _Dot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (kind) {
+      // 읽기 시작: 액센트 테두리만(채움 없음) — 시작 마크
       ReadingMarkKind.started => Container(
           width: 6,
           height: 6,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.accent200),
+            border: Border.all(color: context.colors.accentDefault),
           ),
         ),
+      // 완독: 액센트 채움
       ReadingMarkKind.finished => Container(
           width: 6,
           height: 6,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.accent500,
+            color: context.colors.accentDefault,
           ),
         ),
+      // 시작+완독 동일: 채움 + 강한 테두리
       ReadingMarkKind.both => Container(
           width: 7,
           height: 7,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.accent500,
-            border: Border.all(color: AppColors.accent700, width: 1),
+            color: context.colors.accentDefault,
+            border: Border.all(
+              color: context.colors.accentBorder,
+              width: 1,
+            ),
           ),
         ),
     };
@@ -226,8 +247,10 @@ class _DetailList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return markers.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(color: AppColors.accent500),
+      loading: () => Center(
+        child: CircularProgressIndicator(
+          color: context.colors.accentDefault,
+        ),
       ),
       error: (_, _) => Center(
         child: Padding(
@@ -263,7 +286,7 @@ class _DetailList extends StatelessWidget {
               Text(
                 '이 날 시작·완독한 책이 없어요',
                 style: textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.primary500),
+                    ?.copyWith(color: context.colors.onSurfaceMuted),
               )
             else
               for (final entry in entries)
@@ -317,15 +340,15 @@ class _BookRow extends StatelessWidget {
                       Text(
                         _kindLabel,
                         style: textTheme.bodySmall?.copyWith(
-                          color: AppColors.accent700,
+                          color: context.colors.accentDefault,
                         ),
                       ),
                       if (rating != null) ...[
                         const SizedBox(width: AppSpacing.s2),
                         Text(
                           '★' * rating,
-                          style: const TextStyle(
-                            color: AppColors.accent500,
+                          style: TextStyle(
+                            color: context.colors.accentDefault,
                             fontSize: AppFontSize.sm,
                           ),
                         ),
