@@ -3,6 +3,7 @@ package io.github.tgparkk.bookquote
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.view.View
@@ -47,7 +48,7 @@ class ReadingBookWidgetProvider : HomeWidgetProvider() {
                     setTextViewText(R.id.reading_days, daysLabel)
                     setTextViewText(R.id.reading_cta, "＋ 한 줄 적기")
                     val bmp = if (!coverPath.isNullOrBlank()) {
-                        BitmapFactory.decodeFile(coverPath)
+                        decodeScaledCover(coverPath)
                     } else {
                         null
                     }
@@ -67,6 +68,31 @@ class ReadingBookWidgetProvider : HomeWidgetProvider() {
                 setOnClickPendingIntent(R.id.reading_root, launchIntent)
             }
             appWidgetManager.updateAppWidget(widgetId, views)
+        }
+    }
+
+    /**
+     * 표지를 다운샘플 디코드한다. RemoteViews 비트맵이 바인더 메모리 한도(위젯 크기 기반)를
+     * 넘으면 updateAppWidget이 업데이트 전체를 거부해 표지뿐 아니라 텍스트도 안 바뀐다.
+     * 원본(수백 px)을 ~240x360으로 줄여 안전하게 만든다.
+     */
+    private fun decodeScaledCover(path: String): Bitmap? {
+        return try {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(path, bounds)
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+            val reqW = 240
+            val reqH = 360
+            var sample = 1
+            while (bounds.outWidth / (sample * 2) >= reqW &&
+                bounds.outHeight / (sample * 2) >= reqH
+            ) {
+                sample *= 2
+            }
+            val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+            BitmapFactory.decodeFile(path, opts)
+        } catch (e: Exception) {
+            null
         }
     }
 }
