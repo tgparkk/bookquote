@@ -101,7 +101,7 @@ class HomeWidgetService {
 }
 
 /// 두 위젯을 한 번에 새로고침. 읽는 책을 한 번 조회해 글귀 위젯·읽는책 위젯 양쪽에 푸시한다.
-/// 네트워크/비로그인 등 실패는 조용히 무시 — 위젯은 직전 데이터를 유지한다.
+/// 두 푸시는 독립 처리 — 하나가 실패해도 다른 위젯은 갱신된다.
 Future<void> refreshHomeWidget({
   required BookRepository bookRepo,
   required QuoteRepository quoteRepo,
@@ -109,8 +109,16 @@ Future<void> refreshHomeWidget({
   if (kIsWeb) return;
   try {
     final reading = await bookRepo.listCurrentlyReading(limit: 1);
-    await _pushQuoteWidget(reading, quoteRepo);
-    await _pushReadingBookWidget(reading);
+    try {
+      await _pushQuoteWidget(reading, quoteRepo);
+    } catch (_) {
+      // 글귀 위젯 갱신 실패 — 읽는책 위젯은 계속 시도.
+    }
+    try {
+      await _pushReadingBookWidget(reading);
+    } catch (_) {
+      // 읽는책 위젯 갱신 실패 — 무시.
+    }
   } catch (_) {
     // 비로그인/오프라인 등 — 위젯은 직전 데이터 유지.
   }
