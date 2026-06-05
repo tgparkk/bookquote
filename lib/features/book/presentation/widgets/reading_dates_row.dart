@@ -11,6 +11,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../library/state/calendar_providers.dart';
 import '../../data/book_repository.dart';
@@ -204,7 +205,8 @@ class _DateLine extends StatelessWidget {
                     TextButton(
                       onPressed: busy ? null : onClear,
                       style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primary500,
+                        // primary500 → onSurfaceSubtle
+                        foregroundColor: context.colors.onSurfaceSubtle,
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         minimumSize: const Size(0, 32),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -226,11 +228,13 @@ class _ChipButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.accent600,
-        side: const BorderSide(color: AppColors.accent200),
+        // accent600 → accentDefault, accent200 → accentBorder
+        foregroundColor: colors.accentDefault,
+        side: BorderSide(color: colors.accentBorder), // const 제거 — 런타임 색
         padding: const EdgeInsets.symmetric(horizontal: 12),
         minimumSize: const Size(0, 32),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -258,20 +262,21 @@ class _DateChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(AppRadius.full);
+    final colors = context.colors;
     final body = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.accent50,
+        color: colors.accentContainer,   // accent50 → accentContainer
         borderRadius: radius,
-        border: Border.all(color: AppColors.accent200),
+        border: Border.all(color: colors.accentBorder), // accent200 → accentBorder
       ),
       child: Text(
         '${date.month}월 ${date.day}일',
-        style: const TextStyle(
+        style: TextStyle( // const 제거 — 런타임 색
           fontFamily: AppFonts.ui,
           fontSize: AppFontSize.sm,
           fontWeight: FontWeight.w500,
-          color: AppColors.accent800,
+          color: colors.accentOnContainer, // accent800 → accentOnContainer
         ),
       ),
     );

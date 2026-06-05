@@ -4,7 +4,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/tokens.dart';
+import '../../../../core/theme/app_semantic_colors.dart';
 
 class StarRating extends StatelessWidget {
   const StarRating({
@@ -27,6 +27,9 @@ class StarRating extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final filled = rating ?? 0;
+    // 다크모드 대응 — 시맨틱 색 토큰 사용
+    final filledColor = context.colors.accentDefault;   // accent500 → accentDefault
+    final emptyColor = context.colors.onSurfaceSubtle;  // primary300 → onSurfaceSubtle
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -42,19 +45,20 @@ class StarRating extends StatelessWidget {
                   ),
                   tooltip: i == filled ? '별점 지우기' : '$i점',
                   onPressed: () => onRated!(i == filled ? null : i),
-                  icon: _star(i <= filled, size),
+                  icon: _star(i <= filled, size, filledColor, emptyColor),
                 )
               : Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 1),
-                  child: _star(i <= filled, size),
+                  child: _star(i <= filled, size, filledColor, emptyColor),
                 ),
       ],
     );
   }
 
-  Widget _star(bool isFilled, double size) => Icon(
+  Widget _star(bool isFilled, double size, Color filledColor, Color emptyColor) =>
+      Icon(
         isFilled ? Icons.star_rounded : Icons.star_border_rounded,
         size: size,
-        color: isFilled ? AppColors.accent500 : AppColors.primary300,
+        color: isFilled ? filledColor : emptyColor,
       );
 }

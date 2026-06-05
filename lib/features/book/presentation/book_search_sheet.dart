@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
 import '../data/aladin_dto.dart';
 import '../data/book_repository.dart';
@@ -22,7 +23,7 @@ Future<Book?> showBookSearchSheet(BuildContext context) {
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    backgroundColor: AppColors.secondary100,
+    backgroundColor: context.colors.surfaceSheet, // secondary100 → surfaceSheet
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
     ),
@@ -157,7 +158,7 @@ class _DragHandle extends StatelessWidget {
       width: 36,
       height: 4,
       decoration: BoxDecoration(
-        color: AppColors.primary200,
+        color: context.colors.border, // primary200 → border
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -326,7 +327,7 @@ class _EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.menu_book_outlined,
-                size: 36, color: AppColors.primary300),
+                size: 36, color: context.colors.onSurfaceSubtle), // primary300 → onSurfaceSubtle
             const SizedBox(height: AppSpacing.s3),
             Text('찾는 책이 없어요',
                 style: textTheme.titleMedium),
