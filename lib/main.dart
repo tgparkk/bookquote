@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:firebase_core/firebase_core.dart';
@@ -13,6 +14,9 @@ import 'app/router.dart';
 import 'core/config/env.dart';
 import 'core/supabase/supabase_init.dart';
 import 'core/theme/app_theme.dart';
+import 'features/book/data/book_repository.dart';
+import 'features/quote/data/quote_repository.dart';
+import 'features/widget/home_widget_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,13 +53,45 @@ class BookquoteApp extends ConsumerStatefulWidget {
   ConsumerState<BookquoteApp> createState() => _BookquoteAppState();
 }
 
-class _BookquoteAppState extends ConsumerState<BookquoteApp> {
+class _BookquoteAppState extends ConsumerState<BookquoteApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final router = ref.read(routerProvider);
     // deep link 핸들러가 인앱 라우트(`://book/:id?from=share` 등)를 GoRouter로
     // 보낼 수 있게 연결한다. 콜드스타트 진입은 스플래시가 보류 경로를 소비.
-    DeepLinkHandler().attachRouter(ref.read(routerProvider));
+    DeepLinkHandler().attachRouter(router);
+    // HW-B: 위젯 탭 → GoRouter 라우팅 연결 + 진입 시 최신 데이터 푸시.
+    HomeWidgetService.instance.initInteractivity(router);
+    _refreshHomeWidget();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // HW-B: 포그라운드 복귀 시 위젯 갱신 — 일일 글귀 회전의 실효 트리거.
+    if (state == AppLifecycleState.resumed) _refreshHomeWidget();
+  }
+
+  /// HW-B: 현재 읽는 책 + 그 책 글귀(잠금 제외)를 위젯에 푸시. 비로그인·미초기화·
+  /// 플러그인 미지원은 조용히 무시.
+  void _refreshHomeWidget() {
+    if (!isSupabaseReady) return;
+    try {
+      unawaited(refreshHomeWidget(
+        bookRepo: ref.read(bookRepositoryProvider),
+        quoteRepo: ref.read(quoteRepositoryProvider),
+      ));
+    } catch (_) {
+      // provider 구성 실패 등 — 위젯은 직전 데이터 유지.
+    }
   }
 
   @override
