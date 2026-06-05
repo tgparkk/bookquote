@@ -64,6 +64,9 @@ class _BookquoteAppState extends ConsumerState<BookquoteApp> {
     return MaterialApp.router(
       title: '책글귀',
       theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      // DM-A: 시스템 테마 추종. 사용자 토글 영속(DM-C)은 별도 PR에서 구현.
+      themeMode: ThemeMode.system,
       routerConfig: router,
     );
   }
