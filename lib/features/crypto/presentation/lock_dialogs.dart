@@ -23,6 +23,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
 import '../data/envelope_repository.dart';
 import '../domain/envelope.dart';
@@ -154,7 +155,7 @@ class _FirstLockDialogState extends ConsumerState<FirstLockDialog> {
             Text(
               '잠금 인용구는 본문이 암호화되어 저장돼요. '
               '비밀번호는 책글귀 서버가 모릅니다 — 잊으면 잠금 인용구를 영구히 못 봐요.',
-              style: textTheme.bodyMedium?.copyWith(color: AppColors.primary700),
+              style: textTheme.bodyMedium?.copyWith(color: context.colors.onSurfaceMuted),
             ),
             const SizedBox(height: AppSpacing.s2),
             Text(
@@ -284,7 +285,7 @@ class _UnlockDialogState extends ConsumerState<UnlockDialog> {
           Text(
             '이 기기에서 잠금 인용구를 처음 다뤄요. '
             '다른 기기에서 설정한 잠금 비밀번호를 입력해주세요.',
-            style: textTheme.bodyMedium?.copyWith(color: AppColors.primary700),
+            style: textTheme.bodyMedium?.copyWith(color: context.colors.onSurfaceMuted),
           ),
           const SizedBox(height: AppSpacing.s4),
           TextField(
@@ -349,7 +350,7 @@ Future<bool> showPrivateShareWarningDialog(BuildContext context) async {
             Text(
               '본문은 잠겨 있지만, 카드 이미지에는 인용구가 평문으로 박혀요. '
               '이 이미지를 공유하면 받는 사람이 본문을 볼 수 있어요.',
-              style: textTheme.bodyMedium?.copyWith(color: AppColors.primary700),
+              style: textTheme.bodyMedium?.copyWith(color: dialogCtx.colors.onSurfaceMuted),
             ),
             const SizedBox(height: AppSpacing.s2),
             Text(
@@ -489,7 +490,7 @@ class _ChangePasswordDialogState extends ConsumerState<ChangePasswordDialog> {
             Text(
               '현재 비밀번호를 확인한 뒤 새 비밀번호로 바꿔요. '
               '기존 잠금 인용구는 그대로 읽을 수 있어요(재암호화 X).',
-              style: textTheme.bodyMedium?.copyWith(color: AppColors.primary700),
+              style: textTheme.bodyMedium?.copyWith(color: context.colors.onSurfaceMuted),
             ),
             const SizedBox(height: AppSpacing.s4),
             TextField(

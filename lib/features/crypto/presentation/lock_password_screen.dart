@@ -16,6 +16,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
 import '../data/envelope_repository.dart';
 import '../domain/envelope.dart';
@@ -144,9 +145,10 @@ class LockPasswordBody extends ConsumerWidget {
         Icon(
           _stateIcon(snapshot.state),
           size: 56,
+          // notConfigured: 미설정 상태 → 보조 아이콘 / 설정됨: 액센트 아이콘
           color: snapshot.state == LockPasswordState.notConfigured
-              ? AppColors.primary400
-              : AppColors.accent500,
+              ? context.colors.iconMuted
+              : context.colors.accentDefault,
         ),
         const SizedBox(height: AppSpacing.s4),
         Text(
@@ -158,7 +160,7 @@ class LockPasswordBody extends ConsumerWidget {
         Text(
           _stateBody(snapshot.state),
           textAlign: TextAlign.center,
-          style: textTheme.bodyMedium?.copyWith(color: AppColors.primary600),
+          style: textTheme.bodyMedium?.copyWith(color: context.colors.onSurfaceMuted),
         ),
         const SizedBox(height: AppSpacing.s6),
         _ActionButton(state: snapshot.state, onPressed: () {
@@ -206,7 +208,7 @@ class LockPasswordBody extends ConsumerWidget {
               const SizedBox(height: AppSpacing.s2),
               Text(
                 '비밀번호는 책글귀 서버가 모릅니다. 잊으면 잠금 인용구를 영구히 못 봐요.',
-                style: textTheme.bodySmall?.copyWith(color: AppColors.primary700),
+                style: textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceMuted),
               ),
             ],
           ),
@@ -252,9 +254,10 @@ class _ActionButton extends StatelessWidget {
     };
     return FilledButton(
       onPressed: onPressed,
+      // accentDefault: 액센트 CTA 배경 / accentOnAccent: 액센트 위 전경
       style: FilledButton.styleFrom(
-        backgroundColor: AppColors.accent500,
-        foregroundColor: AppColors.secondary50,
+        backgroundColor: context.colors.accentDefault,
+        foregroundColor: context.colors.accentOnAccent,
         minimumSize: const Size.fromHeight(48),
         textStyle: const TextStyle(
           fontFamily: AppFonts.ui,
@@ -280,10 +283,11 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(
+            Icon(
               Icons.error_outline_rounded,
               size: 56,
-              color: AppColors.primary400,
+              // 에러 상태 보조 아이콘 — iconMuted (semanticError 아님, 에러 상태색 아닌 UI 아이콘)
+              color: context.colors.iconMuted,
             ),
             const SizedBox(height: AppSpacing.s4),
             Text(
