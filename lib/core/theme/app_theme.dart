@@ -26,8 +26,8 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: s.scaffoldBg,
       canvasColor: s.scaffoldBg,
-      textTheme: appTextTheme,
-      primaryTextTheme: appTextTheme,
+      textTheme: appTextThemeLight,
+      primaryTextTheme: appTextThemeLight,
       fontFamily: AppFonts.ui,
 
       appBarTheme: AppBarTheme(
@@ -227,8 +227,8 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: s.scaffoldBg,
       canvasColor: s.scaffoldBg,
-      textTheme: appTextTheme,
-      primaryTextTheme: appTextTheme,
+      textTheme: appTextThemeDark,
+      primaryTextTheme: appTextThemeDark,
       fontFamily: AppFonts.ui,
 
       appBarTheme: AppBarTheme(

@@ -3,27 +3,28 @@
 // Material `TextTheme` 슬롯에 매핑되는 UI 스타일과,
 // 카드 안의 인용구 본문에 쓰이는 별도 스타일을 한곳에 모은다.
 //
+// 색 정책(DM-C 다크모드): **UI 스타일(display~label)은 색을 박지 않는다.**
+// 라이트/다크 색은 [appTextThemeLight]/[appTextThemeDark]가 슬롯별로 입혀 Material
+// TextTheme로 주입하고, `style: AppTextStyles.X`처럼 직접 쓰는 경우엔 ListTile/테마의
+// onSurface를 상속해 다크에서도 보이게 한다(색을 박으면 다크에서 검정으로 묻힌다).
+// 카드 본문(quote*)만 색을 고정한다 — 카드 PNG는 수신자 테마와 무관해야 하므로.
+//
 // 폰트는 family 한 개에 weight axis(NotoSerifKR 가변) 또는 weight별 정적 파일
 // (Pretendard)을 묶어 pubspec.yaml에 등록했다. TextStyle은 항상
 // `fontFamily: AppFonts.{ui|quote}` + `fontWeight: FontWeight.wXXX` 조합을 쓴다.
-//
-// V1 미번들 weight (사용 시 시스템 폰트로 폴백):
-//   - Pretendard w700 (Bold)  → displayLarge는 w600(SemiBold)으로 대체
-//   - Libre Baskerville 전체    → V1엔 영문 보조 스타일 정의 안 함
 
 import 'package:flutter/material.dart';
 
 import 'tokens.dart';
 
 abstract final class AppTextStyles {
-  // ── Display / Headline (UI) ──────────────────
+  // ── Display / Headline (UI) — 색은 TextTheme이 입힌다 ──
   static const TextStyle displayLarge = TextStyle(
     fontFamily: AppFonts.ui,
     fontWeight: FontWeight.w600,
     fontSize: AppFontSize.xxl,
     height: AppLineHeight.tight,
     letterSpacing: AppLetterSpacing.tight,
-    color: AppColors.primary900,
   );
 
   static const TextStyle displayMedium = TextStyle(
@@ -32,7 +33,6 @@ abstract final class AppTextStyles {
     fontSize: AppFontSize.xl,
     height: AppLineHeight.tight,
     letterSpacing: AppLetterSpacing.tight,
-    color: AppColors.primary900,
   );
 
   static const TextStyle headlineLarge = TextStyle(
@@ -40,7 +40,6 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w600,
     fontSize: AppFontSize.lg,
     height: AppLineHeight.tight,
-    color: AppColors.primary900,
   );
 
   static const TextStyle headlineMedium = TextStyle(
@@ -48,7 +47,6 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w600,
     fontSize: AppFontSize.md,
     height: AppLineHeight.normal,
-    color: AppColors.primary900,
   );
 
   static const TextStyle headlineSmall = TextStyle(
@@ -56,7 +54,6 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w500,
     fontSize: AppFontSize.base,
     height: AppLineHeight.normal,
-    color: AppColors.primary900,
   );
 
   // ── Title ────────────────────────────────────
@@ -65,7 +62,6 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w600,
     fontSize: AppFontSize.md,
     height: AppLineHeight.normal,
-    color: AppColors.primary900,
   );
 
   static const TextStyle titleMedium = TextStyle(
@@ -73,7 +69,6 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w500,
     fontSize: AppFontSize.base,
     height: AppLineHeight.normal,
-    color: AppColors.primary800,
   );
 
   static const TextStyle titleSmall = TextStyle(
@@ -81,7 +76,6 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w500,
     fontSize: AppFontSize.sm,
     height: AppLineHeight.normal,
-    color: AppColors.primary700,
   );
 
   // ── Body ─────────────────────────────────────
@@ -90,7 +84,6 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w400,
     fontSize: AppFontSize.base,
     height: AppLineHeight.normal,
-    color: AppColors.primary800,
   );
 
   static const TextStyle bodyMedium = TextStyle(
@@ -98,7 +91,6 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w400,
     fontSize: AppFontSize.sm,
     height: AppLineHeight.normal,
-    color: AppColors.primary700,
   );
 
   static const TextStyle bodySmall = TextStyle(
@@ -106,7 +98,6 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w400,
     fontSize: AppFontSize.xs,
     height: AppLineHeight.normal,
-    color: AppColors.primary600,
   );
 
   // ── Label ────────────────────────────────────
@@ -116,7 +107,6 @@ abstract final class AppTextStyles {
     fontSize: AppFontSize.sm,
     height: AppLineHeight.tight,
     letterSpacing: AppLetterSpacing.wide,
-    color: AppColors.primary700,
   );
 
   static const TextStyle labelMedium = TextStyle(
@@ -125,7 +115,6 @@ abstract final class AppTextStyles {
     fontSize: AppFontSize.xs,
     height: AppLineHeight.tight,
     letterSpacing: AppLetterSpacing.wide,
-    color: AppColors.primary600,
   );
 
   static const TextStyle labelSmall = TextStyle(
@@ -134,10 +123,9 @@ abstract final class AppTextStyles {
     fontSize: AppFontSize.xxs,
     height: AppLineHeight.tight,
     letterSpacing: AppLetterSpacing.wider,
-    color: AppColors.primary500,
   );
 
-  // ── Quote (카드 본문 전용 — TextTheme 외) ────────
+  // ── Quote (카드 본문 전용 — 색 고정, 테마 무관) ────────
   /// 인용구 큰 (≤50자)
   static const TextStyle quoteLarge = TextStyle(
     fontFamily: AppFonts.quote,
@@ -190,20 +178,44 @@ abstract final class AppTextStyles {
   }
 }
 
-/// Material `TextTheme`에 주입할 매핑.
-const TextTheme appTextTheme = TextTheme(
-  displayLarge: AppTextStyles.displayLarge,
-  displayMedium: AppTextStyles.displayMedium,
-  headlineLarge: AppTextStyles.headlineLarge,
-  headlineMedium: AppTextStyles.headlineMedium,
-  headlineSmall: AppTextStyles.headlineSmall,
-  titleLarge: AppTextStyles.titleLarge,
-  titleMedium: AppTextStyles.titleMedium,
-  titleSmall: AppTextStyles.titleSmall,
-  bodyLarge: AppTextStyles.bodyLarge,
-  bodyMedium: AppTextStyles.bodyMedium,
-  bodySmall: AppTextStyles.bodySmall,
-  labelLarge: AppTextStyles.labelLarge,
-  labelMedium: AppTextStyles.labelMedium,
-  labelSmall: AppTextStyles.labelSmall,
+// ─────────────────────────────────────────────
+// Material TextTheme — 색 없는 UI 스타일에 슬롯별 색을 입힌다.
+// 라이트는 기존 위계(primary900~500) 유지, 다크는 onSurface 스케일로 반전(시인성).
+// ─────────────────────────────────────────────
+
+/// 라이트 TextTheme. AppTheme.light()에서 사용.
+final TextTheme appTextThemeLight = TextTheme(
+  displayLarge: AppTextStyles.displayLarge.copyWith(color: AppColors.primary900),
+  displayMedium: AppTextStyles.displayMedium.copyWith(color: AppColors.primary900),
+  headlineLarge: AppTextStyles.headlineLarge.copyWith(color: AppColors.primary900),
+  headlineMedium: AppTextStyles.headlineMedium.copyWith(color: AppColors.primary900),
+  headlineSmall: AppTextStyles.headlineSmall.copyWith(color: AppColors.primary900),
+  titleLarge: AppTextStyles.titleLarge.copyWith(color: AppColors.primary900),
+  titleMedium: AppTextStyles.titleMedium.copyWith(color: AppColors.primary800),
+  titleSmall: AppTextStyles.titleSmall.copyWith(color: AppColors.primary700),
+  bodyLarge: AppTextStyles.bodyLarge.copyWith(color: AppColors.primary800),
+  bodyMedium: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary700),
+  bodySmall: AppTextStyles.bodySmall.copyWith(color: AppColors.primary600),
+  labelLarge: AppTextStyles.labelLarge.copyWith(color: AppColors.primary700),
+  labelMedium: AppTextStyles.labelMedium.copyWith(color: AppColors.primary600),
+  labelSmall: AppTextStyles.labelSmall.copyWith(color: AppColors.primary500),
+);
+
+/// 다크 TextTheme. AppTheme.dark()에서 사용 — 메인 텍스트 secondary200,
+/// 보조 secondary500, 최약 primary300 (대비 보강 반영).
+final TextTheme appTextThemeDark = TextTheme(
+  displayLarge: AppTextStyles.displayLarge.copyWith(color: AppColors.secondary200),
+  displayMedium: AppTextStyles.displayMedium.copyWith(color: AppColors.secondary200),
+  headlineLarge: AppTextStyles.headlineLarge.copyWith(color: AppColors.secondary200),
+  headlineMedium: AppTextStyles.headlineMedium.copyWith(color: AppColors.secondary200),
+  headlineSmall: AppTextStyles.headlineSmall.copyWith(color: AppColors.secondary200),
+  titleLarge: AppTextStyles.titleLarge.copyWith(color: AppColors.secondary200),
+  titleMedium: AppTextStyles.titleMedium.copyWith(color: AppColors.secondary200),
+  titleSmall: AppTextStyles.titleSmall.copyWith(color: AppColors.secondary500),
+  bodyLarge: AppTextStyles.bodyLarge.copyWith(color: AppColors.secondary200),
+  bodyMedium: AppTextStyles.bodyMedium.copyWith(color: AppColors.secondary500),
+  bodySmall: AppTextStyles.bodySmall.copyWith(color: AppColors.secondary500),
+  labelLarge: AppTextStyles.labelLarge.copyWith(color: AppColors.secondary500),
+  labelMedium: AppTextStyles.labelMedium.copyWith(color: AppColors.secondary500),
+  labelSmall: AppTextStyles.labelSmall.copyWith(color: AppColors.primary300),
 );
