@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
 import '../../moderation/presentation/report_dialog.dart';
@@ -28,19 +29,21 @@ class BookReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors; // 시맨틱 색
     final name = review.displayName ?? '(이름 없음)';
     final hasAvatar = review.avatarUrl?.isNotEmpty ?? false;
     final initial = name.isEmpty ? '?' : String.fromCharCode(name.runes.first);
     final avatar = CircleAvatar(
       radius: 14,
-      backgroundColor: AppColors.accent200,
+      // 아바타 배경: accentBorder(accent200 계열)로 매핑
+      backgroundColor: colors.accentBorder,
       backgroundImage: hasAvatar ? NetworkImage(review.avatarUrl!) : null,
       child: hasAvatar
           ? null
           : Text(
               initial,
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.primary900,
+                color: colors.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -53,17 +56,19 @@ class BookReviewCard extends StatelessWidget {
         fontFamily: AppFonts.ui,
         fontSize: AppFontSize.sm,
         fontWeight: FontWeight.w600,
-        color: AppColors.primary800,
+        color: colors.onSurface,
       ),
     );
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.s3),
       decoration: BoxDecoration(
-        color: isMine ? AppColors.secondary100 : AppColors.secondary200,
+        // 본인: surface(secondary100), 타인: surfaceCard(secondary300/dark:primary700)
+        color: isMine ? colors.surface : colors.surfaceCard,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: isMine ? AppColors.accent200 : AppColors.secondary400,
+          // 본인: accentBorder, 타인: border
+          color: isMine ? colors.accentBorder : colors.border,
         ),
       ),
       child: Column(
@@ -95,7 +100,7 @@ class BookReviewCard extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.accent100,
+                    color: colors.accentContainer,
                     borderRadius: BorderRadius.circular(AppRadius.full),
                   ),
                   child: Text(
@@ -104,7 +109,7 @@ class BookReviewCard extends StatelessWidget {
                       fontFamily: AppFonts.ui,
                       fontSize: AppFontSize.xs,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.accent700,
+                      color: colors.accentOnContainer,
                     ),
                   ),
                 ),
@@ -149,14 +154,14 @@ class BookReviewCard extends StatelessWidget {
               fontFamily: AppFonts.quote,
               fontSize: AppFontSize.sm,
               height: AppLineHeight.loose,
-              color: AppColors.primary800,
+              color: colors.onSurface,
             ),
           ),
           const SizedBox(height: AppSpacing.s2),
           Text(
             _formatDate(review.updatedAt),
             style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.primary400,
+              color: colors.onSurfaceSubtle,
             ),
           ),
         ],
