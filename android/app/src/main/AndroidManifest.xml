@@ -2,6 +2,9 @@
     <!-- Supabase 호출, 알라딘 책 검색, 표지 이미지 fetch 등 모든 네트워크에 필요.
          debug/profile manifest에는 Flutter 툴이 자동으로 넣지만 release는 명시해야 한다. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- PR-PB: FCM 푸시 알림 표시(Android 13+ 런타임 권한). 코드에서 맥락에 맞춰
+         requestPermission()로 요청한다. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- PR16-A: allowBackup="false" — flutter_secure_storage에 든 E2EE 마스터키가
          Google Drive autoBackup으로 새는 걸 막는다. 안 막으면 "키를 서버가 모름"
          보장이 무력화. user data는 Supabase가 source of truth이므로 백업 차단해도

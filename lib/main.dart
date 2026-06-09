@@ -3,6 +3,7 @@ import 'dart:ui' show PlatformDispatcher;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,7 +17,9 @@ import 'core/config/env.dart';
 import 'core/supabase/supabase_init.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_provider.dart';
+import 'app/auth_state_provider.dart';
 import 'features/book/data/book_repository.dart';
+import 'features/notifications/data/push_service.dart';
 import 'features/quote/data/quote_repository.dart';
 import 'features/widget/home_widget_service.dart';
 
@@ -35,6 +38,8 @@ Future<void> main() async {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
     };
+    // PR-PB: FCM 백그라운드/종료 상태 메시지 핸들러 등록(반드시 top-level 함수).
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   }
   await initSupabase();
   // PR21: 카카오 SDK 초기화 — 네이티브 앱 키 없으면 건너뜀(빌드는 통과,
@@ -75,6 +80,10 @@ class _BookquoteAppState extends ConsumerState<BookquoteApp>
     // HW-B: 위젯 탭 → GoRouter 라우팅 연결 + 진입 시 최신 데이터 푸시.
     HomeWidgetService.instance.initInteractivity(router);
     _refreshHomeWidget();
+    // PR-PB: FCM — 라우터 연결 후 로그인 상태면 토큰 등록 시작(콜드스타트 로그인).
+    // 이후 로그인/로그아웃 전환은 build의 ref.listen이 처리.
+    PushService.instance.attachRouter(router);
+    PushService.instance.start();
   }
 
   @override
@@ -105,6 +114,14 @@ class _BookquoteAppState extends ConsumerState<BookquoteApp>
 
   @override
   Widget build(BuildContext context) {
+    // PR-PB: 로그인 시 FCM 토큰 등록 시작, 로그아웃 시 이 기기 토큰 삭제.
+    ref.listen(currentUserIdProvider, (prev, next) {
+      if (next != null) {
+        PushService.instance.start();
+      } else if (prev != null) {
+        PushService.instance.stop();
+      }
+    });
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
     return MaterialApp.router(
