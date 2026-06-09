@@ -5,6 +5,23 @@
 
 ---
 
+## 2026-06-09 — 좋아요(인용구·후기) + 알림 백본 + FCM 푸시 도입
+
+- **결정**: 인용구·후기 두 객체에 좋아요를 붙이고, 그 위에 알림 백본(인앱 알림함 + Supabase Realtime 라이브 배지)과 FCM 푸시까지 단계적으로 도입한다. 알림 타입은 `quote_like`·`review_like`·`follow` 3종. 매니저 모드 4팀(Dart·UI/UX·기획·QA) 병렬 협의 산출.
+- **이유**: 협의 초기 결론은 "출시 직전이라 좋아요 보류"였으나(보류 근거 = 알림 인프라 0 → 좋아요 루프 절반), 사용자가 알림까지 함께 넣기로 결정하면서 보류 근거 자체가 해소됨. 후기는 이미 공개 발견 객체(`recent_public_book_reviews`)라 좋아요가 product로 자연스럽고, 인용구는 "사적 수집" 멘탈모델이라 작성 위축 리스크가 있어 **본인 콘텐츠엔 좋아요 버튼 미노출 + 카운트만**으로 방어.
+- **데이터·RLS 설계 (PR-LA, `20260609111229_likes.sql` — 2026-06-09 원격 적용 완료)**:
+  - 폴리모픽 단일 테이블 금지 → `quote_likes` / `review_likes` 2개 분리(FK·RLS 단순).
+  - 후기 PK가 `(user_id, book_id)` 복합키라 FK 타깃 없음 → `book_reviews.id uuid unique` surrogate 추가(1책당 1개 불변식은 기존 PK가 계속 강제).
+  - 멱등 PK `(target_id, liker_id)` — 더블탭·오프라인 재전송 무해.
+  - INSERT 정책은 `liker_id = auth.uid() and exists(select 1 from <대상> where id = ... and user_id <> liker_id)` — 하위 exists가 quotes/book_reviews RLS를 상속해 **차단·잠금·비공개·비공개프로필·self-like를 한 subquery로 게이트**(별도 차단 필터 추가 금지 = 드리프트 0).
+  - **인용구와 후기의 게이트가 다름**: 인용구 좋아요는 팔로워+공개+미해제만, 후기 좋아요는 공개 프로필이면 비팔로워도 가능(후기 RLS가 이미 공개라). RLS 테스트로 이 차이 단언(`rls_likes.test.sql`).
+- **liker 프라이버시 (A안 채택)**: 앱은 "누가 눌렀나" 목록을 절대 표시하지 않는다. 카운트는 `quote_like_counts`/`review_like_counts`(SECURITY INVOKER, RLS 자연 게이트) RPC가 `(id, n, liked_by_me)`만 반환 — `liker_id` 미반환. SELECT 정책은 본인 like + 가시 대상의 like 행만 허용(INVOKER 집계용). **대안 B안**(SECURITY DEFINER 카운트 + own-only SELECT로 liker_id를 DB단까지 완전 차단)은 가시성 술어를 RPC 안에 복제해야 해 드리프트 리스크 → 코드베이스 전체의 `INVOKER + 자연 게이트` 일관성 우선해 A안 채택.
+- **알림 백본 (PR-NA)**: `notifications(recipient_id, actor_id, type, quote_id?, review_id?, read_at)`. 적재는 **클라 금지 → DB 트리거(SECURITY DEFINER)**가 `quote_likes`/`review_likes`/`follows` insert 시 수행(recipient = 대상 소유자). unlike(취소)는 안 읽은 알림 삭제(스팸 방지). 묶음 표시("외 N명")는 저장이 아니라 read-time RPC 집계. SELECT는 수신자 본인만, update는 read_at 처리만. 차단 상대 알림은 read-time RPC가 profiles RLS로 자연 제외.
+- **전달 채널**: ① 인앱 알림함 + **Supabase Realtime 라이브 배지**(외부 인프라 0, 이미 보유) → ② **FCM 푸시**(`firebase_messaging` 추가 + `device_tokens` + Edge Function `push-notification`이 Database Webhook→FCM HTTP v1, 서비스계정은 Edge secret). Firebase 프로젝트는 Crashlytics로 이미 존재 → Cloud Messaging만 활성화. **opt-in 마스터 토글 + 타입별 on/off**(`profiles.push_*`) + `POST_NOTIFICATIONS`(Android 13+)는 런치가 아닌 맥락에서 요청(Play UX·메모리 계정 리스크 정신). iOS·APNs는 더 뒤로.
+- **PR 분할**: LA(좋아요 마이그+RLS+카운트 RPC+테스트) → {NA(알림 백본), LB(좋아요 repo)} → {NB(알림함+Realtime 배지), LC(좋아요 UI)} → PA(device_tokens+prefs) → PB(firebase_messaging) → PC(Edge Function 발송+설정 UI).
+- **출시 정합**: 현재 V1.0 정식 출시는 "[검토 후 출시 시작]"만 남음. 좋아요·알림은 **출시에 끼우지 않고** LA~NB(좋아요+인앱+Realtime)를 출시 후 첫 마이너로, PA~PC(FCM)를 그다음으로. 사용자 모토 "서두르지 않고 고득하게"와 정합.
+- **재검토 트리거**: liker 목록 노출이 product로 필요해지면 A안→B안(DEFINER) 전환. FCM 발송량이 늘면 알림 배치/쿨다운 + denormalized `like_count` 컬럼+트리거로 카운트 RPC 대체(인터페이스 유지 시 클라 무변경).
+
 ## 2026-05-29 — OAuth 아바타 신뢰 제거 (닉네임 무작위화의 누락된 짝)
 
 - **결정**: 가입 트리거가 `avatar_url`에 OAuth `picture`/`avatar_url`을 저장하던 것을 중단하고, 기존 행의 `avatar_url`을 전부 null로 백필. 마이그레이션 `20260529130000_drop_oauth_avatar.sql` 한 장. Dart 변경 0(모든 아바타 위젯이 이미 `avatar_url` 비면 닉네임 이니셜 동그라미로 폴백).

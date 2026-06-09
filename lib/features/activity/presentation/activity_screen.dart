@@ -21,6 +21,8 @@ import '../../book_review/data/book_review_repository.dart';
 import '../../book_review/state/book_review_providers.dart';
 import '../../follow/state/friend_activity_provider.dart';
 import '../../follow/state/friend_recent_books_provider.dart';
+import '../../likes/data/like_repository.dart';
+import '../../likes/presentation/like_button.dart';
 
 class ActivityScreen extends ConsumerWidget {
   const ActivityScreen({super.key});
@@ -451,6 +453,14 @@ class _ReviewCard extends StatelessWidget {
                           fontSize: AppFontSize.sm,
                           height: 1.45,
                           color: context.colors.onSurface, // primary800 → onSurface
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      // 발견 맥락 — 타인 후기라 항상 좋아요 가능(RPC가 본인 제외).
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: LikeButton(
+                          target: (kind: LikeTargetKind.review, id: review.id),
                         ),
                       ),
                     ],

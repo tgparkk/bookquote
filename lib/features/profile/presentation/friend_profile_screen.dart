@@ -21,6 +21,8 @@ import '../../book/domain/book.dart';
 import '../../book/presentation/widgets/book_cover.dart';
 import '../../follow/data/follow_repository.dart';
 import '../../follow/state/follow_providers.dart';
+import '../../likes/data/like_repository.dart';
+import '../../likes/presentation/like_button.dart';
 import '../../moderation/data/moderation_repository.dart';
 import '../../moderation/presentation/report_dialog.dart';
 import '../../quote/data/quote_repository.dart';
@@ -780,6 +782,10 @@ class _QuotesSliver extends StatelessWidget {
               context,
               reportedQuoteId: id,
               targetLabel: '이 인용구',
+            ),
+            // PR-LC — 친구 인용구라 좋아요 가능(내 인용구엔 미주입).
+            likeButton: LikeButton(
+              target: (kind: LikeTargetKind.quote, id: id),
             ),
           );
         },

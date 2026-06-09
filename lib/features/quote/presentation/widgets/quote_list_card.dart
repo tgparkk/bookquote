@@ -31,6 +31,7 @@ class QuoteListCard extends StatelessWidget {
     this.readOnly = false,
     this.onOpenBook,
     this.onReport,
+    this.likeButton,
   });
 
   final Quote quote;
@@ -63,6 +64,10 @@ class QuoteListCard extends StatelessWidget {
   /// PR25 — 친구 인용구 펼침 시 [신고] 액션. 읽기 전용(`readOnly`) 카드 전용 —
   /// null이면 미노출(내 인용구엔 안 뜸). 접힌 카드엔 표시 안 함(목록 시인성).
   final VoidCallback? onReport;
+
+  /// PR-LC — 친구 인용구 좋아요 버튼(호출자가 LikeButton 주입). null이면 미노출.
+  /// 내 인용구 카드엔 주입하지 않는다(노이즈·작성 위축 방지 + self-like 불가).
+  final Widget? likeButton;
 
   @override
   Widget build(BuildContext context) {
@@ -196,6 +201,14 @@ class QuoteListCard extends StatelessWidget {
                                     : () => onMoodTap!(m),
                               ),
                           ],
+                        ),
+                      ),
+                    if (likeButton != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.s1),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: likeButton,
                         ),
                       ),
                     if (expanded &&

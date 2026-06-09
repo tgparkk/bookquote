@@ -22,8 +22,9 @@ class BookReviewRepositoryException implements Exception {
 }
 
 /// PR29-F: 책별 공개 후기 한 줄 — 작성자 프로필 join. RPC `book_reviews_by_book`
-/// 응답의 도메인 표현. 본인 후기는 RPC가 제외하므로 isMe 플래그 불필요.
+/// 응답의 도메인 표현. [id]는 review_likes 좋아요 타깃(PR-LC).
 typedef PublicBookReview = ({
+  String id,
   String userId,
   String? displayName,
   String? avatarUrl,
@@ -33,8 +34,9 @@ typedef PublicBookReview = ({
 });
 
 /// PR29-I: 홈 "최근 독자 후기" row 한 줄 — 작성자 프로필 + 책 정보(title/cover_url) join.
-/// 본인 후기 제외(발견 목적). 탭하면 `/book/:bookId` 진입.
+/// 본인 후기 제외(발견 목적). 탭하면 `/book/:bookId` 진입. [id]는 좋아요 타깃(PR-LC).
 typedef RecentBookReview = ({
+  String id,
   String userId,
   String? displayName,
   String? avatarUrl,
@@ -117,6 +119,7 @@ class BookReviewRepository {
       ) as List<dynamic>;
       return rows.cast<Map<String, dynamic>>().map((r) {
         return (
+          id: r['id'] as String,
           userId: r['user_id'] as String,
           displayName: r['display_name'] as String?,
           avatarUrl: r['avatar_url'] as String?,
@@ -140,6 +143,7 @@ class BookReviewRepository {
       ) as List<dynamic>;
       return rows.cast<Map<String, dynamic>>().map((r) {
         return (
+          id: r['id'] as String,
           userId: r['user_id'] as String,
           displayName: r['display_name'] as String?,
           avatarUrl: r['avatar_url'] as String?,
