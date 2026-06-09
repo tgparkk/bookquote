@@ -62,7 +62,8 @@ void main() {
     expect(find.text('Markdown으로 내보내기'), findsOneWidget);
     // 설정
     expect(find.text('시스템 설정'), findsOneWidget);
-    expect(find.text('곧 추가될 기능'), findsOneWidget);
+    // 알림 설정 진입 타일 (PR-PB.2 — 비활성 '곧 추가될 기능' 대체)
+    expect(find.text('알림'), findsOneWidget);
     // 정보
     expect(find.text('1.0.0 (1)'), findsOneWidget);
     expect(find.text('문의하기'), findsOneWidget);

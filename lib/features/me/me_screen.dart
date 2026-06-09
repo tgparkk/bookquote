@@ -108,14 +108,13 @@ class MeScreen extends ConsumerWidget {
               title: '잠금 비밀번호',
               onTap: () => context.push('/me/lock-password'),
             ),
+            _ActionTile(
+              icon: Icons.notifications_none,
+              title: '알림',
+              onTap: () => context.push('/me/notifications'),
+            ),
           ],
           const _ThemeModeTile(),
-          const _ValueTile(
-            icon: Icons.notifications_none,
-            title: '알림',
-            value: '곧 추가될 기능',
-            disabled: true,
-          ),
 
           const _SectionHeader('정보'),
           _AppVersionTile(version: ref.watch(appVersionProvider)),
@@ -362,38 +361,6 @@ class _ActionTile extends StatelessWidget {
       // chevron: primary300 → iconMuted
       trailing: Icon(Icons.chevron_right, color: colors.iconMuted, size: 20),
       onTap: onTap,
-    );
-  }
-}
-
-class _ValueTile extends StatelessWidget {
-  const _ValueTile({
-    required this.icon,
-    required this.title,
-    required this.value,
-    this.disabled = false,
-  });
-  final IconData icon;
-  final String title;
-  final String value;
-  final bool disabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    // disabled 시: primary300 → iconMuted / primary800 → onSurface
-    final titleColor = disabled ? colors.iconMuted : colors.onSurface;
-    final iconColor  = disabled ? colors.iconMuted : colors.iconPrimary;
-    return ListTile(
-      leading: Icon(icon, color: iconColor, size: 22),
-      title: Text(title, style: AppTextStyles.bodyLarge.copyWith(color: titleColor)),
-      trailing: Text(
-        value,
-        style: AppTextStyles.bodyMedium.copyWith(
-          // trailing 값: disabled → iconMuted, 활성 → onSurfaceSubtle
-          color: disabled ? colors.iconMuted : colors.onSurfaceSubtle,
-        ),
-      ),
     );
   }
 }
