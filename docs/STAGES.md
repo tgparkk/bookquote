@@ -7,6 +7,23 @@
 
 ---
 
+## ▶ 좋아요 + 알림 + FCM 백로그 (2026-06-09 설계 확정 — DECISIONS 2026-06-09)
+
+매니저 모드 4팀 협의 산출. **출시에 끼우지 않고** LA~NB는 출시 후 첫 마이너, PA~PC는 그다음. liker 목록 미표시(A안), 본인 콘텐츠는 카운트만.
+
+- **[x] PR-LA** — 좋아요 마이그레이션 `20260609111229_likes.sql`. `book_reviews.id` surrogate + `quote_likes`·`review_likes` + RLS(대상 RLS 자연 상속, self-like 차단) + `quote_like_counts`/`review_like_counts`(INVOKER) RPC. RLS 테스트 `rls_likes.test.sql` 로컬 48/48 통과. ✅ **원격 적용 완료**(MCP apply_migration, 2026-06-09, security advisor 신규 경고 0). 클라이언트 미사용이라 사용자 영향 없음.
+- **[ ] PR-NA** — 알림 백본: `notifications` 테이블 + 적재 트리거(like·follow, SECURITY DEFINER) + unlike 취소 정리 + `my_notifications`/`unread_notification_count` RPC + RLS 테스트. LA 의존.
+- **[x] PR-LB** — Dart 좋아요 repo·model·낙관적 토글. `lib/features/likes/data/like_repository.dart`(`LikeRepository`·`LikeTargetKind`·`LikeCount`·멱등 setLiked·배치 counts) + `state/like_providers.dart`(`likeCountProvider` family·`LikeActionController`). 낙관 헬퍼 `LikeCount.toggled` + 단위 테스트 5/5. `flutter analyze` clean. UI 미연결.
+- **[x] PR-LC** — 좋아요 UI. `lib/features/likes/presentation/like_button.dart`(낙관적 토글, 자체 Consumer). 후기 카드(`book_review_card`, 책 상세+전체화면)·활동탭 후기 카드·친구 인용구 카드(`quote_list_card` via 친구 프로필)에 연결. 본인 후기는 카운트만, 내 인용구 피드는 미주입(노이즈·위축 방지). **후기 RPC 2종에 `id` 추가** `20260609113147_review_id_in_rpcs.sql`(MCP 원격 적용 완료) + `PublicBookReview`/`RecentBookReview`에 id 반영. `flutter analyze` clean + 전체 테스트 302/302. ⏳ release AAB 폰 검증은 미실행(다음 손작업).
+- **[ ] PR-NB** — 알림함 화면 + Supabase Realtime 라이브 배지 + 안읽음 카운트 + mark-read. NA 의존.
+- **[ ] PR-PA** — `device_tokens` 테이블 + `profiles.push_*`(마스터+타입별 토글) + RLS.
+- **[ ] PR-PB** — `firebase_messaging` 통합: 토큰 register/refresh/delete(auth 연동), `POST_NOTIFICATIONS` 맥락 요청, foreground/background/탭→딥링크. PA 의존. ⚠️ release-only 함정(토큰·권한) → AAB 검증 필수.
+- **[ ] PR-PC** — Edge Function `push-notification`(Database Webhook→FCM HTTP v1, 서비스계정 Edge secret) + prefs 존중 + stale 토큰 정리 + 설정 토글 UI. NA·PA 의존.
+
+순서: LA → {NA, LB} → {NB, LC} → PA → PB → PC.
+
+---
+
 ## ▶ 다음 세션 시작점 (2026-05-28 기준 — **V1.0.x 백로그 13 PR commit + push 완료, 마이그레이션 적용 완료, release APK 폰 검증 완료. versionCode 11 비공개 트랙 업로드 + PR4-B·PR5-B·PR7만 deferred**)
 
 **2026-05-28 산출 — V1.0.x 백로그 13 PR + 마이그레이션 1 + STAGES doc 1**:
@@ -64,6 +81,12 @@
 - **PR7** — 읽은 책 통계 화면. 신규 화면 — 가장 큰 작업, 1세션 full 필요.
 
 **유지 — 출시 트랙 항목**: 카카오 로그인 재오픈 (V1.0.x, 검수 의존) · iOS 출시 (안드로이드 트랙션 확인 후) · keystore 비밀번호 rotate · Supabase DPA + 키 회전 SOP · pgTAP RLS 단위 테스트 · 레이어 누수 5곳 정리 · PostHog 연동 · release 환경 진단 배너.
+
+**광고 도입 결정 (2026-05-28 4팀 협의)**:
+- ❌ **종료 시 인터스티셜·뒤로가기 광고 = 영구 금지** — AdMob 2022 정책상 사용자 의도 외 트리거 전면 광고는 우발 클릭 유발로 분류 → 계정 정지·노출 차단 사유. Play Console 계정 복구 전적 있어 재정지 리스크 > 매출 기댓값.
+- ⏸ **설정(내 정보) 네이티브 광고 1개 = V1.0.x로 분리, 시점은 V1.0 프로덕션 승격 + MAU 100명 달성 이후**. 현재 검수 중인 versionCode 11에 끼우지 않음(SDK 도입은 release-only 함정·데이터 보안 폼 재제출·개인정보 HTML 갱신 동시 필요 → 검수 리셋 리스크).
+- 도입 시 PR 분해: ① `google_mobile_ads` + AndroidManifest meta-data ② NativeAd 위젯 ③ `me_screen.dart` 정보 섹션 하단 삽입(로그아웃·탈퇴 버튼과 `SizedBox` 격리) ④ 데이터 보안 폼 재제출 ⑤ 개인정보처리방침 HTML 갱신 ⑥ release APK 폰 검증.
+- 광고 대안 우선순위: ① "차 한 잔 후원" 1회 IAP(브랜드 정합) ② 종료 시점 `PopScope` + ★별점/공유 카드(K-factor, 정책 위반 0). 상세 메모리 `feedback_ads_policy.md`.
 
 ---
 

@@ -10,6 +10,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
+import '../../likes/data/like_repository.dart';
+import '../../likes/presentation/like_button.dart';
 import '../../moderation/presentation/report_dialog.dart';
 import '../data/book_review_repository.dart';
 
@@ -158,11 +160,21 @@ class BookReviewCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.s2),
-          Text(
-            _formatDate(review.updatedAt),
-            style: AppTextStyles.labelSmall.copyWith(
-              color: colors.onSurfaceSubtle,
-            ),
+          Row(
+            children: [
+              Text(
+                _formatDate(review.updatedAt),
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: colors.onSurfaceSubtle,
+                ),
+              ),
+              const Spacer(),
+              // 본인 후기는 카운트만(좋아요 못 누름), 타인 후기는 토글 가능.
+              LikeButton(
+                target: (kind: LikeTargetKind.review, id: review.id),
+                canLike: !isMine,
+              ),
+            ],
           ),
         ],
       ),
