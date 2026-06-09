@@ -90,6 +90,12 @@
                 <data android:scheme="kakao${KAKAO_NATIVE_APP_KEY}" android:host="oauth"/>
             </intent-filter>
         </activity>
+        <!-- PR-PB: FCM 백그라운드/종료 알림이 사용할 기본 채널 id. PushService가 앱
+             기동 시 동일 id('bookquote_high')로 고중요도 채널을 생성한다 — 삼성 One UI
+             등에서 채널 명시가 없으면 알림이 표시 누락되는 문제 방지. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="bookquote_high" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

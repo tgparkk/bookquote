@@ -61,6 +61,7 @@ dependencies:
   firebase_crashlytics: ^5.2.2
   home_widget: ^0.9.2          # 홈 화면 위젯 '이 책의 한 줄' (HW-A) — 네이티브 위젯에 데이터 푸시. 위젯 UI 자체는 안드로이드 RemoteViews
   firebase_messaging: ^16.3.0
+  flutter_local_notifications: ^22.0.0
 
 dev_dependencies:
   flutter_test:
