@@ -19,7 +19,6 @@ import '../../core/ui/app_snackbar.dart';
 import '../book/data/book_repository.dart';
 import '../book/domain/book.dart';
 import '../book/presentation/book_search_sheet.dart';
-import '../book/presentation/widgets/book_cover.dart';
 import '../book/state/book_providers.dart';
 import '../crypto/presentation/lock_dialogs.dart';
 import '../crypto/presentation/lock_toggle_row.dart';
@@ -29,6 +28,8 @@ import 'data/quote_repository.dart';
 import 'domain/quote.dart';
 import 'domain/quote_mood.dart';
 import 'presentation/widgets/mood_chips.dart';
+import 'presentation/widgets/paste_banner.dart';
+import 'presentation/widgets/quote_book_field.dart';
 import 'state/quote_feed_provider.dart';
 import 'state/quote_providers.dart';
 
@@ -642,7 +643,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
                 ),
               if (_showPasteBanner) ...[
                 const SizedBox(height: AppSpacing.s3),
-                _PasteBanner(
+                PasteBanner(
                   onPaste: _pasteFromClipboard,
                   onDismiss: () => setState(() => _showPasteBanner = false),
                 ),
@@ -651,7 +652,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
               const SizedBox(height: AppSpacing.s4),
 
               // 책 연결
-              _BookField(book: _book, onTap: saving ? null : _pickBook),
+              QuoteBookField(book: _book, onTap: saving ? null : _pickBook),
 
               const SizedBox(height: AppSpacing.s4),
 
@@ -727,110 +728,3 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
   }
 }
 
-// ── 보조 위젯 ────────────────────────────────────────────
-
-class _PasteBanner extends StatelessWidget {
-  const _PasteBanner({required this.onPaste, required this.onDismiss});
-
-  final VoidCallback onPaste;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final textTheme = Theme.of(context).textTheme;
-    return Material(
-      // 붙여넣기 배너 배경: surfaceCard 토큰(라이트=secondary300, 다크=primary700)
-      color: colors.surfaceCard,
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpacing.s3, AppSpacing.s2, AppSpacing.s2, AppSpacing.s2),
-        child: Row(
-          children: [
-            Icon(Icons.content_paste, size: 18, color: colors.iconMuted),
-            const SizedBox(width: AppSpacing.s2),
-            Expanded(
-              child: Text(
-                '클립보드에 텍스트가 있어요',
-                style: textTheme.bodySmall?.copyWith(color: colors.onSurfaceMuted),
-              ),
-            ),
-            TextButton(onPressed: onPaste, child: const Text('붙여넣기')),
-            IconButton(
-              icon: const Icon(Icons.close, size: 18),
-              tooltip: '닫기',
-              onPressed: onDismiss,
-              visualDensity: VisualDensity.compact,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BookField extends StatelessWidget {
-  const _BookField({required this.book, required this.onTap});
-
-  final Book? book;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final textTheme = Theme.of(context).textTheme;
-    final book = this.book;
-    final author = book?.author;
-    return Material(
-      // 책 연결 필드 배경: surface 토큰(라이트=secondary100, 다크=primary800)
-      color: colors.surface,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: colors.border),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.s3),
-          child: book == null
-              ? Row(
-                  children: [
-                    Icon(Icons.add, size: 20, color: colors.accentDefault),
-                    const SizedBox(width: AppSpacing.s2),
-                    Text('책 연결',
-                        style: textTheme.bodyMedium
-                            ?.copyWith(color: colors.accentOnContainer)),
-                  ],
-                )
-              : Row(
-                  children: [
-                    BookCover(url: book.coverUrl, title: book.title),
-                    const SizedBox(width: AppSpacing.s3),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(book.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: textTheme.titleSmall),
-                          if (author != null && author.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Text(author, style: textTheme.bodySmall),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Text('변경 ▸',
-                        style: textTheme.labelMedium
-                            ?.copyWith(color: colors.accentDefault)),
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-}
