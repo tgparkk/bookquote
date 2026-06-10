@@ -17,6 +17,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/auth_state_provider.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/app_status_view.dart';
 import '../crypto/presentation/lock_dialogs.dart';
 import '../profile/data/profile_repository.dart';
 import 'data/card_renderer.dart';
@@ -965,30 +966,15 @@ class _NotFoundView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.s8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Icon(
-              Icons.search_off_rounded,
-              size: 56,
-              color: AppColors.primary400,
-            ),
-            const SizedBox(height: AppSpacing.s4),
-            Text(
-              '이 인용구를 찾을 수 없어요',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: AppSpacing.s2),
-            const Text(
-              '삭제됐거나 권한이 없는 인용구일 수 있어요.',
-              style: TextStyle(color: AppColors.primary500),
-            ),
-          ],
-        ),
-      ),
+    // 카드 에디터 화면 크롬 — 고정 팔레트(AppColors) 유지, context.colors 금지.
+    return AppStatusView(
+      icon: Icons.search_off_rounded,
+      iconSize: 56,
+      iconColor: AppColors.primary400,
+      title: '이 인용구를 찾을 수 없어요',
+      titleStyle: Theme.of(context).textTheme.titleMedium,
+      subtitle: '삭제됐거나 권한이 없는 인용구일 수 있어요.',
+      subtitleStyle: const TextStyle(color: AppColors.primary500),
     );
   }
 }
@@ -1000,27 +986,15 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.s8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Icon(
-              Icons.error_outline_rounded,
-              size: 56,
-              color: AppColors.primary400,
-            ),
-            const SizedBox(height: AppSpacing.s4),
-            Text(
-              '카드 정보를 불러오지 못했어요',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: AppSpacing.s4),
-            FilledButton(onPressed: onRetry, child: const Text('다시 시도')),
-          ],
-        ),
-      ),
+    return AppStatusView(
+      icon: Icons.error_outline_rounded,
+      iconSize: 56,
+      iconColor: AppColors.primary400,
+      title: '카드 정보를 불러오지 못했어요',
+      titleStyle: Theme.of(context).textTheme.titleMedium,
+      actions: [
+        FilledButton(onPressed: onRetry, child: const Text('다시 시도')),
+      ],
     );
   }
 }

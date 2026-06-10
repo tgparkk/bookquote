@@ -17,6 +17,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_status_view.dart';
 import '../../book/domain/book.dart';
 import '../../book/presentation/widgets/book_cover.dart';
 import '../../follow/data/follow_repository.dart';
@@ -1075,30 +1076,18 @@ class _NotFoundView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.person_off_outlined,
-              size: 48,
-              color: context.colors.iconMuted,
-            ),
-            const SizedBox(height: AppSpacing.s4),
-            Text(
-              '사용자를 찾을 수 없어요',
-              style: AppTextStyles.headlineSmall,
-            ),
-            const SizedBox(height: AppSpacing.s4),
-            OutlinedButton(
-              onPressed: () => context.go('/'),
-              child: const Text('홈으로'),
-            ),
-          ],
+    return AppStatusView(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s6),
+      icon: Icons.person_off_outlined,
+      iconColor: context.colors.iconMuted,
+      title: '사용자를 찾을 수 없어요',
+      titleStyle: AppTextStyles.headlineSmall,
+      actions: [
+        OutlinedButton(
+          onPressed: () => context.go('/'),
+          child: const Text('홈으로'),
         ),
-      ),
+      ],
     );
   }
 }

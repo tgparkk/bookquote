@@ -17,6 +17,7 @@ import '../../app/auth_state_provider.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/app_status_view.dart';
 import '../book_review/presentation/book_review_section.dart';
 import '../card_editor/presentation/widgets/share_sheet.dart'
     show buildAladinSearchUrl, buildBookPurchaseUrl;
@@ -603,40 +604,21 @@ class _NotFoundView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.s8),
-      children: [
-        SizedBox(height: MediaQuery.sizeOf(context).height * 0.18),
-        Icon(Icons.menu_book_outlined,
-            size: 48,
-            color: context.colors.onSurfaceSubtle), // primary300 → onSurfaceSubtle
-        const SizedBox(height: AppSpacing.s4),
-        Text(
-          '이 책을 더 이상 볼 수 없어요',
-          textAlign: TextAlign.center,
-          style: textTheme.headlineSmall,
+    return AppStatusView(
+      topHeightFraction: 0.18,
+      icon: Icons.menu_book_outlined,
+      iconColor: context.colors.onSurfaceSubtle, // primary300 → onSurfaceSubtle
+      title: '이 책을 더 이상 볼 수 없어요',
+      subtitle: '삭제됐거나 잘못된 링크일 수 있어요.',
+      gapBeforeActions: AppSpacing.s6,
+      actions: [
+        OutlinedButton(
+          onPressed: () => context.go('/'),
+          child: const Text('홈으로'),
         ),
-        const SizedBox(height: AppSpacing.s2),
-        Text(
-          '삭제됐거나 잘못된 링크일 수 있어요.',
-          textAlign: TextAlign.center,
-          style: textTheme.bodyMedium,
-        ),
-        const SizedBox(height: AppSpacing.s6),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            OutlinedButton(
-              onPressed: () => context.go('/'),
-              child: const Text('홈으로'),
-            ),
-            const SizedBox(width: AppSpacing.s3),
-            OutlinedButton(
-              onPressed: () => context.go('/library'),
-              child: const Text('내 서재'),
-            ),
-          ],
+        OutlinedButton(
+          onPressed: () => context.go('/library'),
+          child: const Text('내 서재'),
         ),
       ],
     );
@@ -650,20 +632,12 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.s8),
-      children: [
-        SizedBox(height: MediaQuery.sizeOf(context).height * 0.22),
-        Text(
-          '책 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.',
-          textAlign: TextAlign.center,
-          style: textTheme.bodyMedium,
-        ),
-        const SizedBox(height: AppSpacing.s3),
-        Center(
-          child: OutlinedButton(onPressed: onRetry, child: const Text('다시 시도')),
-        ),
+    return AppStatusView(
+      topHeightFraction: 0.22,
+      subtitle: '책 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.',
+      gapBeforeActions: AppSpacing.s3,
+      actions: [
+        OutlinedButton(onPressed: onRetry, child: const Text('다시 시도')),
       ],
     );
   }
