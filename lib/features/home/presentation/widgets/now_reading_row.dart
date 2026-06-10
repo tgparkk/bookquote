@@ -15,6 +15,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/ui/app_snackbar.dart';
 import '../../../book/data/book_repository.dart';
 import '../../../book/domain/reading_dates.dart';
 import '../../../book/presentation/book_search_sheet.dart';
@@ -270,23 +271,18 @@ Future<void> _onAddTap(BuildContext context, WidgetRef ref) async {
     ref.invalidate(myLibraryProvider); // setReadingDate가 user_books row 자동 INSERT
     ref.invalidate(isInLibraryProvider(book.id));
     if (!context.mounted) return;
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text('"${book.title}" 오늘부터 읽고 있어요'),
-          action: SnackBarAction(
-            label: '한 줄 적기',
-            onPressed: () {
-              if (context.mounted) context.push('/quote/new?bookId=${book.id}');
-            },
-          ),
-        ),
-      );
+    showAppSnackBarOn(
+      messenger,
+      '"${book.title}" 오늘부터 읽고 있어요',
+      action: SnackBarAction(
+        label: '한 줄 적기',
+        onPressed: () {
+          if (context.mounted) context.push('/quote/new?bookId=${book.id}');
+        },
+      ),
+    );
   } on BookRepositoryException {
     if (!context.mounted) return;
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(const SnackBar(content: Text('시작일 저장에 실패했어요.')));
+    showAppSnackBarOn(messenger, '시작일 저장에 실패했어요.');
   }
 }

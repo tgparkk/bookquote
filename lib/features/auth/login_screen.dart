@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/env.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/app_snackbar.dart';
 import 'auth_controller.dart';
 
 /// V1.0 카카오 보류 게이트 — `true`로 되돌리면 카카오 버튼이 다시 노출된다.
@@ -34,9 +35,7 @@ class LoginScreen extends ConsumerWidget {
         data: (_) {},
         loading: () {},
         error: (e, _) {
-          ScaffoldMessenger.of(context)
-            ..clearSnackBars()
-            ..showSnackBar(SnackBar(content: Text(authErrorMessage(e))));
+          showAppSnackBar(context, authErrorMessage(e));
         },
       );
     }

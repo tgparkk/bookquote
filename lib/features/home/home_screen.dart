@@ -16,6 +16,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/app_snackbar.dart';
 import '../quote/data/quote_outbox.dart';
 import '../quote/data/quote_repository.dart';
 import '../quote/domain/quote.dart';
@@ -100,13 +101,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ref.invalidate(quoteOutboxProvider); // 배너 카운트 갱신
       }
       if (result.discarded > 0) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(SnackBar(
-            content: Text(
-              '동기화하지 못한 인용구 ${result.discarded}개를 정리했어요.',
-            ),
-          ));
+        showAppSnackBar(
+          context,
+          '동기화하지 못한 인용구 ${result.discarded}개를 정리했어요.',
+        );
       }
     } catch (_) {/* best-effort */}
   }
@@ -162,11 +160,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     } catch (_) {
       if (!mounted) return;
       ref.invalidate(quoteFeedProvider); // 삭제 실패 → 서버 기준으로 목록 복구
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('삭제하지 못했어요. 다시 시도해주세요.')),
-        );
+      showAppSnackBar(context, '삭제하지 못했어요. 다시 시도해주세요.');
     }
   }
 

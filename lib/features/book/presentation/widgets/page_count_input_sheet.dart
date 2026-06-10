@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/ui/app_snackbar.dart';
 import '../../data/book_repository.dart';
 import '../../domain/book.dart';
 import '../../state/book_providers.dart';
@@ -37,13 +38,9 @@ Future<void> openPageCountInputSheet({
     await ref.read(bookRepositoryProvider).setBookPageCount(book.id, saved);
     ref.invalidate(myLibraryProvider);
     ref.invalidate(bookByIdProvider(book.id));
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(SnackBar(content: Text('"${book.title}" 쪽수를 저장했어요')));
+    showAppSnackBarOn(messenger, '"${book.title}" 쪽수를 저장했어요');
   } on BookRepositoryException catch (e) {
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(SnackBar(content: Text('저장 실패: ${e.message}')));
+    showAppSnackBarOn(messenger, '저장 실패: ${e.message}');
   }
 }
 

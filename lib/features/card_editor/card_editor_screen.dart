@@ -17,6 +17,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/auth_state_provider.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/app_snackbar.dart';
 import '../../core/ui/app_status_view.dart';
 import '../crypto/presentation/lock_dialogs.dart';
 import '../profile/data/profile_repository.dart';
@@ -191,14 +192,11 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
                 // 현재 ON/OFF 상태를 시각적으로 즉시 파악하기 어려웠음.
                 if (!mounted) return;
                 final next = ref.read(cardEditorControllerProvider);
-                ScaffoldMessenger.of(context)
-                  ..clearSnackBars()
-                  ..showSnackBar(SnackBar(
-                    content: Text(
-                      next.watermarkEnabled ? '워터마크를 켰어요' : '워터마크를 껐어요',
-                    ),
-                    duration: const Duration(milliseconds: 1500),
-                  ));
+                showAppSnackBar(
+                  context,
+                  next.watermarkEnabled ? '워터마크를 켰어요' : '워터마크를 껐어요',
+                  duration: const Duration(milliseconds: 1500),
+                );
             }
           },
           itemBuilder: (_) => <PopupMenuEntry<_AppBarAction>>[
@@ -301,11 +299,7 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
       );
     } on CardRenderException {
       if (!mounted) return;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('카드 만들기에 실패했어요. 다시 시도해 주세요.')),
-        );
+      showAppSnackBarOn(messenger, '카드 만들기에 실패했어요. 다시 시도해 주세요.');
     } finally {
       if (mounted) setState(() => _isSharing = false);
     }
@@ -385,12 +379,11 @@ class _Editor extends ConsumerWidget {
     // F8: 템플릿 전환 직전 사용자가 폰트 ±로 조정해뒀다면, setTemplate이 fontStep을
     // 0으로 리셋한 사실을 SnackBar로 안내. 이미 0이면 toast 생략.
     void notifyFontReset() {
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(const SnackBar(
-          content: Text('템플릿이 바뀌면서 글자 크기는 기본으로 되돌렸어요.'),
-          duration: Duration(milliseconds: 1800),
-        ));
+      showAppSnackBar(
+        context,
+        '템플릿이 바뀌면서 글자 크기는 기본으로 되돌렸어요.',
+        duration: const Duration(milliseconds: 1800),
+      );
     }
 
     final fontBaseline = CardEditorState.initial.fontStep;

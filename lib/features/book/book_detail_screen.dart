@@ -17,6 +17,7 @@ import '../../app/auth_state_provider.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/app_snackbar.dart';
 import '../../core/ui/app_status_view.dart';
 import '../book_review/presentation/book_review_section.dart';
 import '../card_editor/presentation/widgets/share_sheet.dart'
@@ -293,39 +294,27 @@ class _LibraryActionButtonState extends ConsumerState<_LibraryActionButton> {
       if (!mounted) return;
       ref.invalidate(isInLibraryProvider(widget.bookId));
       ref.invalidate(myLibraryProvider);
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: const Text('서재에 담았어요'),
-            action: SnackBarAction(
-              label: '서재 보기',
-              onPressed: () {
-                if (mounted) context.go('/library');
-              },
-            ),
-          ),
-        );
+      showAppSnackBarOn(
+        messenger,
+        '서재에 담았어요',
+        action: SnackBarAction(
+          label: '서재 보기',
+          onPressed: () {
+            if (mounted) context.go('/library');
+          },
+        ),
+      );
     } on BookRepositoryException catch (e) {
       if (!mounted) return;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              e.code == 'NOT_AUTHENTICATED'
-                  ? '로그인이 필요해요.'
-                  : '서재에 담지 못했어요. 다시 시도해주세요.',
-            ),
-          ),
-        );
+      showAppSnackBarOn(
+        messenger,
+        e.code == 'NOT_AUTHENTICATED'
+            ? '로그인이 필요해요.'
+            : '서재에 담지 못했어요. 다시 시도해주세요.',
+      );
     } catch (_) {
       if (!mounted) return;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('서재에 담지 못했어요. 다시 시도해주세요.')),
-        );
+      showAppSnackBarOn(messenger, '서재에 담지 못했어요. 다시 시도해주세요.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -676,16 +665,10 @@ class _OverflowMenu extends ConsumerWidget {
       ref.invalidate(isInLibraryProvider(bookId));
       ref.invalidate(myLibraryProvider);
       ref.invalidate(myRatingProvider(bookId));
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(const SnackBar(content: Text('서재에서 뺐어요.')));
+      showAppSnackBarOn(messenger, '서재에서 뺐어요.');
     } catch (_) {
       if (!context.mounted) return;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('빼지 못했어요. 다시 시도해주세요.')),
-        );
+      showAppSnackBarOn(messenger, '빼지 못했어요. 다시 시도해주세요.');
     }
   }
 
@@ -792,23 +775,12 @@ class _BookRatingBlockState extends ConsumerState<_BookRatingBlock> {
       ref.invalidate(myLibraryProvider);
       ref.invalidate(isInLibraryProvider(widget.bookId));
     } on BookRepositoryException catch (e) {
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              e.code == 'NOT_AUTHENTICATED'
-                  ? '로그인이 필요해요.'
-                  : '별점을 저장하지 못했어요.',
-            ),
-          ),
-        );
+      showAppSnackBarOn(
+        messenger,
+        e.code == 'NOT_AUTHENTICATED' ? '로그인이 필요해요.' : '별점을 저장하지 못했어요.',
+      );
     } catch (_) {
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('별점을 저장하지 못했어요. 다시 시도해주세요.')),
-        );
+      showAppSnackBarOn(messenger, '별점을 저장하지 못했어요. 다시 시도해주세요.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -1166,9 +1138,7 @@ class _PurchaseLinksRow extends StatelessWidget {
     if (uri == null) return;
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text('$name 페이지를 열 수 없어요.')));
+      showAppSnackBarOn(messenger, '$name 페이지를 열 수 없어요.');
     }
   }
 

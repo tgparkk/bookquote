@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../data/like_repository.dart';
 import '../state/like_providers.dart';
 
@@ -52,11 +53,7 @@ class _LikeButtonState extends ConsumerState<LikeButton> {
     } catch (_) {
       if (mounted) {
         setState(() => _override = null); // 롤백
-        messenger
-          ..clearSnackBars()
-          ..showSnackBar(
-            const SnackBar(content: Text('좋아요를 처리하지 못했어요. 잠시 후 다시 시도해주세요.')),
-          );
+        showAppSnackBarOn(messenger, '좋아요를 처리하지 못했어요. 잠시 후 다시 시도해주세요.');
       }
     } finally {
       if (mounted) setState(() => _busy = false);

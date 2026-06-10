@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../../profile/domain/profile.dart';
 import '../state/moderation_providers.dart';
 
@@ -69,19 +70,11 @@ class _BlockedTileState extends ConsumerState<_BlockedTile> {
           .read(moderationRepositoryProvider)
           .unblock(widget.profile.id);
       ref.invalidate(blockedListProvider);
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text('$name님 차단을 해제했어요.')));
+      showAppSnackBarOn(messenger, '$name님 차단을 해제했어요.');
     } catch (_) {
       if (!mounted) return;
       setState(() => _busy = false);
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(
-            content: Text('차단 해제에 실패했어요. 잠시 후 다시 시도해주세요.'),
-          ),
-        );
+      showAppSnackBarOn(messenger, '차단 해제에 실패했어요. 잠시 후 다시 시도해주세요.');
     }
   }
 

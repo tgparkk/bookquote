@@ -15,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/supabase/supabase_init.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/app_snackbar.dart';
 import '../me/data/quote_export.dart';
 
 enum AccountDeletionResult { cancelled, deleted, failed }
@@ -84,11 +85,7 @@ Future<AccountDeletionResult> runAccountDeletionFlow({
     if (context.mounted) {
       Navigator.of(context, rootNavigator: true).pop(); // dim 닫기
     }
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(
-        const SnackBar(content: Text('탈퇴 처리에 실패했어요. 잠시 후 다시 시도해주세요.')),
-      );
+    showAppSnackBarOn(messenger, '탈퇴 처리에 실패했어요. 잠시 후 다시 시도해주세요.');
     return AccountDeletionResult.failed;
   }
 
@@ -96,9 +93,7 @@ Future<AccountDeletionResult> runAccountDeletionFlow({
     Navigator.of(context, rootNavigator: true).pop(); // dim 닫기
   }
   await supabase.auth.signOut(); // 라우터 가드가 /auth/login으로
-  messenger
-    ..clearSnackBars()
-    ..showSnackBar(const SnackBar(content: Text('탈퇴가 완료됐어요.')));
+  showAppSnackBarOn(messenger, '탈퇴가 완료됐어요.');
   return AccountDeletionResult.deleted;
 }
 

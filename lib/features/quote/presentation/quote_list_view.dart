@@ -13,6 +13,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../data/quote_repository.dart';
 import '../domain/quote.dart';
 import '../domain/quote_mood.dart';
@@ -265,11 +266,7 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
     } catch (_) {
       if (!mounted) return;
       _reload(); // 삭제 실패 → 서버 기준으로 목록 복구
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('삭제하지 못했어요. 다시 시도해주세요.')),
-        );
+      showAppSnackBar(context, '삭제하지 못했어요. 다시 시도해주세요.');
     }
   }
 

@@ -14,6 +14,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/ui/app_snackbar.dart';
 import '../../../book/data/book_repository.dart';
 import '../../../book/domain/book.dart';
 import '../../../book/domain/reading_dates.dart';
@@ -119,20 +120,13 @@ class _BookQuickActionsSheet extends ConsumerWidget {
         ..invalidate(currentlyReadingProvider)
         ..invalidate(myLibraryProvider);
       navigator.pop();
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(
-          content: Text(
-            kind == ReadingDateKind.started ? '읽기 시작에 표시했어요.' : '다 읽음으로 표시했어요.',
-          ),
-        ));
+      showAppSnackBarOn(
+        messenger,
+        kind == ReadingDateKind.started ? '읽기 시작에 표시했어요.' : '다 읽음으로 표시했어요.',
+      );
     } catch (_) {
       navigator.pop();
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('표시하지 못했어요. 다시 시도해 주세요.')),
-        );
+      showAppSnackBarOn(messenger, '표시하지 못했어요. 다시 시도해 주세요.');
     }
   }
 

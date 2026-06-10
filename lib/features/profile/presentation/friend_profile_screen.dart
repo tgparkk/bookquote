@@ -17,6 +17,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../../../core/ui/app_status_view.dart';
 import '../../book/domain/book.dart';
 import '../../book/presentation/widgets/book_cover.dart';
@@ -468,9 +469,7 @@ class _FollowButtonState extends ConsumerState<_FollowButton> {
     } on FollowRepositoryException catch (e) {
       if (!mounted) return;
       setState(() => _optimistic = wasFollowing); // rollback
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text(e.message)));
+      showAppSnackBar(context, e.message);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -1164,16 +1163,10 @@ class _ProfileOverflowMenu extends ConsumerWidget {
       } else {
         context.go('/');
       }
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text('$name님을 차단했어요.')));
+      showAppSnackBarOn(messenger, '$name님을 차단했어요.');
     } catch (_) {
       if (!context.mounted) return;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('차단하지 못했어요. 잠시 후 다시 시도해주세요.')),
-        );
+      showAppSnackBarOn(messenger, '차단하지 못했어요. 잠시 후 다시 시도해주세요.');
     }
   }
 }

@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../data/aladin_dto.dart';
 import '../data/book_repository.dart';
 import '../domain/book.dart';
@@ -74,9 +75,7 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
     } on BookRepositoryException catch (e) {
       if (!sheetCtx.mounted) return;
       setState(() => _saving = false);
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text('책 저장 실패: ${e.message}')));
+      showAppSnackBarOn(messenger, '책 저장 실패: ${e.message}');
       return;
     }
 

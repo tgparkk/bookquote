@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/profile.dart';
 
@@ -33,9 +34,7 @@ class _NotificationSettingsScreenState
       ref.invalidate(myProfileProvider);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(const SnackBar(content: Text('설정 변경에 실패했어요.')));
+        showAppSnackBar(context, '설정 변경에 실패했어요.');
       }
     } finally {
       if (mounted) setState(() => _busy = false);
