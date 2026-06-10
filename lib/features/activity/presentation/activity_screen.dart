@@ -23,6 +23,7 @@ import '../../follow/state/friend_activity_provider.dart';
 import '../../follow/state/friend_recent_books_provider.dart';
 import '../../likes/data/like_repository.dart';
 import '../../likes/presentation/like_button.dart';
+import '../../notifications/presentation/notification_bell.dart';
 
 class ActivityScreen extends ConsumerWidget {
   const ActivityScreen({super.key});
@@ -39,6 +40,7 @@ class ActivityScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('활동'),
         actions: [
+          const NotificationBell(),
           IconButton(
             icon: const Icon(Icons.person_add_alt_1_outlined),
             tooltip: '친구 찾기',

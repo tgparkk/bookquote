@@ -34,6 +34,8 @@ import '../features/home/home_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/me/me_screen.dart';
 import '../features/moderation/presentation/blocked_users_screen.dart';
+import '../features/notifications/presentation/notification_settings_screen.dart';
+import '../features/notifications/presentation/notifications_screen.dart';
 import '../features/profile/presentation/friend_profile_screen.dart';
 import '../features/quote/quote_input_screen.dart';
 import 'auth_state_provider.dart';
@@ -88,6 +90,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/book/:id/reviews',
         builder: (_, state) =>
             BookReviewsScreen(bookId: state.pathParameters['id']!),
+      ),
+      // PR-NB — 알림함(풀스크린, 셸 밖). 로그인 필수는 _redirect가 처리.
+      GoRoute(
+        path: '/notifications',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (_, _) => const NotificationsScreen(),
       ),
       GoRoute(
         path: '/quote/new',
@@ -144,6 +152,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                   path: 'friend-search',
                   parentNavigatorKey: _rootNavigatorKey,
                   builder: (_, _) => const FriendSearchScreen(),
+                ),
+                GoRoute(
+                  path: 'notifications',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (_, _) => const NotificationSettingsScreen(),
                 ),
                 GoRoute(
                   path: 'following',

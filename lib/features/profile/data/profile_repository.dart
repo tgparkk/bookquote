@@ -59,7 +59,8 @@ class ProfileRepository {
       final row = await _client
           .from(_table)
           .select(
-            'id, display_name, avatar_url, public_handle, is_library_public',
+            'id, display_name, avatar_url, public_handle, is_library_public, '
+            'push_enabled, push_quote_like, push_review_like, push_follow',
           )
           .eq('id', uid)
           .maybeSingle();
@@ -74,11 +75,19 @@ class ProfileRepository {
   Future<void> updateMine({
     String? displayName,
     bool? isLibraryPublic,
+    bool? pushEnabled,
+    bool? pushQuoteLike,
+    bool? pushReviewLike,
+    bool? pushFollow,
   }) async {
     final uid = _requireUid();
     final patch = <String, dynamic>{};
     if (displayName != null) patch['display_name'] = displayName;
     if (isLibraryPublic != null) patch['is_library_public'] = isLibraryPublic;
+    if (pushEnabled != null) patch['push_enabled'] = pushEnabled;
+    if (pushQuoteLike != null) patch['push_quote_like'] = pushQuoteLike;
+    if (pushReviewLike != null) patch['push_review_like'] = pushReviewLike;
+    if (pushFollow != null) patch['push_follow'] = pushFollow;
     if (patch.isEmpty) return;
     try {
       await _client.from(_table).update(patch).eq('id', uid);

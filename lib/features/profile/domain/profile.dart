@@ -18,6 +18,10 @@ class Profile {
     this.avatarUrl,
     this.publicHandle,
     required this.isLibraryPublic,
+    this.pushEnabled = true,
+    this.pushQuoteLike = true,
+    this.pushReviewLike = true,
+    this.pushFollow = true,
   });
 
   final String id;
@@ -35,11 +39,22 @@ class Profile {
   /// 친구 서재 탐험 게이트. true면 검색·`/u/:userId`에 노출, 친구가 책·인용구 read 가능.
   final bool isLibraryPublic;
 
+  /// 푸시 알림 설정(PR-PA). 본인 프로필 fetch에서만 의미 — 타인 프로필 select엔
+  /// 미포함이라 기본값(true)로 채워진다. 마스터 + 타입별. Edge Function이 발송 전 확인.
+  final bool pushEnabled;
+  final bool pushQuoteLike;
+  final bool pushReviewLike;
+  final bool pushFollow;
+
   factory Profile.fromRow(Map<String, dynamic> row) => Profile(
         id: row['id'] as String,
         displayName: row['display_name'] as String?,
         avatarUrl: row['avatar_url'] as String?,
         publicHandle: row['public_handle'] as String?,
         isLibraryPublic: (row['is_library_public'] as bool?) ?? false,
+        pushEnabled: (row['push_enabled'] as bool?) ?? true,
+        pushQuoteLike: (row['push_quote_like'] as bool?) ?? true,
+        pushReviewLike: (row['push_review_like'] as bool?) ?? true,
+        pushFollow: (row['push_follow'] as bool?) ?? true,
       );
 }
