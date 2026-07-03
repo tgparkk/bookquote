@@ -17,6 +17,8 @@ import '../../core/theme/theme_mode_provider.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/app_snackbar.dart';
 import '../account/account_deletion.dart';
+import '../ads/ad_ids.dart';
+import '../ads/app_banner_ad.dart';
 import '../auth/auth_controller.dart';
 import '../follow/state/follow_providers.dart';
 import '../profile/data/profile_repository.dart';
@@ -42,6 +44,10 @@ class MeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('내 정보')),
+      // 하단 고정 배너 (2026-07-03 수익모델, 내정보 확장). 자체 스트립에
+      // 분리 렌더링되어 리스트 말미의 로그아웃·회원 탈퇴 버튼과 겹치지
+      // 않는다 — 5월 협의의 "탈퇴 동선과 격리" 원칙 준수.
+      bottomNavigationBar: AppBannerAd(adUnitId: meBannerAdUnitId),
       body: ListView(
         padding: const EdgeInsets.only(top: AppSpacing.s4, bottom: AppSpacing.s16),
         children: [
