@@ -17,7 +17,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/app_snackbar.dart';
-import '../ads/home_banner_ad.dart';
+import '../ads/ad_ids.dart';
+import '../ads/app_banner_ad.dart';
 import '../book/presentation/book_search_sheet.dart';
 import '../quote/data/quote_outbox.dart';
 import '../quote/data/quote_repository.dart';
@@ -221,7 +222,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ),
       // 홈 하단 고정 배너 — 이 Scaffold는 셸 안쪽이라 배너가 피드와 BottomNav
       // 사이에 앉고, FAB는 Scaffold가 배너 위로 자동 오프셋한다(우발 클릭 방지).
-      bottomNavigationBar: const HomeBannerAd(),
+      bottomNavigationBar: AppBannerAd(adUnitId: homeBannerAdUnitId),
       // 구버전 BottomNav 가운데 [+]가 '활동' 탭으로 교체되며, 핵심 인용구 작성 동선을
       // 홈 FAB로 보강 (PR23 retention 액션 보호).
       floatingActionButton: FloatingActionButton.extended(
