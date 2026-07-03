@@ -4,10 +4,12 @@ import 'dart:ui' show PlatformDispatcher;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kDebugMode, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,6 +42,11 @@ Future<void> main() async {
     };
     // PR-PB: FCM 백그라운드/종료 상태 메시지 핸들러 등록(반드시 top-level 함수).
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  }
+  // AdMob 초기화 — 홈 하단 배너(2026-07-03 수익모델 확정). 첫 프레임을 막지
+  // 않도록 await 없이 시작; 배너 로드는 초기화 완료를 SDK가 내부에서 기다린다.
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    unawaited(MobileAds.instance.initialize());
   }
   await initSupabase();
   // PR21: 카카오 SDK 초기화 — 네이티브 앱 키 없으면 건너뜀(빌드는 통과,
