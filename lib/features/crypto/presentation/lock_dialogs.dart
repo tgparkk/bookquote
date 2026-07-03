@@ -25,6 +25,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../data/envelope_repository.dart';
 import '../domain/envelope.dart';
 import '../state/crypto_providers.dart';
@@ -69,11 +70,7 @@ Future<bool> ensureMasterKeyReady(
     return ok == true;
   } on EnvelopeRepositoryException {
     if (!context.mounted) return false;
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        const SnackBar(content: Text('잠금 상태를 확인하지 못했어요. 잠시 후 다시 시도해주세요.')),
-      );
+    showAppSnackBar(context, '잠금 상태를 확인하지 못했어요. 잠시 후 다시 시도해주세요.');
     return false;
   }
 }

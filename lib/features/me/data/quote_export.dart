@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../../quote/data/quote_repository.dart';
 import 'markdown_exporter.dart';
 
@@ -38,18 +39,12 @@ Future<QuoteExportResult> exportMyQuotesAsMarkdown({
   try {
     entries = await _fetchAllQuotes(repo);
   } catch (_) {
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(
-        const SnackBar(content: Text('인용구를 불러오지 못해 내보내기를 못 했어요.')),
-      );
+    showAppSnackBarOn(messenger, '인용구를 불러오지 못해 내보내기를 못 했어요.');
     return QuoteExportResult.failed;
   }
 
   if (entries.isEmpty) {
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(const SnackBar(content: Text('내보낼 인용구가 없어요.')));
+    showAppSnackBarOn(messenger, '내보낼 인용구가 없어요.');
     return QuoteExportResult.empty;
   }
 
@@ -81,9 +76,7 @@ Future<QuoteExportResult> exportMyQuotesAsMarkdown({
     }
     return QuoteExportResult.shared;
   } catch (_) {
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(const SnackBar(content: Text('내보내기를 마치지 못했어요.')));
+    showAppSnackBarOn(messenger, '내보내기를 마치지 못했어요.');
     return QuoteExportResult.failed;
   }
 }

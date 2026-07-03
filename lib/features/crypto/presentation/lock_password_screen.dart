@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../data/envelope_repository.dart';
 import '../domain/envelope.dart';
 import '../state/crypto_providers.dart';
@@ -93,9 +94,7 @@ class LockPasswordBody extends ConsumerWidget {
     if (ok == true) {
       ref.invalidate(_lockSnapshotProvider);
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(const SnackBar(content: Text('잠금 비밀번호를 설정했어요.')));
+        showAppSnackBar(context, '잠금 비밀번호를 설정했어요.');
       }
     }
   }
@@ -111,9 +110,7 @@ class LockPasswordBody extends ConsumerWidget {
     if (ok == true) {
       ref.invalidate(_lockSnapshotProvider);
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(const SnackBar(content: Text('잠금 비밀번호를 변경했어요.')));
+        showAppSnackBar(context, '잠금 비밀번호를 변경했어요.');
       }
     }
   }
@@ -129,9 +126,7 @@ class LockPasswordBody extends ConsumerWidget {
     if (ok == true) {
       ref.invalidate(_lockSnapshotProvider);
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(const SnackBar(content: Text('잠금을 해제했어요.')));
+        showAppSnackBar(context, '잠금을 해제했어요.');
       }
     }
   }

@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../data/moderation_repository.dart';
 
 /// 신고 사유. [code]는 DB `reports.reason`에 저장, [label]은 UI 노출.
@@ -92,11 +93,7 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
           );
       if (!mounted) return;
       Navigator.of(context).pop(true);
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('신고가 접수됐어요. 검토 후 조치할게요.')),
-        );
+      showAppSnackBarOn(messenger, '신고가 접수됐어요. 검토 후 조치할게요.');
     } catch (_) {
       if (!mounted) return;
       setState(() {

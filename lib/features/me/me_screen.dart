@@ -15,6 +15,7 @@ import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/app_snackbar.dart';
 import '../account/account_deletion.dart';
 import '../auth/auth_controller.dart';
 import '../follow/state/follow_providers.dart';
@@ -184,11 +185,7 @@ Future<void> _openUri(BuildContext context, Uri uri) async {
     ok = false;
   }
   if (!ok) {
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(
-        const SnackBar(content: Text('열 수 없어요. 잠시 후 다시 시도해주세요.')),
-      );
+    showAppSnackBarOn(messenger, '열 수 없어요. 잠시 후 다시 시도해주세요.');
   }
 }
 

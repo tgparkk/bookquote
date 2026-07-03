@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/ui/app_snackbar.dart';
 import '../../../library/state/calendar_providers.dart';
 import '../../data/book_repository.dart';
 import '../../domain/reading_dates.dart';
@@ -69,24 +70,14 @@ class _ReadingDatesRowState extends ConsumerState<ReadingDatesRow> {
       ref.invalidate(currentlyReadingProvider); // PR23 홈 "지금 읽고 있어요" 갱신
       ref.invalidate(userBooksCalendarProvider); // 서재 [캘린더] 마커 갱신
       if (shouldAutoStart) {
-        messenger
-          ..clearSnackBars()
-          ..showSnackBar(
-            const SnackBar(content: Text('함께 시작일도 오늘로 저장했어요')),
-          );
+        showAppSnackBarOn(messenger, '함께 시작일도 오늘로 저장했어요');
       }
     } on BookRepositoryException catch (e) {
       if (!mounted) return;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text(_userMessage(e))));
+      showAppSnackBarOn(messenger, _userMessage(e));
     } catch (_) {
       if (!mounted) return;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('저장하지 못했어요. 다시 시도해주세요.')),
-        );
+      showAppSnackBarOn(messenger, '저장하지 못했어요. 다시 시도해주세요.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

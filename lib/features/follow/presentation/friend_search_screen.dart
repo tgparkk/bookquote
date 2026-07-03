@@ -19,6 +19,7 @@ import '../../../app/auth_state_provider.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/domain/profile.dart';
 import '../data/follow_repository.dart';
@@ -128,18 +129,10 @@ class _MyProfileInviteCard extends ConsumerWidget {
       await ref.read(profileRepositoryProvider).updateMine(isLibraryPublic: true);
       ref.invalidate(myProfileProvider);
       if (!context.mounted) return;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(const SnackBar(
-          content: Text('내 프로필을 공개로 바꿨어요. 이제 친구가 찾을 수 있어요.'),
-        ));
+      showAppSnackBarOn(messenger, '내 프로필을 공개로 바꿨어요. 이제 친구가 찾을 수 있어요.');
     } catch (_) {
       if (!context.mounted) return;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('공개 설정을 바꾸지 못했어요. 다시 시도해 주세요.')),
-        );
+      showAppSnackBarOn(messenger, '공개 설정을 바꾸지 못했어요. 다시 시도해 주세요.');
     }
   }
 
@@ -404,9 +397,7 @@ class _ResultTileState extends ConsumerState<_ResultTile> {
       ref.invalidate(myFollowingProvider);
     } on FollowRepositoryException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text(e.message)));
+      showAppSnackBar(context, e.message);
     } finally {
       if (mounted) setState(() => _busy = false);
     }

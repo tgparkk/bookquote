@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/ui/app_snackbar.dart';
 import '../../data/quote_repository.dart';
 import '../../domain/quote.dart';
 import '../../domain/quote_mood.dart';
@@ -60,12 +61,11 @@ class _ChangeMoodsSheetState extends State<_ChangeMoodsSheet> {
         _selected.remove(mood);
       } else {
         if (_selected.length >= _kMaxMoods) {
-          ScaffoldMessenger.of(context)
-            ..clearSnackBars()
-            ..showSnackBar(const SnackBar(
-              content: Text('무드는 최대 3개까지 선택할 수 있어요.'),
-              duration: Duration(milliseconds: 1500),
-            ));
+          showAppSnackBar(
+            context,
+            '무드는 최대 3개까지 선택할 수 있어요.',
+            duration: const Duration(milliseconds: 1500),
+          );
           return;
         }
         _selected.add(mood);
@@ -93,11 +93,7 @@ class _ChangeMoodsSheetState extends State<_ChangeMoodsSheet> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _saving = false);
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('무드를 바꾸지 못했어요. 다시 시도해 주세요.')),
-        );
+      showAppSnackBarOn(messenger, '무드를 바꾸지 못했어요. 다시 시도해 주세요.');
     }
   }
 

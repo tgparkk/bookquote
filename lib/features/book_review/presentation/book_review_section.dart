@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/auth_state_provider.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../data/book_review_repository.dart';
 import '../state/book_review_providers.dart';
 import 'book_review_card.dart';
@@ -151,17 +152,12 @@ class BookReviewSection extends ConsumerWidget {
           .upsertMyReview(bookId: bookId, text: saved);
       ref.invalidate(publicBookReviewsByBookProvider(bookId));
       ref.invalidate(myBookReviewProvider(bookId));
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(initialText.isEmpty ? '후기를 남겼어요' : '후기를 수정했어요'),
-          ),
-        );
+      showAppSnackBarOn(
+        messenger,
+        initialText.isEmpty ? '후기를 남겼어요' : '후기를 수정했어요',
+      );
     } on BookReviewRepositoryException catch (e) {
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text(e.message)));
+      showAppSnackBarOn(messenger, e.message);
     }
   }
 
@@ -192,13 +188,9 @@ class BookReviewSection extends ConsumerWidget {
       await ref.read(bookReviewRepositoryProvider).deleteMyReview(bookId);
       ref.invalidate(publicBookReviewsByBookProvider(bookId));
       ref.invalidate(myBookReviewProvider(bookId));
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(const SnackBar(content: Text('후기를 삭제했어요.')));
+      showAppSnackBarOn(messenger, '후기를 삭제했어요.');
     } on BookReviewRepositoryException catch (e) {
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text(e.message)));
+      showAppSnackBarOn(messenger, e.message);
     }
   }
 }

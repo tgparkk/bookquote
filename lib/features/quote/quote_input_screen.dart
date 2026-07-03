@@ -15,10 +15,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/app_snackbar.dart';
 import '../book/data/book_repository.dart';
 import '../book/domain/book.dart';
 import '../book/presentation/book_search_sheet.dart';
-import '../book/presentation/widgets/book_cover.dart';
 import '../book/state/book_providers.dart';
 import '../crypto/presentation/lock_dialogs.dart';
 import '../crypto/presentation/lock_toggle_row.dart';
@@ -28,6 +28,8 @@ import 'data/quote_repository.dart';
 import 'domain/quote.dart';
 import 'domain/quote_mood.dart';
 import 'presentation/widgets/mood_chips.dart';
+import 'presentation/widgets/paste_banner.dart';
+import 'presentation/widgets/quote_book_field.dart';
 import 'state/quote_feed_provider.dart';
 import 'state/quote_providers.dart';
 
@@ -116,9 +118,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
           await ref.read(quoteByIdProvider(widget.quoteId!).future);
       if (!mounted) return;
       if (quote == null) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(const SnackBar(content: Text('이 인용구를 찾지 못했어요.')));
+        showAppSnackBar(context, '이 인용구를 찾지 못했어요.');
         Navigator.of(context).maybePop();
         return;
       }
@@ -142,11 +142,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
       setState(() {});
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('인용구를 불러오지 못했어요.')),
-        );
+      showAppSnackBar(context, '인용구를 불러오지 못했어요.');
     }
   }
 
@@ -178,27 +174,24 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
       setState(() {});
       // F5: 시점 단서를 함께 표시 — 한 달 만에 재진입한 사용자도 맥락을 잡을 수 있게.
       final timeLabel = _relativeTime(loaded.savedAt);
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: Text('$timeLabel에 작성하던 인용구를 불러왔어요'),
-            action: SnackBarAction(
-              label: '지우기',
-              onPressed: () async {
-                _textController.clear();
-                _pageController.clear();
-                setState(() {
-                  _moods.clear();
-                  _book = null;
-                });
-                try {
-                  (await ref.read(quoteDraftStoreProvider.future)).clear();
-                } catch (_) {/* ignore */}
-              },
-            ),
-          ),
-        );
+      showAppSnackBar(
+        context,
+        '$timeLabel에 작성하던 인용구를 불러왔어요',
+        action: SnackBarAction(
+          label: '지우기',
+          onPressed: () async {
+            _textController.clear();
+            _pageController.clear();
+            setState(() {
+              _moods.clear();
+              _book = null;
+            });
+            try {
+              (await ref.read(quoteDraftStoreProvider.future)).clear();
+            } catch (_) {/* ignore */}
+          },
+        ),
+      );
     } catch (_) {/* ignore */}
   }
 
@@ -255,11 +248,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
         TextSelection.collapsed(offset: _textController.text.length);
 
     if (wasTruncated) {
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(
-          content: Text('$_maxLen자가 넘어 앞부분만 붙여넣었어요.'),
-        ));
+      showAppSnackBar(context, '$_maxLen자가 넘어 앞부분만 붙여넣었어요.');
     }
   }
 
@@ -280,13 +269,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
     if (_moods.contains(mood)) {
       setState(() => _moods.remove(mood));
     } else if (_moods.length >= QuoteMood.maxPerQuote) {
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: Text('무드는 최대 ${QuoteMood.maxPerQuote}개까지 고를 수 있어요.'),
-          ),
-        );
+      showAppSnackBar(context, '무드는 최대 ${QuoteMood.maxPerQuote}개까지 고를 수 있어요.');
       return;
     } else {
       setState(() => _moods.add(mood));
@@ -396,11 +379,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
     if (pageText.isNotEmpty) {
       final page = int.tryParse(pageText);
       if (page != null && page <= 0) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(const SnackBar(
-            content: Text('쪽수는 1 이상이어야 해요. 비워두면 "모름"으로 저장돼요.'),
-          ));
+        showAppSnackBar(context, '쪽수는 1 이상이어야 해요. 비워두면 "모름"으로 저장돼요.');
         return;
       }
     }
@@ -417,23 +396,16 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
         await controller.submitUpdate(widget.quoteId!, _buildInput());
       } on QuoteRepositoryException catch (e) {
         if (!mounted) return;
-        messenger
-          ..clearSnackBars()
-          ..showSnackBar(SnackBar(
-            content: Text(
-              e.code == 'NOT_AUTHENTICATED'
-                  ? '로그인이 필요해요.'
-                  : '수정 저장에 실패했어요. 잠시 후 다시 시도해주세요.',
-            ),
-          ));
+        showAppSnackBarOn(
+          messenger,
+          e.code == 'NOT_AUTHENTICATED'
+              ? '로그인이 필요해요.'
+              : '수정 저장에 실패했어요. 잠시 후 다시 시도해주세요.',
+        );
         return;
       } catch (_) {
         if (!mounted) return;
-        messenger
-          ..clearSnackBars()
-          ..showSnackBar(
-            const SnackBar(content: Text('수정 저장에 실패했어요. 다시 시도해주세요.')),
-          );
+        showAppSnackBarOn(messenger, '수정 저장에 실패했어요. 다시 시도해주세요.');
         return;
       }
       if (!mounted) return;
@@ -448,9 +420,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
       if (editedBookId != null) {
         ref.invalidate(isInLibraryProvider(editedBookId)); // 책 상세 "서재 담기" 상태
       }
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(const SnackBar(content: Text('수정 내용을 저장했어요.')));
+      showAppSnackBarOn(messenger, '수정 내용을 저장했어요.');
       navigator.pop();
       return;
     }
@@ -461,23 +431,16 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
       created = await controller.submit(_buildInput());
     } on QuoteRepositoryException catch (e) {
       if (!mounted) return;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              e.code == 'NOT_AUTHENTICATED'
-                  ? '로그인이 필요해요.'
-                  : '저장하지 못했어요. 잠시 후 다시 시도해주세요.',
-            ),
-          ),
-        );
+      showAppSnackBarOn(
+        messenger,
+        e.code == 'NOT_AUTHENTICATED'
+            ? '로그인이 필요해요.'
+            : '저장하지 못했어요. 잠시 후 다시 시도해주세요.',
+      );
       return;
     } catch (_) {
       if (!mounted) return;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(const SnackBar(content: Text('저장하지 못했어요. 다시 시도해주세요.')));
+      showAppSnackBarOn(messenger, '저장하지 못했어요. 다시 시도해주세요.');
       return;
     }
 
@@ -497,11 +460,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
 
     if (created == null) {
       // 오프라인 — 아웃박스에 큐잉됨
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('오프라인이에요 — 연결되면 자동으로 저장돼요.')),
-        );
+      showAppSnackBarOn(messenger, '오프라인이에요 — 연결되면 자동으로 저장돼요.');
       navigator.pop();
       return;
     }
@@ -684,7 +643,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
                 ),
               if (_showPasteBanner) ...[
                 const SizedBox(height: AppSpacing.s3),
-                _PasteBanner(
+                PasteBanner(
                   onPaste: _pasteFromClipboard,
                   onDismiss: () => setState(() => _showPasteBanner = false),
                 ),
@@ -693,7 +652,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
               const SizedBox(height: AppSpacing.s4),
 
               // 책 연결
-              _BookField(book: _book, onTap: saving ? null : _pickBook),
+              QuoteBookField(book: _book, onTap: saving ? null : _pickBook),
 
               const SizedBox(height: AppSpacing.s4),
 
@@ -769,110 +728,3 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
   }
 }
 
-// ── 보조 위젯 ────────────────────────────────────────────
-
-class _PasteBanner extends StatelessWidget {
-  const _PasteBanner({required this.onPaste, required this.onDismiss});
-
-  final VoidCallback onPaste;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final textTheme = Theme.of(context).textTheme;
-    return Material(
-      // 붙여넣기 배너 배경: surfaceCard 토큰(라이트=secondary300, 다크=primary700)
-      color: colors.surfaceCard,
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpacing.s3, AppSpacing.s2, AppSpacing.s2, AppSpacing.s2),
-        child: Row(
-          children: [
-            Icon(Icons.content_paste, size: 18, color: colors.iconMuted),
-            const SizedBox(width: AppSpacing.s2),
-            Expanded(
-              child: Text(
-                '클립보드에 텍스트가 있어요',
-                style: textTheme.bodySmall?.copyWith(color: colors.onSurfaceMuted),
-              ),
-            ),
-            TextButton(onPressed: onPaste, child: const Text('붙여넣기')),
-            IconButton(
-              icon: const Icon(Icons.close, size: 18),
-              tooltip: '닫기',
-              onPressed: onDismiss,
-              visualDensity: VisualDensity.compact,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BookField extends StatelessWidget {
-  const _BookField({required this.book, required this.onTap});
-
-  final Book? book;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final textTheme = Theme.of(context).textTheme;
-    final book = this.book;
-    final author = book?.author;
-    return Material(
-      // 책 연결 필드 배경: surface 토큰(라이트=secondary100, 다크=primary800)
-      color: colors.surface,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: colors.border),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.s3),
-          child: book == null
-              ? Row(
-                  children: [
-                    Icon(Icons.add, size: 20, color: colors.accentDefault),
-                    const SizedBox(width: AppSpacing.s2),
-                    Text('책 연결',
-                        style: textTheme.bodyMedium
-                            ?.copyWith(color: colors.accentOnContainer)),
-                  ],
-                )
-              : Row(
-                  children: [
-                    BookCover(url: book.coverUrl, title: book.title),
-                    const SizedBox(width: AppSpacing.s3),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(book.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: textTheme.titleSmall),
-                          if (author != null && author.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Text(author, style: textTheme.bodySmall),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Text('변경 ▸',
-                        style: textTheme.labelMedium
-                            ?.copyWith(color: colors.accentDefault)),
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-}

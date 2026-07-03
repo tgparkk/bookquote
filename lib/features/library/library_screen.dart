@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/app_snackbar.dart';
 import '../book/data/book_repository.dart';
 import '../book/domain/book.dart';
 import '../book/domain/reading_dates.dart';
@@ -77,16 +78,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       if (books.isEmpty || !mounted) return;
       await prefs.setBool(_kLongPressHintShownKey, true);
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(
-          content: const Text('💡 표지를 길게 누르면 빠른 액션 시트가 떨어요.'),
-          duration: const Duration(seconds: 8),
-          action: SnackBarAction(
-            label: '알겠어요',
-            onPressed: () {/* dismiss로 충분 */},
-          ),
-        ));
+      showAppSnackBar(
+        context,
+        '💡 표지를 길게 누르면 빠른 액션 시트가 떨어요.',
+        duration: const Duration(seconds: 8),
+        action: SnackBarAction(
+          label: '알겠어요',
+          onPressed: () {/* dismiss로 충분 */},
+        ),
+      );
     } catch (_) {/* hint 실패는 침묵 — 본 화면 동작에 영향 없음 */}
   }
 
@@ -119,24 +119,19 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         ReadingStatus.reading => '"${book.title}" 읽기 시작했어요',
         ReadingStatus.finished => '"${book.title}" 읽은 책으로 담았어요',
       };
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(snackText),
-            action: SnackBarAction(
-              label: '열기',
-              onPressed: () {
-                if (mounted) context.push('/book/${book.id}');
-              },
-            ),
-          ),
-        );
+      showAppSnackBarOn(
+        messenger,
+        snackText,
+        action: SnackBarAction(
+          label: '열기',
+          onPressed: () {
+            if (mounted) context.push('/book/${book.id}');
+          },
+        ),
+      );
     } on BookRepositoryException {
       if (!mounted) return;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(const SnackBar(content: Text('서재에 추가하지 못했어요.')));
+      showAppSnackBarOn(messenger, '서재에 추가하지 못했어요.');
     }
   }
 

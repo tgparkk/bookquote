@@ -14,6 +14,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/auth_state_provider.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/app_snackbar.dart';
 import '../crypto/presentation/lock_dialogs.dart';
 import '../profile/data/profile_repository.dart';
 import 'data/card_renderer.dart';
@@ -164,11 +165,7 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
       );
     } on CardRenderException {
       if (!mounted) return;
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('카드 만들기에 실패했어요. 다시 시도해 주세요.')),
-        );
+      showAppSnackBarOn(messenger, '카드 만들기에 실패했어요. 다시 시도해 주세요.');
     } finally {
       if (mounted) setState(() => _sharing = false);
     }

@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/tokens.dart';
+import '../../../core/ui/app_snackbar.dart';
 import '../data/profile_repository.dart';
 import '../domain/profile.dart';
 
@@ -46,11 +47,7 @@ class _ProfilePublicToggleTileState
       ref.invalidate(myProfileProvider);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('공개 설정 변경에 실패했어요.')),
-        );
+      showAppSnackBar(context, '공개 설정 변경에 실패했어요.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -163,25 +160,15 @@ class DisplayNameTile extends ConsumerWidget {
       await repo.updateMine(displayName: newName.trim());
       ref.invalidate(myProfileProvider);
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(
-            const SnackBar(content: Text('닉네임을 변경했어요.')),
-          );
+        showAppSnackBar(context, '닉네임을 변경했어요.');
       }
     } on ProfileRepositoryException catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(SnackBar(content: Text(e.message)));
+        showAppSnackBar(context, e.message);
       }
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(
-            const SnackBar(content: Text('닉네임 변경에 실패했어요.')),
-          );
+        showAppSnackBar(context, '닉네임 변경에 실패했어요.');
       }
     }
   }

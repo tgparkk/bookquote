@@ -16,12 +16,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/app_snackbar.dart';
+import '../book/presentation/book_search_sheet.dart';
 import '../quote/data/quote_outbox.dart';
 import '../quote/data/quote_repository.dart';
 import '../quote/domain/quote.dart';
 import '../follow/presentation/widgets/friend_activity_banner.dart';
 import '../follow/state/friend_activity_provider.dart';
-import '../quote/presentation/quote_search_delegate.dart';
 import '../quote/presentation/widgets/change_moods_sheet.dart';
 import '../quote/presentation/widgets/outbox_banner.dart';
 import '../quote/presentation/widgets/quote_list_card.dart';
@@ -100,15 +101,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ref.invalidate(quoteOutboxProvider); // 배너 카운트 갱신
       }
       if (result.discarded > 0) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(SnackBar(
-            content: Text(
-              '동기화하지 못한 인용구 ${result.discarded}개를 정리했어요.',
-            ),
-          ));
+        showAppSnackBar(
+          context,
+          '동기화하지 못한 인용구 ${result.discarded}개를 정리했어요.',
+        );
       }
     } catch (_) {/* best-effort */}
+  }
+
+  /// 홈 검색 = 책 검색. 시트에서 고른 책의 상세로 이동한다 (인용구 검색은
+  /// 서재 [인용구] 탭 동선으로 이관 — 홈 AppBar 단일 진입점은 책 탐색).
+  Future<void> _searchBooks() async {
+    final book = await showBookSearchSheet(context);
+    if (book == null || !mounted) return;
+    context.push('/book/${book.id}');
   }
 
   /// PR3 (2026-05-28): 인라인 무드 변경. 시트 결과 변경됐을 때만 invalidate.
@@ -162,11 +168,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     } catch (_) {
       if (!mounted) return;
       ref.invalidate(quoteFeedProvider); // 삭제 실패 → 서버 기준으로 목록 복구
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('삭제하지 못했어요. 다시 시도해주세요.')),
-        );
+      showAppSnackBar(context, '삭제하지 못했어요. 다시 시도해주세요.');
     }
   }
 
@@ -179,9 +181,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.search_rounded),
-            tooltip: '인용구 검색',
-            onPressed: () =>
-                showSearch(context: context, delegate: QuoteSearchDelegate()),
+            tooltip: '책 검색',
+            onPressed: _searchBooks,
           ),
         ],
       ),

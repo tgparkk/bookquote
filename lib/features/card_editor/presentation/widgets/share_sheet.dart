@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/ui/app_snackbar.dart';
 import '../../data/share_service.dart';
 
 /// 첫 공유 안내 SnackBar 1회 노출 플래그 (PR15-A — 차별화 강화 onboarding).
@@ -177,18 +178,15 @@ class _CardShareSheet extends StatelessWidget {
         final prefs = await SharedPreferences.getInstance();
         if (!(prefs.getBool(_kFirstShareHintShown) ?? false)) {
           await prefs.setBool(_kFirstShareHintShown, true);
-          messenger
-            ..clearSnackBars()
-            ..showSnackBar(const SnackBar(
-              content: Text('공유했어요. 같은 카드를 다른 곳에도 보낼 수 있어요.'),
-              duration: Duration(milliseconds: 2400),
-            ));
+          showAppSnackBarOn(
+            messenger,
+            '공유했어요. 같은 카드를 다른 곳에도 보낼 수 있어요.',
+            duration: const Duration(milliseconds: 2400),
+          );
         }
       } catch (_) {/* prefs 실패는 무시 — 공유는 이미 성공 */}
     } on CardShareException catch (e) {
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(content: Text(e.message)));
+      showAppSnackBarOn(messenger, e.message);
     }
   }
 
