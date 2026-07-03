@@ -22,6 +22,7 @@ import '../follow/state/follow_providers.dart';
 import '../profile/data/profile_repository.dart';
 import '../profile/presentation/profile_settings_tiles.dart';
 import '../quote/data/quote_outbox.dart';
+import '../support/presentation/support_sheet.dart';
 import 'data/quote_export.dart';
 import 'state/me_providers.dart';
 
@@ -138,6 +139,13 @@ class MeScreen extends ConsumerWidget {
             icon: Icons.lock_outline,
             title: '개인정보처리방침',
             onTap: () => _openUri(context, Uri.parse(_privacyUrl)),
+          ),
+          // 후원 IAP '차 한 잔' (2026-07-03 수익모델 협의) — 정보 섹션 말미,
+          // 로그아웃·탈퇴와 시각적으로 격리된 위치. 비로그인도 후원 가능.
+          _ActionTile(
+            icon: Icons.local_cafe_outlined,
+            title: '개발자에게 차 한 잔',
+            onTap: () => showSupportSheet(context),
           ),
 
           const SizedBox(height: AppSpacing.s8),
