@@ -17,12 +17,12 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/app_snackbar.dart';
+import '../book/presentation/book_search_sheet.dart';
 import '../quote/data/quote_outbox.dart';
 import '../quote/data/quote_repository.dart';
 import '../quote/domain/quote.dart';
 import '../follow/presentation/widgets/friend_activity_banner.dart';
 import '../follow/state/friend_activity_provider.dart';
-import '../quote/presentation/quote_search_delegate.dart';
 import '../quote/presentation/widgets/change_moods_sheet.dart';
 import '../quote/presentation/widgets/outbox_banner.dart';
 import '../quote/presentation/widgets/quote_list_card.dart';
@@ -109,6 +109,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     } catch (_) {/* best-effort */}
   }
 
+  /// 홈 검색 = 책 검색. 시트에서 고른 책의 상세로 이동한다 (인용구 검색은
+  /// 서재 [인용구] 탭 동선으로 이관 — 홈 AppBar 단일 진입점은 책 탐색).
+  Future<void> _searchBooks() async {
+    final book = await showBookSearchSheet(context);
+    if (book == null || !mounted) return;
+    context.push('/book/${book.id}');
+  }
+
   /// PR3 (2026-05-28): 인라인 무드 변경. 시트 결과 변경됐을 때만 invalidate.
   Future<void> _changeMoods(Quote quote) async {
     final result = await showChangeMoodsSheet(
@@ -173,9 +181,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.search_rounded),
-            tooltip: '인용구 검색',
-            onPressed: () =>
-                showSearch(context: context, delegate: QuoteSearchDelegate()),
+            tooltip: '책 검색',
+            onPressed: _searchBooks,
           ),
         ],
       ),
