@@ -33,6 +33,12 @@ import 'state/me_providers.dart';
 const String _termsUrl = 'https://tgparkk.github.io/bookquote/terms';
 const String _privacyUrl = 'https://tgparkk.github.io/bookquote/privacy';
 const String _supportEmail = 'sttgpark@gmail.com';
+// 앱 버전 타일 탭 → 스토어 앱 페이지(업데이트 동선). market://가 Play 앱을
+// 직접 열고, 미설치 환경(사이드로드 등)은 웹 URL 폴백.
+const String _storeMarketUrl =
+    'market://details?id=io.github.tgparkk.bookquote';
+const String _storeWebUrl =
+    'https://play.google.com/store/apps/details?id=io.github.tgparkk.bookquote';
 
 class MeScreen extends ConsumerWidget {
   const MeScreen({super.key});
@@ -184,15 +190,25 @@ class MeScreen extends ConsumerWidget {
 /// `mailto:`·`https:` 등을 외부 앱으로 연다. 실패하면 토스트(크래시 금지 — 8원칙).
 Future<void> _openUri(BuildContext context, Uri uri) async {
   final messenger = ScaffoldMessenger.of(context);
-  var ok = false;
-  try {
-    ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-  } catch (_) {
-    ok = false;
-  }
-  if (!ok) {
+  if (!await _tryLaunch(uri)) {
     showAppSnackBarOn(messenger, '열 수 없어요. 잠시 후 다시 시도해주세요.');
   }
+}
+
+Future<bool> _tryLaunch(Uri uri) async {
+  try {
+    return await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } catch (_) {
+    return false;
+  }
+}
+
+/// 스토어 앱 페이지 열기 — 앱 버전 타일의 업데이트 동선.
+Future<void> _openStoreListing(BuildContext context) async {
+  final messenger = ScaffoldMessenger.of(context);
+  if (await _tryLaunch(Uri.parse(_storeMarketUrl))) return;
+  if (await _tryLaunch(Uri.parse(_storeWebUrl))) return;
+  showAppSnackBarOn(messenger, '스토어를 열 수 없어요. 잠시 후 다시 시도해주세요.');
 }
 
 // ── 프로필 ────────────────────────────────────────────────
@@ -460,11 +476,24 @@ class _AppVersionTile extends StatelessWidget {
       // 아이콘: primary500 → iconPrimary
       leading: Icon(Icons.info_outline, color: colors.iconPrimary, size: 22),
       title: Text('앱 버전', style: AppTextStyles.bodyLarge),
-      trailing: Text(
-        label,
-        // 버전 값: primary400 → onSurfaceSubtle
-        style: AppTextStyles.bodyMedium.copyWith(color: colors.onSurfaceSubtle),
+      subtitle: Text(
+        '탭하면 스토어에서 업데이트를 확인해요',
+        style: AppTextStyles.labelSmall.copyWith(color: colors.onSurfaceSubtle),
       ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            // 버전 값: primary400 → onSurfaceSubtle
+            style: AppTextStyles.bodyMedium
+                .copyWith(color: colors.onSurfaceSubtle),
+          ),
+          const SizedBox(width: AppSpacing.s1),
+          Icon(Icons.chevron_right, color: colors.iconMuted, size: 20),
+        ],
+      ),
+      onTap: () => _openStoreListing(context),
     );
   }
 }
