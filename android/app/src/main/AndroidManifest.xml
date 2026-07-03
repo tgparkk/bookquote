@@ -122,6 +122,11 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
         </intent>
+        <!-- url_launcher: Play 스토어 앱 페이지(앱 버전 타일 → 업데이트 동선) -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="market" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="mailto" />

@@ -6,7 +6,30 @@ import 'package:bookquote/features/profile/domain/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher_platform_interface/link.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
+
+/// url_launcher fake — 실제 플랫폼 채널은 테스트에서 Future가 완료되지 않아
+/// (호스트에 구현체 미등록) launch 흐름 검증이 불가능하다. 호출 URL을 기록하고
+/// 항상 실패를 돌려줘 폴백 경로까지 검증한다.
+class _FakeUrlLauncher extends UrlLauncherPlatform
+    with MockPlatformInterfaceMixin {
+  final launched = <String>[];
+
+  @override
+  LinkDelegate? get linkDelegate => null;
+
+  @override
+  Future<bool> canLaunch(String url) async => false;
+
+  @override
+  Future<bool> launchUrl(String url, LaunchOptions options) async {
+    launched.add(url);
+    return false;
+  }
+}
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -100,6 +123,30 @@ void main() {
     expect(find.text('회원 탈퇴'), findsNothing);
     // 설정·정보 섹션은 그대로
     expect(find.text('이용약관'), findsOneWidget);
+  });
+
+  testWidgets('앱 버전 타일 탭 → market 시도 후 웹 폴백, 모두 실패면 안내 스낵바', (tester) async {
+    final fake = _FakeUrlLauncher();
+    final original = UrlLauncherPlatform.instance;
+    UrlLauncherPlatform.instance = fake;
+    addTearDown(() => UrlLauncherPlatform.instance = original);
+
+    await pumpMe(tester, loggedIn: true, email: 'reader@example.com');
+
+    final versionTile = find.widgetWithText(ListTile, '앱 버전');
+    expect(versionTile, findsOneWidget);
+    await tester.ensureVisible(versionTile);
+    await tester.pumpAndSettle();
+    await tester.tap(versionTile);
+    await tester.pumpAndSettle();
+
+    // market:// 먼저, 실패 시 Play 웹 URL 폴백 순서로 시도한다.
+    expect(fake.launched, [
+      'market://details?id=io.github.tgparkk.bookquote',
+      'https://play.google.com/store/apps/details?id=io.github.tgparkk.bookquote',
+    ]);
+    // 둘 다 실패하면 크래시 없이 안내 스낵바.
+    expect(find.text('스토어를 열 수 없어요. 잠시 후 다시 시도해주세요.'), findsOneWidget);
   });
 
   testWidgets('회원 탈퇴 탭 → 영구 삭제 경고 + 내보내기 권유 다이얼로그(1단계)', (tester) async {
