@@ -96,6 +96,14 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="bookquote_high" />
+        <!-- AdMob 앱 ID (홈 하단 배너, 2026-07-03 수익모델 확정). 이 meta-data가 없으면
+             SDK 초기화 시점에 크래시한다.
+             TODO(프로덕션 승격 전): 아래는 Google 공식 테스트 앱 ID — AdMob 콘솔에서
+             앱 등록 후 실제 앱 ID(ca-app-pub-...~...)로 교체할 것. lib/features/ads/ad_ids.dart의
+             광고 단위 ID도 함께 교체. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
