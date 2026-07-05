@@ -114,7 +114,16 @@ Select-String build\app\intermediates\merged_manifests\release\processReleaseMan
 ```powershell
 powershell -File tool\check_release.ps1
 ```
-검사 항목: 스토어 페이지 게시 상태 · app-ads.txt · 이용약관/개인정보처리방침 URL · Supabase Auth/REST health. 실패 항목은 ❌로 표시.
+검사 항목: 스토어 페이지 게시 상태 · app-ads.txt · 이용약관/개인정보처리방침 URL · Supabase Auth/REST 가용성. 실패는 [FAIL]로 표시, exit code = 실패 건수.
+
+### 일일 자동 실행 — Windows 작업 스케줄러 (2026-07-05 등록)
+- 작업명 **`Bookquote Release Check`** — 매일 09:00, 놓치면 부팅 후 실행(StartWhenAvailable)
+- 실행 대상: `tool/check_release_task.ps1` (래퍼) — 결과를 `%LOCALAPPDATA%\bookquote\check_release.log`에 누적(최근 500줄), **실패 시에만 팝업 경보**, 성공은 무음
+- 관리: `Get-ScheduledTask -TaskName 'Bookquote Release Check'` / 해제: `Unregister-ScheduledTask -TaskName 'Bookquote Release Check'`
+- 재등록 명령은 `tool/check_release_task.ps1` 상단 주석 참고 (PC를 바꾸면 재등록 필요)
+
+### Crashlytics 이메일 알림 (계정별 설정 — sttgpark@gmail.com으로 켜둠)
+Firebase 콘솔 → 프로젝트 → ⚙️ 프로젝트 설정 → **알림** 탭 → Crashlytics 항목(신규 이슈·급증 알림·회귀)의 이메일 토글 ON.
 
 ### 수동 체크 (콘솔 로그인 필요 — 출시 후 첫 주는 매일, 이후 주 1회)
 | 무엇 | 어디 | 경보 기준 |
