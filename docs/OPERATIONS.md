@@ -82,6 +82,12 @@
 - **FCM**: 푸시 알림 (기본 채널 `bookquote_high`, Manifest meta-data)
 - 권장: Firebase 콘솔 → Crashlytics → 알림 설정에서 **신규 이슈/급증(velocity) 이메일 알림 켜기**
 
+### Firebase MCP (Claude 세션에서 Crashlytics 직접 조회 — 2026-07-06 설정)
+- `.mcp.json`에 firebase 서버 등록됨 (`npx firebase-tools mcp --only core,crashlytics`). `.firebaserc`가 기본 프로젝트 `bookquote-aa178` 지정
+- **Crashlytics Data API 활성화됨** (2026-07-06, 프로젝트 105975163034)
+- ⚠️ **인증은 반드시 `firebase login` 사용자 계정으로** — 서비스 계정(GOOGLE_APPLICATION_CREDENTIALS)은 조회 API가 404를 반환하는 알려진 버그 (firebase-tools#10310). 로그인 풀리면 새 터미널에서 `npx -y firebase-tools login`
+- Android 앱 ID: `1:105975163034:android:558e54cb508f8142fd9723` (google-services.json의 mobilesdk_app_id)
+
 ## 6. OAuth
 
 - **Google**: `GOOGLE_WEB_CLIENT_ID` (.env.json) → Supabase signInWithIdToken
@@ -133,6 +139,9 @@ Firebase 콘솔 → 프로젝트 → ⚙️ 프로젝트 설정 → **알림** �
 | 광고 수익·노출 | apps.admob.com → 홈 | 노출 0 지속(광고 단위 문제), 매치율 급락 |
 | 정책 상태 | Play Console → 정책 및 프로그램 → 정책 상태 / AdMob 정책 센터 | 위반 항목 등장 시 즉시 대응 |
 | 리뷰 | Play Console → 평점 및 리뷰 | 별 1~2점 리뷰의 공통 패턴 |
+
+### DB 지표 조회 — `tool/launch_metrics.sql`
+가입자·인용구·서재 등 출시 후 지표 쿼리 4종(①요약 ②일별 가입 ③일별 콘텐츠 ④활동 심도). Claude 세션에서 Supabase MCP(`/mcp` 인증)로 바로 실행하거나, 대시보드 SQL Editor에 블록별로 붙여넣기.
 
 ### 이상 발견 시
 크래시 스택/vitals 스크린샷을 Claude 세션에 붙여넣으면 코드와 대조해 진단. Supabase 장애 의심 시 `check_release.ps1` 우선 실행.
