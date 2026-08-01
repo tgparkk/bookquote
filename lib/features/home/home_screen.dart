@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/analytics/app_analytics.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/app_snackbar.dart';
@@ -50,6 +51,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   /// 앱이 열려 있는 동안 wifi가 끊겼다 돌아온 케이스를 못 잡는다.
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   bool _wasOffline = false;
+
+  /// home_empty_view 계측 — 화면 인스턴스당 1회만 (rebuild 중복 방지).
+  bool _loggedEmptyView = false;
 
   @override
   void initState() {
@@ -222,7 +226,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ),
       // 홈 하단 고정 배너 — 이 Scaffold는 셸 안쪽이라 배너가 피드와 BottomNav
       // 사이에 앉고, FAB는 Scaffold가 배너 위로 자동 오프셋한다(우발 클릭 방지).
-      bottomNavigationBar: AppBannerAd(adUnitId: homeBannerAdUnitId),
+      // 인용구 0개(빈 홈)에선 미노출 — 신규 유저 첫 화면이 "빈 피드 + 광고"가
+      // 되는 걸 막는다(2026-08-01 출시 1개월 진단). 노출 축소라 AdMob 정책 무관.
+      bottomNavigationBar: (feed.value?.isNotEmpty ?? false)
+          ? AppBannerAd(adUnitId: homeBannerAdUnitId)
+          : null,
       // 구버전 BottomNav 가운데 [+]가 '활동' 탭으로 교체되며, 핵심 인용구 작성 동선을
       // 홈 FAB로 보강 (PR23 retention 액션 보호).
       floatingActionButton: FloatingActionButton.extended(
@@ -263,6 +271,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _emptyView(BuildContext context) {
+    if (!_loggedEmptyView) {
+      _loggedEmptyView = true;
+      appAnalytics.logHomeEmptyView();
+    }
     final textTheme = Theme.of(context).textTheme;
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.s6),

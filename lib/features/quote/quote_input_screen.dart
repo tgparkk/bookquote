@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/analytics/app_analytics.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/app_snackbar.dart';
@@ -97,6 +98,7 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
       await _loadExistingQuote();
       return;
     }
+    appAnalytics.logQuoteNewOpen(hasBook: widget.bookId != null);
     await _maybeRestoreDraft();
     if (mounted && widget.bookId != null && _book == null) {
       try {
@@ -284,6 +286,14 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
     _scheduleDraftSave();
   }
 
+  /// 연결된 책 영역 탭 — 책 상세로 push. 입력 화면은 스택에 남아
+  /// 작성 중이던 본문·무드가 그대로 유지된다.
+  void _openBookDetail() {
+    final bookId = _book?.id;
+    if (bookId == null) return;
+    context.push('/book/$bookId');
+  }
+
   // ── draft ──────────────────────────────────────────────
 
   bool get _hasEdits =>
@@ -447,6 +457,11 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
     if (!mounted) return;
     await _clearDraft();
     final newBookId = _book?.id;
+    appAnalytics.logQuoteSaveSuccess(
+      hasBook: newBookId != null,
+      locked: _isPrivate,
+      offline: created == null,
+    );
     ref
       ..invalidate(quoteFeedProvider) // 홈 피드에 새 인용구 반영
       ..invalidate(moodCountsProvider) // 홈 RecallCard 카운트 갱신 (PR15-B)
@@ -652,7 +667,11 @@ class _QuoteInputScreenState extends ConsumerState<QuoteInputScreen>
               const SizedBox(height: AppSpacing.s4),
 
               // 책 연결
-              QuoteBookField(book: _book, onTap: saving ? null : _pickBook),
+              QuoteBookField(
+                book: _book,
+                onTap: saving ? null : _pickBook,
+                onBookTap: saving ? null : _openBookDetail,
+              ),
 
               const SizedBox(height: AppSpacing.s4),
 

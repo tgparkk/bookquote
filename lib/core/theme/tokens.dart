@@ -361,16 +361,17 @@ abstract final class AppWatermark {
   );
 
   /// 사용자 닉네임 기반 워터마크 — 카드 공유 시 받는 사람이 보낸 사람의 닉네임을
-  /// 식별할 수 있게 카드 모서리에 `@닉네임` 표기. [minimal]과 동일 폰트·크기·
-  /// 위치·opacity를 사용해 카드 디자인을 해치지 않는다.
+  /// 식별할 수 있게 카드 모서리에 `@닉네임 · 책글귀` 표기. 닉네임이 브랜드를
+  /// 대체하면 카드가 SNS에 퍼져도 어떤 앱인지 알 길이 없어 브랜드를 병기한다
+  /// (2026-08-01 출시 1개월 진단 — 무료 유입의 최대 자산).
   /// displayName이 null/공백인 경우(미로그인 미리보기 등)는 [minimal](앱 브랜드).
   static WatermarkConfig forUser(String? displayName) {
     final name = displayName?.trim() ?? '';
     if (name.isEmpty) return minimal;
     return WatermarkConfig(
-      text: '@$name',
+      text: '@$name · 책글귀',
       fontSize: 36,
-      opacity: 0.30,
+      opacity: 0.45,
       position: WatermarkPosition.bottomRight,
       fontFamily: AppFonts.ui,
       showIcon: false,
