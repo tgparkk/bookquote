@@ -15,6 +15,8 @@
 // SDK 흐름은 클라이언트가 scope를 직접 통제하므로 nickname/profile_image만
 // 받고 우회 가능.
 
+import 'dart:async' show unawaited;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,6 +24,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/analytics/app_analytics.dart';
 import '../../core/config/env.dart';
 import '../../core/supabase/supabase_init.dart';
 
@@ -62,6 +65,7 @@ class AuthController extends AsyncNotifier<void> {
         idToken: idToken,
         accessToken: auth.accessToken,
       );
+      unawaited(appAnalytics.logLoginSuccess('google'));
     });
   }
 
@@ -105,6 +109,7 @@ class AuthController extends AsyncNotifier<void> {
         idToken: idToken,
         accessToken: token.accessToken,
       );
+      unawaited(appAnalytics.logLoginSuccess('kakao'));
     });
   }
 

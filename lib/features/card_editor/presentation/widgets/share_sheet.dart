@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../../core/analytics/app_analytics.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/ui/app_snackbar.dart';
 import '../../data/share_service.dart';
@@ -153,7 +154,11 @@ class _CardShareSheet extends StatelessWidget {
   final int? quotePage;
   final String? senderUid;
 
-  Future<void> _share(BuildContext context, String? prefix) async {
+  Future<void> _share(
+    BuildContext context,
+    String? prefix, {
+    required String target,
+  }) async {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     final deepLink = buildDeepLinkForShare(bookId: bookId, senderUid: senderUid);
@@ -170,6 +175,7 @@ class _CardShareSheet extends StatelessWidget {
         subject: prefix == null ? null : '$prefix — 책글귀',
         text: text,
       );
+      appAnalytics.logCardShareSuccess(target);
       if (navigator.canPop()) navigator.pop();
       // PR15-A (2): 첫 공유 직후 단 1회 — "다른 곳에도 보낼 수 있어요" closure
       // 카피. 4단톡 순차 공유(S6) 같은 반복 시나리오에서 사용자에게 다음 동선이
@@ -205,24 +211,24 @@ class _CardShareSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            _KakaoButton(onTap: () => _share(context, '카카오톡')),
+            _KakaoButton(onTap: () => _share(context, '카카오톡', target: 'kakao')),
             const SizedBox(height: AppSpacing.s2),
             _OutlinedShareButton(
               icon: Icons.camera_alt_outlined,
               label: '인스타그램 스토리 (9:16)',
-              onTap: () => _share(context, '인스타그램'),
+              onTap: () => _share(context, '인스타그램', target: 'instagram'),
             ),
             const SizedBox(height: AppSpacing.s2),
             _OutlinedShareButton(
               icon: Icons.download_rounded,
               label: '이미지 저장',
-              onTap: () => _share(context, null),
+              onTap: () => _share(context, null, target: 'save'),
             ),
             const SizedBox(height: AppSpacing.s2),
             _OutlinedShareButton(
               icon: Icons.more_horiz_rounded,
               label: '다른 앱으로 공유',
-              onTap: () => _share(context, null),
+              onTap: () => _share(context, null, target: 'other'),
             ),
             const SizedBox(height: AppSpacing.s4),
             const Text(
