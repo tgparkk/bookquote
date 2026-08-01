@@ -170,9 +170,31 @@ class _CardShareSheet extends StatelessWidget {
       link: landingLink,
       purchaseUrl: buildBookPurchaseUrl(bookIsbn13),
     );
-    // 카카오톡·인스타는 이미지 공유 시 텍스트(EXTRA_TEXT)를 드롭해 랜딩 링크가
-    // 함께 안 간다. 링크는 공유 *전에* 복사해 둔다(안전망) — 공유 직후 스낵바는
-    // 대상 앱이 전면에 떠서 보이지 않았음(2026-08-01 실기기 2회 확인).
+    // 카카오톡 1순위: SDK 메시지 템플릿 — 이미지+[책 보러 가기] 버튼이 한
+    // 메시지로 전송(2026-08-01 사용자 결정: 공유 한 번으로 끝). 실패 시 아래
+    // OS 공유 시트 2단 공유로 폴백.
+    if (target == 'kakao') {
+      final linkUri = Uri.parse(
+        landingLink ??
+            'https://play.google.com/store/apps/details?id=io.github.tgparkk.bookquote',
+      );
+      final sent = await shareCardViaKakaoTalk(
+        file: file,
+        linkUrl: linkUri,
+        title: (bookTitle == null || bookTitle!.trim().isEmpty)
+            ? '책글귀 — 책 속 한 줄'
+            : '〈${bookTitle!.trim()}〉 속 한 줄',
+        description: bookAuthor?.trim(),
+      );
+      if (sent) {
+        appAnalytics.logCardShareSuccess('kakao_template');
+        if (navigator.canPop()) navigator.pop();
+        return;
+      }
+    }
+    // 카카오톡(폴백)·인스타는 이미지 공유 시 텍스트(EXTRA_TEXT)를 드롭해 랜딩
+    // 링크가 함께 안 간다. 링크는 공유 *전에* 복사해 둔다(안전망) — 공유 직후
+    // 스낵바는 대상 앱이 전면에 떠서 보이지 않았음(2026-08-01 실기기 2회 확인).
     if (landingLink != null &&
         (target == 'kakao' || target == 'instagram')) {
       try {
@@ -255,7 +277,7 @@ class _CardShareSheet extends StatelessWidget {
             // 전면에 떠서 못 보므로(2026-08-01) 시트 안 상시 카피로 안내한다.
             if (bookId != null && bookId!.isNotEmpty) ...<Widget>[
               const Text(
-                '카카오톡은 이미지 공유 후 링크 공유 창이 한 번 더 열려요.\n인스타그램은 이미지만 전달돼요(앱 링크는 자동 복사).',
+                '카카오톡은 이미지와 [책 보러 가기] 버튼이 한 메시지로 전송돼요.\n인스타그램은 이미지만 전달돼요(앱 링크는 자동 복사).',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: AppFonts.ui,
