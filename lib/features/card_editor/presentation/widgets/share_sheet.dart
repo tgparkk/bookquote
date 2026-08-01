@@ -5,6 +5,7 @@
 // 막다른 골목 금지: 어떤 버튼도 비활성 없음(V1).
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -161,20 +162,62 @@ class _CardShareSheet extends StatelessWidget {
   }) async {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    final landingLink = buildShareLandingLink(bookId: bookId);
     final text = buildShareMessage(
       bookTitle: bookTitle,
       bookAuthor: bookAuthor,
       quotePage: quotePage,
-      link: buildShareLandingLink(bookId: bookId),
+      link: landingLink,
       purchaseUrl: buildBookPurchaseUrl(bookIsbn13),
     );
+    // 카카오톡 1순위: SDK 메시지 템플릿 — 이미지+[책 보러 가기] 버튼이 한
+    // 메시지로 전송(2026-08-01 사용자 결정: 공유 한 번으로 끝). 실패 시 아래
+    // OS 공유 시트 2단 공유로 폴백.
+    if (target == 'kakao') {
+      final linkUri = Uri.parse(
+        landingLink ??
+            'https://play.google.com/store/apps/details?id=io.github.tgparkk.bookquote',
+      );
+      final sent = await shareCardViaKakaoTalk(
+        file: file,
+        linkUrl: linkUri,
+        title: (bookTitle == null || bookTitle!.trim().isEmpty)
+            ? '책글귀 — 책 속 한 줄'
+            : '〈${bookTitle!.trim()}〉 속 한 줄',
+        description: bookAuthor?.trim(),
+      );
+      if (sent) {
+        appAnalytics.logCardShareSuccess('kakao_template');
+        if (navigator.canPop()) navigator.pop();
+        return;
+      }
+    }
+    // 카카오톡(폴백)·인스타는 이미지 공유 시 텍스트(EXTRA_TEXT)를 드롭해 랜딩
+    // 링크가 함께 안 간다. 링크는 공유 *전에* 복사해 둔다(안전망) — 공유 직후
+    // 스낵바는 대상 앱이 전면에 떠서 보이지 않았음(2026-08-01 실기기 2회 확인).
+    if (landingLink != null &&
+        (target == 'kakao' || target == 'instagram')) {
+      try {
+        await Clipboard.setData(ClipboardData(text: landingLink));
+      } catch (_) {/* 클립보드 실패 — 공유는 계속 */}
+    }
     try {
-      await shareCardImage(
+      final result = await shareCardImage(
         file: file,
         subject: prefix == null ? null : '$prefix — 책글귀',
         text: text,
       );
       appAnalytics.logCardShareSuccess(target);
+      // 카카오톡 2단 공유(2026-08-01 사용자 결정): 이미지 공유가 끝나고 앱으로
+      // 돌아오면 링크 텍스트 공유 창을 한 번 더 연다 — 카톡에 이미지·링크가
+      // 각각 한 메시지씩 도착. 첫 공유를 취소(dismissed)했으면 생략.
+      if (target == 'kakao' &&
+          text != null &&
+          result.status == ShareResultStatus.success) {
+        try {
+          await shareTextOnly(text);
+        } on CardShareException {/* 2차 공유 실패 — 링크는 클립보드에 있음 */}
+      }
       if (navigator.canPop()) navigator.pop();
       // PR15-A (2): 첫 공유 직후 단 1회 — "다른 곳에도 보낼 수 있어요" closure
       // 카피. 4단톡 순차 공유(S6) 같은 반복 시나리오에서 사용자에게 다음 동선이
@@ -230,6 +273,20 @@ class _CardShareSheet extends StatelessWidget {
               onTap: () => _share(context, null, target: 'other'),
             ),
             const SizedBox(height: AppSpacing.s4),
+            // 카톡·인스타의 EXTRA_TEXT 드롭 안내 — 공유 후 스낵바는 대상 앱이
+            // 전면에 떠서 못 보므로(2026-08-01) 시트 안 상시 카피로 안내한다.
+            if (bookId != null && bookId!.isNotEmpty) ...<Widget>[
+              const Text(
+                '카카오톡은 이미지와 [책 보러 가기] 버튼이 한 메시지로 전송돼요.\n인스타그램은 이미지만 전달돼요(앱 링크는 자동 복사).',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: AppFonts.ui,
+                  fontSize: AppFontSize.xxs,
+                  color: AppColors.primary400,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s2),
+            ],
             const Text(
               '저장 권한이 없어도 공유는 그대로 할 수 있어요.',
               textAlign: TextAlign.center,

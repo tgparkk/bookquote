@@ -110,12 +110,22 @@ class WarmCard extends StatelessWidget {
         children: <Widget>[
           Positioned.fill(child: body),
           if (watermarkEnabled)
+            // 폭 제한: sideBySide는 좌측 표지 패널 전까지 — 긴 닉네임이 표지
+            // 영역과 겹치지 않게(2026-08-01, 표지는 어떤 오버레이로도 가리지
+            // 않는다). 넘치면 FittedBox가 줄여 브랜드 병기를 유지.
             Positioned(
               right: 64,
               bottom: 80,
-              child: CardWatermark(
-                config: watermarkConfig,
-                color: palette.textOnBackground,
+              width: v.mode == _Mode.sideBySide
+                  ? v.width - v.coverPanelSize - 64 - 24
+                  : v.width - 128,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: CardWatermark(
+                  config: watermarkConfig,
+                  color: palette.textOnBackground,
+                ),
               ),
             ),
         ],

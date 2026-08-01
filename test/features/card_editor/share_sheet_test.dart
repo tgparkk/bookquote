@@ -35,6 +35,34 @@ void main() {
     expect(find.text('이미지 저장'), findsOneWidget);
     expect(find.text('다른 앱으로 공유'), findsOneWidget);
     expect(find.text('저장 권한이 없어도 공유는 그대로 할 수 있어요.'), findsOneWidget);
+    // bookId 없으면 링크가 없으니 붙여넣기 안내도 없다.
+    expect(find.textContaining('앱 링크는 자동 복사'), findsNothing);
+  });
+
+  testWidgets('bookId 있으면 링크 자동 복사 안내 카피가 보인다', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () => showCardShareSheet(
+                  context: context,
+                  file: XFile('dummy.png'),
+                  shareText: '인용구 본문',
+                  bookId: 'book-1',
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('앱 링크는 자동 복사'), findsOneWidget);
   });
 
   group('buildBookPurchaseUrl (V1.0 — 책 구매 링크)', () {

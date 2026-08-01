@@ -32,6 +32,13 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- Flutter 엔진 기본 딥링크 비활성 — 켜져 있으면(기본값) 엔진이
+                 io.github...://book/:id URI를 go_router에 그대로 넘겨 path만
+                 매칭 → GoException(2026-08-01 실기기). 딥링크는 app_links 기반
+                 deep_link_handler가 전담한다(host+path → /book/:id 변환). -->
+            <meta-data
+              android:name="flutter_deeplinking_enabled"
+              android:value="false" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
