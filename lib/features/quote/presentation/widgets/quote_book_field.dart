@@ -1,5 +1,6 @@
 // 인용구 입력 화면의 "책 연결" 필드 — 미연결이면 [+ 책 연결], 연결이면
-// 표지+제목+저자 + [변경 ▸]. 본체: `quote_input_screen.dart`.
+// 표지+제목+저자(탭 시 책 상세) + [변경 ▸](탭 시 검색 시트).
+// 본체: `quote_input_screen.dart`.
 
 import 'package:flutter/material.dart';
 
@@ -9,10 +10,20 @@ import '../../../book/domain/book.dart';
 import '../../../book/presentation/widgets/book_cover.dart';
 
 class QuoteBookField extends StatelessWidget {
-  const QuoteBookField({super.key, required this.book, required this.onTap});
+  const QuoteBookField({
+    super.key,
+    required this.book,
+    required this.onTap,
+    this.onBookTap,
+  });
 
   final Book? book;
+
+  /// 책 연결/변경 — 미연결 시 필드 전체, 연결 시 [변경 ▸] 탭.
   final VoidCallback? onTap;
+
+  /// 연결된 책 영역 탭 — 책 상세 이동. null이면 연결 시에도 onTap으로 동작.
+  final VoidCallback? onBookTap;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +39,7 @@ class QuoteBookField extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: InkWell(
-        onTap: onTap,
+        onTap: book == null ? onTap : (onBookTap ?? onTap),
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.s3),
@@ -62,9 +73,19 @@ class QuoteBookField extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Text('변경 ▸',
-                        style: textTheme.labelMedium
-                            ?.copyWith(color: colors.accentDefault)),
+                    InkWell(
+                      onTap: onTap,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.s2,
+                          vertical: AppSpacing.s2,
+                        ),
+                        child: Text('변경 ▸',
+                            style: textTheme.labelMedium
+                                ?.copyWith(color: colors.accentDefault)),
+                      ),
+                    ),
                   ],
                 ),
         ),
