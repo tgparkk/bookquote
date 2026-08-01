@@ -17,7 +17,7 @@ import 'card_watermark.dart';
 /// 레이어 3: 그라데이션 overlay (transparent → `darkVibrant` 85%)
 /// 레이어 4: 선명 표지 (우하단)
 /// 레이어 5: 책 정보 (좌하단, 선명 표지와 겹치지 않게 maxWidth 540)
-/// 레이어 6: 워터마크
+/// 레이어 6: 워터마크 (좌하단 책 정보 아래 — 선명 표지를 가리지 않게)
 ///
 /// 표지가 없으면 (`data.hasCover == false`) `CardTemplate.supports`가 `false`라
 /// 정상 흐름에서는 도달하지 않지만, 도달 시 단색 배경으로 폴백한다.
@@ -152,12 +152,21 @@ class CoverExtractCard extends StatelessWidget {
             child: _BookInfo(data: data, palette: palette),
           ),
           if (watermarkEnabled)
+            // 우하단은 선명 표지(레이어 4) 자리 — 워터마크가 표지를 가리면 안
+            // 된다(2026-08-01 사용자 피드백). 좌하단 책 정보(bottom:120) 아래로.
+            // 폭은 표지 왼쪽 경계 전까지로 제한 — 긴 닉네임이 표지 영역까지
+            // 뻗어 겹치던 문제(FittedBox로 줄여서 브랜드 병기 유지).
             Positioned(
-              right: 80,
+              left: 80,
               bottom: 60,
-              child: CardWatermark(
-                config: watermarkConfig,
-                color: AppColors.secondary200,
+              width: v.coverSharpX - 80 - 32,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: CardWatermark(
+                  config: watermarkConfig,
+                  color: AppColors.secondary200,
+                ),
               ),
             ),
         ],

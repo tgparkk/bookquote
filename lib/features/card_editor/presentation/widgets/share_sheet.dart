@@ -5,6 +5,7 @@
 // 막다른 골목 금지: 어떤 버튼도 비활성 없음(V1).
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -161,13 +162,24 @@ class _CardShareSheet extends StatelessWidget {
   }) async {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    final landingLink = buildShareLandingLink(bookId: bookId);
     final text = buildShareMessage(
       bookTitle: bookTitle,
       bookAuthor: bookAuthor,
       quotePage: quotePage,
-      link: buildShareLandingLink(bookId: bookId),
+      link: landingLink,
       purchaseUrl: buildBookPurchaseUrl(bookIsbn13),
     );
+    // 카카오톡·인스타는 이미지 공유 시 텍스트(EXTRA_TEXT)를 드롭해 랜딩 링크가
+    // 함께 안 간다. 링크는 공유 *전에* 복사한다 — 공유 직후엔 대상 앱이 전면에
+    // 떠서 스낵바가 보이지 않았음(2026-08-01 실기기 2회 확인). 사용자 안내는
+    // 시트 하단 상시 카피가 담당.
+    if (landingLink != null &&
+        (target == 'kakao' || target == 'instagram')) {
+      try {
+        await Clipboard.setData(ClipboardData(text: landingLink));
+      } catch (_) {/* 클립보드 실패 — 공유는 계속 */}
+    }
     try {
       await shareCardImage(
         file: file,
@@ -230,6 +242,20 @@ class _CardShareSheet extends StatelessWidget {
               onTap: () => _share(context, null, target: 'other'),
             ),
             const SizedBox(height: AppSpacing.s4),
+            // 카톡·인스타의 EXTRA_TEXT 드롭 안내 — 공유 후 스낵바는 대상 앱이
+            // 전면에 떠서 못 보므로(2026-08-01) 시트 안 상시 카피로 안내한다.
+            if (bookId != null && bookId!.isNotEmpty) ...<Widget>[
+              const Text(
+                '카카오톡·인스타그램은 이미지만 전달돼요.\n앱 링크는 자동 복사되니 채팅창에 붙여넣어 주세요.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: AppFonts.ui,
+                  fontSize: AppFontSize.xxs,
+                  color: AppColors.primary400,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s2),
+            ],
             const Text(
               '저장 권한이 없어도 공유는 그대로 할 수 있어요.',
               textAlign: TextAlign.center,
