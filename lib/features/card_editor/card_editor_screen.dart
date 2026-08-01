@@ -15,7 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/auth_state_provider.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/app_snackbar.dart';
 import '../../core/ui/app_status_view.dart';
@@ -271,7 +270,6 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
         bookTitle: data.bookTitle,
         bookAuthor: data.bookAuthor,
         quotePage: data.quotePage,
-        senderUid: ref.read(currentUserIdProvider),
       );
     } on CardRenderException {
       if (!mounted) return;

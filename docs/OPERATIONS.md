@@ -62,9 +62,10 @@
 | 사이트 | 저장소 | 역할 |
 |---|---|---|
 | `tgparkk.github.io` | `tgparkk/tgparkk.github.io` (main, 루트, Jekyll legacy 빌드) | **app-ads.txt**, ads.txt(블로그 AdSense), 개발자 웹사이트 |
-| `tgparkk.github.io/bookquote` | 이 리포 `/docs` | **이용약관** `/bookquote/terms`, **개인정보처리방침** `/bookquote/privacy` |
+| `tgparkk.github.io/bookquote` | 이 리포 `/docs` | **이용약관** `/bookquote/terms`, **개인정보처리방침** `/bookquote/privacy`, **공유 랜딩** `/bookquote/b/?id=<bookId>` |
 
 - 개인정보처리방침에 광고(ADID 수집·AdMob 위탁·국외 이전) 고지 포함됨 (2026-07-03, PR#14)
+- 공유 랜딩(`/bookquote/b/`, 2026-08-01): 카드 공유 텍스트의 https 링크가 여기로 옴. Android 설치자는 [앱에서 이 책 열기](intent:// → 커스텀 스킴), 미설치자는 Play 폴백(UTM `utm_source=share_card`). 향후 App Links 자동 열기를 원하면 **루트 저장소**(`tgparkk/tgparkk.github.io`)의 `/.well-known/assetlinks.json` 추가 필요 — app-ads.txt 안 깨지게 주의
 - Pages 배포가 가끔 "Deployment failed, try again later"로 실패 — 저장소 Actions에서 실패한 `pages build and deployment` **재실행**으로 해결 (2026-07-03 발생)
 
 ## 4. Supabase

@@ -51,28 +51,46 @@ void main() {
     });
   });
 
+  group('buildShareLandingLink (https 랜딩 — 미설치자 클릭 가능)', () {
+    test('bookId → GitHub Pages 랜딩 URL (from=share 포함)', () {
+      expect(
+        buildShareLandingLink(bookId: 'abc-123'),
+        'https://tgparkk.github.io/bookquote/b/?id=abc-123&from=share',
+      );
+    });
+
+    test('sender uid는 링크에 포함되지 않는다 (공개 URL 노출 방지)', () {
+      expect(buildShareLandingLink(bookId: 'abc'), isNot(contains('sender')));
+    });
+
+    test('bookId 없으면 null (이미지만 공유)', () {
+      expect(buildShareLandingLink(bookId: null), isNull);
+      expect(buildShareLandingLink(bookId: ''), isNull);
+    });
+  });
+
   group('buildShareMessage', () {
-    test('deep link + 구매 링크 모두 포함', () {
+    test('랜딩 링크 + 구매 링크 모두 포함', () {
       final msg = buildShareMessage(
-        deepLink: 'io.x://book/1',
+        link: 'https://tgparkk.github.io/bookquote/b/?id=1&from=share',
         purchaseUrl: 'https://search.kyobobook.co.kr/search?keyword=978',
       );
-      expect(msg, contains('io.x://book/1'));
+      expect(msg, contains('https://tgparkk.github.io/bookquote/b/?id=1'));
       expect(msg, contains('교보문고'));
       expect(msg, contains('https://search.kyobobook.co.kr/search?keyword=978'));
     });
 
-    test('구매 링크만 — deep link 없는 직접 입력 책', () {
+    test('구매 링크만 — 랜딩 링크 없는 직접 입력 책', () {
       final msg = buildShareMessage(
-        deepLink: null,
+        link: null,
         purchaseUrl: 'https://search.kyobobook.co.kr/search?keyword=978',
       );
       expect(msg, contains('교보문고'));
-      expect(msg, isNot(contains('book/')));
+      expect(msg, isNot(contains('bookquote/b/')));
     });
 
     test('둘 다 없으면 null (이미지만 공유)', () {
-      expect(buildShareMessage(deepLink: null, purchaseUrl: null), isNull);
+      expect(buildShareMessage(link: null, purchaseUrl: null), isNull);
     });
   });
 }

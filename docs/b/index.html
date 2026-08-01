@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>책글귀 — 책 속 한 줄</title>
+  <meta name="description" content="친구가 책글귀로 책 속 한 줄을 공유했어요. 앱에서 이 책을 바로 열어보세요.">
+  <!-- 카카오톡·SNS 링크 미리보기 (정적 페이지라 책별 분기 없음 — 브랜드 카드로 통일) -->
+  <meta property="og:title" content="책글귀 — 책 속 한 줄">
+  <meta property="og:description" content="읽다 만난 문장을 담고, 예쁜 카드로 만들어 공유하는 독서 기록장">
+  <meta property="og:type" content="website">
+  <style>
+    :root {
+      --bg: #FAF6EF;        /* 종이 크림 */
+      --card: #FFFFFF;
+      --ink: #2B2520;       /* 잉크 */
+      --ink-subtle: #8A8178;
+      --accent: #C0663B;    /* 브랜드 액센트 (테라코타) */
+      --accent-ink: #FFFFFF;
+      --border: #E8E0D4;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1E1B18;
+        --card: #2A2622;
+        --ink: #EDE7DE;
+        --ink-subtle: #9A9086;
+        --accent: #D57A4C;
+        --accent-ink: #241F1B;
+        --border: #3A342E;
+      }
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      max-width: 420px;
+      width: 100%;
+      padding: 36px 28px 28px;
+      text-align: center;
+    }
+    .quote-mark {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 56px;
+      line-height: 1;
+      color: var(--accent);
+      display: block;
+    }
+    h1 { font-size: 22px; margin: 12px 0 8px; }
+    .brand { color: var(--accent); }
+    p.desc {
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink-subtle);
+      margin-bottom: 28px;
+      word-break: keep-all;
+    }
+    a.btn {
+      display: block;
+      border-radius: 10px;
+      padding: 15px 16px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      margin-bottom: 10px;
+    }
+    a.btn-primary { background: var(--accent); color: var(--accent-ink); }
+    a.btn-outline {
+      border: 1.5px solid var(--border);
+      color: var(--ink);
+      font-weight: 500;
+    }
+    p.hint { font-size: 12px; color: var(--ink-subtle); margin-top: 14px; word-break: keep-all; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <span class="quote-mark">&ldquo;</span>
+    <h1><span class="brand">책글귀</span>로 공유된 책이에요</h1>
+    <p class="desc">읽다 만난 문장을 담고, 예쁜 카드로 만들어<br>공유하는 독서 기록장</p>
+
+    <a id="open-app" class="btn btn-primary hidden" href="#">앱에서 이 책 열기</a>
+    <a id="get-app" class="btn btn-outline"
+       href="https://play.google.com/store/apps/details?id=io.github.tgparkk.bookquote&referrer=utm_source%3Dshare_card%26utm_medium%3Dlanding">
+      Google Play에서 책글귀 받기
+    </a>
+
+    <p class="hint" id="ios-hint" style="display:none">아직 Android에서만 만나볼 수 있어요. iOS는 준비 중이에요.</p>
+    <p class="hint">앱이 설치돼 있으면 [앱에서 이 책 열기]가 책 상세로 바로 이동해요.</p>
+  </main>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var id = params.get('id') || '';
+      // 책 id는 UUID/영숫자만 허용 — intent URL 조립 시 주입 방지.
+      var valid = /^[A-Za-z0-9_-]{1,64}$/.test(id);
+      var ua = navigator.userAgent || '';
+      var isAndroid = /Android/i.test(ua);
+      var isIOS = /iPhone|iPad|iPod/i.test(ua);
+
+      if (isIOS) document.getElementById('ios-hint').style.display = 'block';
+
+      if (valid && isAndroid) {
+        // intent:// — 설치돼 있으면 커스텀 스킴(io.github.tgparkk.bookquote://book/<id>)
+        // 으로 앱이 열리고(기존 딥링크 수신 경로 그대로), 미설치면 Play로 폴백.
+        // Chrome은 사용자 제스처에서만 intent를 허용하므로 자동 리다이렉트 대신 버튼.
+        var fallback = encodeURIComponent(
+          'https://play.google.com/store/apps/details?id=io.github.tgparkk.bookquote' +
+          '&referrer=utm_source%3Dshare_card%26utm_medium%3Dlanding');
+        var intentUrl =
+          'intent://book/' + id + '?from=share' +
+          '#Intent;scheme=io.github.tgparkk.bookquote;' +
+          'package=io.github.tgparkk.bookquote;' +
+          'S.browser_fallback_url=' + fallback + ';end';
+        var openBtn = document.getElementById('open-app');
+        openBtn.href = intentUrl;
+        openBtn.classList.remove('hidden');
+      }
+    })();
+  </script>
+</body>
+</html>
