@@ -40,3 +40,18 @@ Future<ShareResult> shareCardImage({
     throw CardShareException('공유 시트를 열지 못했어요. ($e)');
   }
 }
+
+/// 텍스트만 OS 공유 시트로 보낸다 — 카카오톡 2단 공유(이미지 → 링크)용.
+/// 카톡은 이미지 공유의 EXTRA_TEXT를 드롭하므로 링크를 별도 공유로 보낸다.
+Future<ShareResult> shareTextOnly(
+  String text, {
+  Rect? sharePositionOrigin,
+}) async {
+  try {
+    return await SharePlus.instance.share(
+      ShareParams(text: text, sharePositionOrigin: sharePositionOrigin),
+    );
+  } catch (e) {
+    throw CardShareException('공유 시트를 열지 못했어요. ($e)');
+  }
+}
