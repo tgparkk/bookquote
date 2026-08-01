@@ -16,15 +16,21 @@ import '../../data/share_service.dart';
 /// 첫 공유 안내 SnackBar 1회 노출 플래그 (PR15-A — 차별화 강화 onboarding).
 const String _kFirstShareHintShown = 'card_share_first_hint_shown_v1';
 
-/// 받는 사람용 deep link scheme. AndroidManifest/Info.plist에 등록된 intent filter.
-const String _kDeepLinkScheme = 'io.github.tgparkk.bookquote';
+/// 공유 링크 랜딩 베이스 (GitHub Pages — `docs/b/index.html`).
+///
+/// 구 커스텀 스킴 딥링크(`io.github.tgparkk.bookquote://...`)는 미설치자에게
+/// 클릭조차 안 되는 죽은 문자열이라 신규 유입 기여가 구조적으로 0이었다
+/// (2026-08-01 출시 1개월 진단). https 랜딩은 설치자에겐 intent://로 같은
+/// 스킴을 쏴 앱을 열고(기존 딥링크 수신 경로 무변경), 미설치자는 Play로 유도.
+/// sender uid는 공개 URL 노출 문제로 링크에서 제거 — 받는 쪽
+/// `book_overflow_menu`의 sender 처리는 구 링크 호환용으로 유지.
+const String _kShareLandingBase = 'https://tgparkk.github.io/bookquote/b/';
 
 /// 카드 PNG가 준비된 뒤 호출. 사용자가 시트를 dismiss 해도 정상.
 ///
-/// [bookId]와 [senderUid]가 둘 다 제공되면 공유 텍스트에 deep link를 포함한다
-/// (`io.github.tgparkk.bookquote://book/<bookId>?from=share&sender=<senderUid>`).
-/// 받는 사람이 링크를 탭하면 책 상세로 이동 + "[이 사람 서재 ▸]" 노출 — V1 K-factor
-/// 핵심 다리 (PR20-C). bookId 없으면(manual_book_text만) deep link 미포함.
+/// [bookId]가 있으면 공유 텍스트에 https 랜딩 링크를 포함한다
+/// (`https://tgparkk.github.io/bookquote/b/?id=<bookId>&from=share`).
+/// bookId 없으면(manual_book_text만) 링크 미포함.
 /// [bookIsbn13]이 있으면 교보문고 검색(구매) 링크도 공유 텍스트에 함께 첨부한다(V1.0).
 Future<void> showCardShareSheet({
   required BuildContext context,
@@ -35,7 +41,6 @@ Future<void> showCardShareSheet({
   String? bookTitle,
   String? bookAuthor,
   int? quotePage,
-  String? senderUid,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -53,17 +58,14 @@ Future<void> showCardShareSheet({
       bookTitle: bookTitle,
       bookAuthor: bookAuthor,
       quotePage: quotePage,
-      senderUid: senderUid,
     ),
   );
 }
 
-String? buildDeepLinkForShare({String? bookId, String? senderUid}) {
+/// 받는 사람용 https 랜딩 링크. bookId 없으면 null(이미지만 공유).
+String? buildShareLandingLink({String? bookId}) {
   if (bookId == null || bookId.isEmpty) return null;
-  final base = '$_kDeepLinkScheme://book/$bookId?from=share';
-  return (senderUid == null || senderUid.isEmpty)
-      ? base
-      : '$base&sender=$senderUid';
+  return '$_kShareLandingBase?id=$bookId&from=share';
 }
 
 /// 책 ISBN13으로 교보문고 검색 링크를 만든다(공유 텍스트 첨부 — V1.0).
@@ -85,7 +87,7 @@ String? buildAladinSearchUrl(String? isbn13) {
       '?SearchTarget=All&SearchWord=${Uri.encodeQueryComponent(v)}';
 }
 
-/// 공유 메시지 본문 — 책 출처(제목·저자·페이지) + deep link(K-factor) + 구매 링크
+/// 공유 메시지 본문 — 책 출처(제목·저자·페이지) + 랜딩 링크(K-factor) + 구매 링크
 /// 순서로 조립. PR12 (2026-05-28)에서 출처 라인 추가 — 카드 이미지엔 박혀 있어도
 /// 텍스트 공유에선 빠져 받는 쪽이 인용 출처를 모르던 문제 해소.
 ///
@@ -94,7 +96,7 @@ String? buildShareMessage({
   String? bookTitle,
   String? bookAuthor,
   int? quotePage,
-  String? deepLink,
+  String? link,
   String? purchaseUrl,
 }) {
   final citation = _buildCitationLine(
@@ -104,7 +106,7 @@ String? buildShareMessage({
   );
   final parts = <String>[
     ?citation,
-    if (deepLink != null && deepLink.isNotEmpty) deepLink,
+    if (link != null && link.isNotEmpty) link,
     if (purchaseUrl != null && purchaseUrl.isNotEmpty)
       '📖 이 책 보러 가기 · 교보문고\n$purchaseUrl',
   ];
@@ -142,7 +144,6 @@ class _CardShareSheet extends StatelessWidget {
     required this.bookTitle,
     required this.bookAuthor,
     required this.quotePage,
-    required this.senderUid,
   });
 
   final XFile file;
@@ -152,7 +153,6 @@ class _CardShareSheet extends StatelessWidget {
   final String? bookTitle;
   final String? bookAuthor;
   final int? quotePage;
-  final String? senderUid;
 
   Future<void> _share(
     BuildContext context,
@@ -161,12 +161,11 @@ class _CardShareSheet extends StatelessWidget {
   }) async {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
-    final deepLink = buildDeepLinkForShare(bookId: bookId, senderUid: senderUid);
     final text = buildShareMessage(
       bookTitle: bookTitle,
       bookAuthor: bookAuthor,
       quotePage: quotePage,
-      deepLink: deepLink,
+      link: buildShareLandingLink(bookId: bookId),
       purchaseUrl: buildBookPurchaseUrl(bookIsbn13),
     );
     try {

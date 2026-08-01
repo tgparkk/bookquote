@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/auth_state_provider.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/app_snackbar.dart';
 import '../crypto/presentation/lock_dialogs.dart';
@@ -161,7 +160,6 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
         bookTitle: _data!.bookTitle,
         bookAuthor: _data!.bookAuthor,
         quotePage: _data!.quotePage,
-        senderUid: ref.read(currentUserIdProvider),
       );
     } on CardRenderException {
       if (!mounted) return;
