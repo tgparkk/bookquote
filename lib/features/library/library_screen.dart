@@ -2,6 +2,8 @@
 //
 // 책 탭: 내가 담은 책 목록 (탭 → 책 상세, FAB → 책 검색 시트 → addToLibrary).
 //        view 모드 4종 — 리스트/그리드/스택/책장. 모드는 SharedPreferences에 영속화.
+//        상단 상태 필터 칩(전체·읽는 중·완독·읽고 싶은) + 정렬(최근·제목·저자·별점·
+//        인용 수, 저장됨) — 2026-09-26.
 // 인용구 탭: 내가 모은 인용구를 무드별로 — `QuoteListView` (차별화 ④).
 // `?tab=quotes&mood=<name>` 쿼리로 진입 시 초기 탭·무드 필터 설정.
 // 설계: docs/design/screens/library.md · quote-list.md
@@ -15,7 +17,7 @@ import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/app_snackbar.dart';
 import '../book/data/book_repository.dart';
-import '../book/domain/book.dart';
+import '../book/domain/library_entry.dart';
 import '../book/domain/reading_dates.dart';
 import '../book/presentation/book_search_sheet.dart';
 import '../book/presentation/widgets/add_book_status_sheet.dart';
@@ -23,11 +25,13 @@ import '../book/state/book_providers.dart';
 import '../quote/domain/quote_mood.dart';
 import '../quote/presentation/quote_list_view.dart';
 import '../quote/presentation/quote_search_delegate.dart';
+import '../quote/state/quote_providers.dart';
 import 'presentation/book_views/book_grid_view.dart';
 import 'presentation/book_views/book_list_view.dart';
 import 'presentation/book_views/book_shelf_view.dart';
 import 'presentation/book_views/book_stack_view.dart';
 import 'presentation/calendar_segment.dart';
+import 'state/library_sort.dart';
 import 'state/library_view_mode.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
@@ -100,7 +104,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final repo = ref.read(bookRepositoryProvider);
     try {
-      await repo.addToLibrary(book.id);
+      await repo.addToLibrary(book.id, status: status);
       if (status == ReadingStatus.reading) {
         await repo.setReadingDate(
           bookId: book.id,
@@ -279,51 +283,273 @@ class _SegmentHeader extends ConsumerWidget {
 
 // ── 책 탭 ────────────────────────────────────────────────
 
-class _BookTab extends ConsumerWidget {
+/// 책 탭 — 상단 상태 필터 칩 + 정렬 버튼(2026-09-26), 아래 보기 방식별 목록.
+class _BookTab extends ConsumerStatefulWidget {
   const _BookTab();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_BookTab> createState() => _BookTabState();
+}
+
+class _BookTabState extends ConsumerState<_BookTab> {
+  /// null = 전체. 세션 상태(저장 안 함).
+  ReadingStatus? _filter;
+
+  Future<void> _refresh() async {
+    ref
+      ..invalidate(myLibraryProvider)
+      ..invalidate(myQuoteCountsByBookProvider);
+    await ref.read(myLibraryProvider.future);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final asyncLibrary = ref.watch(myLibraryProvider);
-    final asyncMode = ref.watch(libraryViewModeProvider);
-    final mode = asyncMode.value ?? LibraryViewMode.list;
-    return RefreshIndicator(
-      onRefresh: () async => ref.invalidate(myLibraryProvider),
-      child: asyncLibrary.when(
-        data: (books) {
-          if (books.isEmpty) return const _EmptyView();
-          final sorted = _sortForMode(books, mode);
-          return switch (mode) {
-            LibraryViewMode.list => BookListView(books: sorted),
-            LibraryViewMode.grid => BookGridView(books: sorted),
-            LibraryViewMode.stack => BookStackView(books: sorted),
-            LibraryViewMode.shelf => BookShelfView(books: sorted),
-          };
-        },
-        loading: () => Center(
-          child: CircularProgressIndicator(color: context.colors.accentDefault),
-        ),
-        error: (e, _) => _ErrorView(onRetry: () => ref.invalidate(myLibraryProvider)),
+    final mode = ref.watch(libraryViewModeProvider).value ?? LibraryViewMode.list;
+    final sort =
+        ref.watch(librarySortProvider).value ?? LibrarySort.recentlyAdded;
+    // 인용 수는 "인용 많은 순"일 때만 조회.
+    final quoteCounts = sort == LibrarySort.quoteCount
+        ? ref.watch(myQuoteCountsByBookProvider).value ?? const <String, int>{}
+        : const <String, int>{};
+
+    return asyncLibrary.when(
+      data: (entries) {
+        if (entries.isEmpty) {
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: const _EmptyView(),
+          );
+        }
+        final shown = sortLibrary(
+          filterLibrary(entries, _filter),
+          sort,
+          quoteCounts: quoteCounts,
+        );
+        final books = [for (final e in shown) e.book];
+        return Column(
+          children: [
+            _BookToolbar(
+              entries: entries,
+              filter: _filter,
+              sort: sort,
+              onFilter: (f) => setState(() => _filter = f),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refresh,
+                child: books.isEmpty
+                    ? _FilteredEmptyView(filter: _filter!)
+                    : switch (mode) {
+                        LibraryViewMode.list => BookListView(books: books),
+                        LibraryViewMode.grid => BookGridView(books: books),
+                        LibraryViewMode.stack => BookStackView(books: books),
+                        LibraryViewMode.shelf => BookShelfView(books: books),
+                      },
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => Center(
+        child: CircularProgressIndicator(color: context.colors.accentDefault),
+      ),
+      error: (e, _) => RefreshIndicator(
+        onRefresh: _refresh,
+        child: _ErrorView(onRetry: () => ref.invalidate(myLibraryProvider)),
       ),
     );
   }
 }
 
-/// view 모드별 정렬. myLibraryProvider는 added_at desc로 반환 — 그 외 모드는
-/// 클라이언트에서 재정렬(서재 50권 미만 가정, repo 변경 없이 V1 스코프 유지).
-List<Book> _sortForMode(List<Book> books, LibraryViewMode mode) {
-  switch (mode) {
-    case LibraryViewMode.list:
-    case LibraryViewMode.grid:
-      return books; // added_at desc (repo가 이미 반환)
-    case LibraryViewMode.stack:
-      // 최근 담은 책이 맨 위 — added_at desc (repo 기본값 그대로).
-      return books;
-    case LibraryViewMode.shelf:
-      // 실제 책장 — 제목 가나다순.
-      final sorted = [...books];
-      sorted.sort((a, b) => a.title.compareTo(b.title));
-      return sorted;
+String _filterLabel(ReadingStatus s) => switch (s) {
+      ReadingStatus.reading => '읽는 중',
+      ReadingStatus.finished => '완독',
+      ReadingStatus.wishlist => '읽고 싶은',
+    };
+
+/// [전체 · 읽는 중 · 완독 · 읽고 싶은] 칩(권수 포함, 가로 스크롤) + 정렬 버튼.
+class _BookToolbar extends ConsumerWidget {
+  const _BookToolbar({
+    required this.entries,
+    required this.filter,
+    required this.sort,
+    required this.onFilter,
+  });
+
+  final List<LibraryEntry> entries;
+  final ReadingStatus? filter;
+  final LibrarySort sort;
+  final ValueChanged<ReadingStatus?> onFilter;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final counts = <ReadingStatus, int>{};
+    for (final e in entries) {
+      final s = libraryStatusOf(e);
+      if (s != null) counts[s] = (counts[s] ?? 0) + 1;
+    }
+    return Row(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.s4,
+              0,
+              AppSpacing.s2,
+              AppSpacing.s1,
+            ),
+            child: Row(
+              children: [
+                _FilterChip(
+                  label: '전체 ${entries.length}',
+                  selected: filter == null,
+                  onTap: () => onFilter(null),
+                ),
+                for (final s in const [
+                  ReadingStatus.reading,
+                  ReadingStatus.finished,
+                  ReadingStatus.wishlist,
+                ]) ...[
+                  const SizedBox(width: AppSpacing.s2),
+                  _FilterChip(
+                    label: '${_filterLabel(s)} ${counts[s] ?? 0}',
+                    selected: filter == s,
+                    onTap: () => onFilter(s),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        TextButton.icon(
+          onPressed: () => _pickSort(context, ref),
+          icon: const Icon(Icons.swap_vert_rounded, size: 18),
+          label: Text(sort.shortLabel),
+          style: TextButton.styleFrom(
+            foregroundColor: context.colors.onSurfaceMuted,
+            visualDensity: VisualDensity.compact,
+            textStyle: const TextStyle(
+              fontFamily: AppFonts.ui,
+              fontSize: AppFontSize.sm,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.s2),
+      ],
+    );
+  }
+
+  Future<void> _pickSort(BuildContext context, WidgetRef ref) async {
+    final picked = await showModalBottomSheet<LibrarySort>(
+      context: context,
+      backgroundColor: context.colors.surfaceSheet,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: AppSpacing.s4),
+            Text(
+              '정렬',
+              style: TextStyle(
+                fontFamily: AppFonts.ui,
+                fontSize: AppFontSize.md,
+                fontWeight: FontWeight.w700,
+                color: context.colors.onSurface,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s2),
+            for (final s in LibrarySort.values)
+              ListTile(
+                title: Text(s.label),
+                trailing: s == sort
+                    ? Icon(Icons.check, color: context.colors.accentDefault)
+                    : null,
+                onTap: () => Navigator.of(ctx).pop(s),
+              ),
+            const SizedBox(height: AppSpacing.s2),
+          ],
+        ),
+      ),
+    );
+    if (picked != null && picked != sort) {
+      await ref.read(librarySortProvider.notifier).set(picked);
+    }
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    // 인용구 탭 무드 필터 칩과 같은 톤(chipBg / chipSelected). 시스템 1.3x 글꼴에서
+    // 줄바꿈 마찰 없게 1.15x로 제한 — mood_chips와 동일 정책.
+    final clamped =
+        MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.15);
+    return ChoiceChip(
+      label: Text(label, textScaler: clamped),
+      selected: selected,
+      showCheckmark: false,
+      onSelected: (_) => onTap(),
+      backgroundColor: colors.chipBg,
+      selectedColor: colors.chipSelected,
+      side: BorderSide(color: selected ? colors.chipSelected : colors.chipBg),
+      shape: const StadiumBorder(),
+      labelStyle: TextStyle(
+        fontFamily: AppFonts.ui,
+        fontSize: AppFontSize.sm,
+        fontWeight: FontWeight.w500,
+        color: selected ? colors.onSurface : colors.onSurfaceMuted,
+      ),
+      visualDensity: VisualDensity.compact,
+    );
+  }
+}
+
+/// 상태 필터 결과가 비었을 때 — 그 상태로 옮기는 방법(길게 누르기 액션)을 안내.
+class _FilteredEmptyView extends StatelessWidget {
+  const _FilteredEmptyView({required this.filter});
+  final ReadingStatus filter;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final (title, hint) = switch (filter) {
+      ReadingStatus.reading => ('읽는 중인 책이 없어요', '표지를 길게 눌러 [읽기 시작]을 고를 수 있어요.'),
+      ReadingStatus.finished => ('완독한 책이 없어요', '표지를 길게 눌러 [다 읽음]을 고를 수 있어요.'),
+      ReadingStatus.wishlist => (
+          '읽고 싶은 책이 없어요',
+          '표지를 길게 눌러 [읽고 싶은 책으로]를 고를 수 있어요.'
+        ),
+    };
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.s6,
+        AppSpacing.s16,
+        AppSpacing.s6,
+        AppSpacing.s8,
+      ),
+      children: [
+        Text(title, textAlign: TextAlign.center, style: textTheme.titleMedium),
+        const SizedBox(height: AppSpacing.s2),
+        Text(hint, textAlign: TextAlign.center, style: textTheme.bodyMedium),
+      ],
+    );
   }
 }
 

@@ -256,6 +256,10 @@ class _StackedCapsule extends ConsumerWidget {
     var height =
         hasThickness ? stackHeightForPages(pages) : _unknownThicknessHeight;
     if (reading && height < _readingMinHeight) height = _readingMinHeight;
+    // 가름끈 크기 — 캡슐 두께에 비례. 표지엔 2px만 걸치고 나머지는 책등 위라
+    // 책등 제목은 리본 폭만큼 더 안쪽에서 시작.
+    final ribbonWidth = (height * 0.14).clamp(9.0, 12.0);
+    final ribbonHeight = (height * 0.6).clamp(26.0, 56.0);
     final asyncPalette = ref.watch(extractedPaletteProvider(
       (coverUrl: book.coverUrl, templateId: 'minimal'),
     ));
@@ -310,8 +314,11 @@ class _StackedCapsule extends ConsumerWidget {
                       Expanded(
                         child: Container(
                           color: spineColor,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.s3,
+                          padding: EdgeInsets.only(
+                            left: reading
+                                ? ribbonWidth + AppSpacing.s2
+                                : AppSpacing.s3,
+                            right: AppSpacing.s3,
                           ),
                           child: Row(
                             children: [
@@ -382,8 +389,8 @@ class _StackedCapsule extends ConsumerWidget {
                       top: 0,
                       left: height * (2 / 3) - 2,
                       child: ReadingRibbon(
-                        width: (height * 0.1).clamp(6.0, 9.0),
-                        height: (height * 0.45).clamp(18.0, 44.0),
+                        width: ribbonWidth,
+                        height: ribbonHeight,
                       ),
                     ),
                 ],

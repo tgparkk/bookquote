@@ -185,8 +185,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ],
                 ),
                 error: (e, _) => _errorView(context),
-                data: (books) {
-                  if (books.isEmpty) return _emptyView(context);
+                data: (entries) {
+                  if (entries.isEmpty) return _emptyView(context);
+                  final books = [for (final e in entries) e.book];
                   final header = _scrollHeader(friendCta: true);
                   final ordered = _readingFirst(books, readingIds);
                   final readingSet = readingIds.toSet();

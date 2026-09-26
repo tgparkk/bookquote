@@ -28,8 +28,8 @@ String quoteCountLabel(int count) => count >= kBookQuotesLimit
 class ReadingRibbon extends StatelessWidget {
   const ReadingRibbon({
     super.key,
-    this.width = 6,
-    this.height = 20,
+    this.width = 9,
+    this.height = 28,
     this.excludeSemantics = false,
   });
 
@@ -53,13 +53,15 @@ class ReadingRibbon extends StatelessWidget {
   }
 }
 
-// 가름끈 색 — 회고 카드·강조색(구리)과 겹치지 않는 별도 계열. 라이트·다크 동일.
-const Color _ribbonTop = Color(0xFF5A222C);
-const Color _ribbonBottom = Color(0xFF7A2E3A);
-const Color _ribbonFold = Color(0xFF3F1720);
+// 가름끈 색 — 회고 카드·강조색(구리)과 겹치지 않는 와인 계열. 라이트·다크 동일.
+// 딥 와인(#5A222C→#7A2E3A)은 어두운 책등(남색·짙은 녹색)에서 너무 약해 보인다는
+// 피드백으로 한 단계 밝고 채도 높은 크림슨 와인으로(2026-09-26).
+const Color _ribbonTop = Color(0xFF8A1C30);
+const Color _ribbonBottom = Color(0xFFB3263E);
+const Color _ribbonFold = Color(0xFF5E1020);
 
 /// 위가 짙은 세로 그라데이션(책 사이에서 빠져나온 깊이감) + 윗단 접힘 띠 + 옅은
-/// 흰 바탕(어두운 책등에서도 윤곽 유지) + 약한 그림자.
+/// 흰 윤곽(어두운 책등에서도 윤곽 유지) + 그림자.
 class _RibbonPainter extends CustomPainter {
   const _RibbonPainter();
 
@@ -75,13 +77,13 @@ class _RibbonPainter extends CustomPainter {
       ..close();
     final rect = Offset.zero & size;
     canvas.drawShadow(
-        path, AppColors.primary900.withValues(alpha: 0.5), 1.5, false);
+        path, AppColors.primary900.withValues(alpha: 0.6), 2, false);
     canvas.drawPath(
       path,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2
-        ..color = AppColors.secondary50.withValues(alpha: 0.12),
+        ..color = AppColors.secondary50.withValues(alpha: 0.3),
     );
     canvas.drawPath(
       path,
@@ -93,7 +95,7 @@ class _RibbonPainter extends CustomPainter {
         ).createShader(rect),
     );
     canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height < 24 ? 1.5 : 2.5),
+      Rect.fromLTWH(0, 0, size.width, size.height < 24 ? 2 : 3),
       Paint()..color = _ribbonFold,
     );
   }
@@ -114,7 +116,7 @@ class ReadingGroupHeader extends StatelessWidget {
       header: true,
       child: Row(
         children: [
-          const ReadingRibbon(width: 6, height: 14, excludeSemantics: true),
+          const ReadingRibbon(width: 9, height: 18, excludeSemantics: true),
           const SizedBox(width: AppSpacing.s2),
           Text(
             '지금 읽는 중',

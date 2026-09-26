@@ -353,6 +353,28 @@ class QuoteRepository {
     }
   }
 
+  /// 책별 내 인용구 수 `{book_id: n}` — 서재 [책] "인용 많은 순" 정렬용.
+  /// book_id 한 컬럼만 받아 클라이언트에서 집계(잠긴 인용구도 개수엔 포함).
+  Future<Map<String, int>> countMyQuotesByBook() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return const {};
+    try {
+      final rows = await _client
+          .from(_table)
+          .select('book_id')
+          .eq('user_id', uid)
+          .not('book_id', 'is', null);
+      final counts = <String, int>{};
+      for (final r in rows) {
+        final id = r['book_id'] as String?;
+        if (id != null) counts[id] = (counts[id] ?? 0) + 1;
+      }
+      return counts;
+    } on PostgrestException catch (e) {
+      throw QuoteRepositoryException('COUNT_FAILED', e.message);
+    }
+  }
+
   /// 내 인용구 목록. cursor-after(`(created_at, id)` desc), 기본 15개 (offset 금지).
   /// [bookId] 지정 시 그 책 것만, [moods]가 비어있지 않으면 그 무드 중 하나라도 가진 것만.
   Future<List<Quote>> listMyQuotes({

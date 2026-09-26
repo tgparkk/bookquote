@@ -24,7 +24,17 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          myLibraryProvider.overrideWith((ref) async => books),
+          myLibraryProvider.overrideWith((ref) async => [
+                for (final b in books)
+                  (
+                    book: b,
+                    addedAt: DateTime(2026, 9, 1),
+                    startedAt: null,
+                    finishedAt: null,
+                    readingStatus: 'reading',
+                    rating: null,
+                  ),
+              ]),
           currentlyReadingProvider.overrideWith((ref) async => [
                 for (final b in reading)
                   (book: b, startedAt: DateTime(2026, 9, 1)),

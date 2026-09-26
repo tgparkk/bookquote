@@ -37,6 +37,10 @@ class ReadingDates {
 /// `book_repository.setReadingDate({kind: ...})` 의 두 축.
 enum ReadingDateKind { started, finished }
 
+/// 서재 책의 읽기 상태. `name`이 `user_books.reading_status` 값과 같다
+/// ('wishlist'/'reading'/'finished'). 판정 규칙은 `libraryStatusOf`.
+enum ReadingStatus { wishlist, reading, finished }
+
 /// postgres `date` 컬럼은 시각 없는 'YYYY-MM-DD' 문자열로 주고받는다.
 /// `DateTime.toIso8601String()`은 시각이 붙어 시간대 혼란을 일으키므로 직접 포맷.
 String formatReadingDate(DateTime d) =>

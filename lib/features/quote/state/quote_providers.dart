@@ -26,6 +26,13 @@ final bookQuotesProvider =
   return repo.listMyQuotes(bookId: bookId, limit: kBookQuotesLimit);
 });
 
+/// 책별 내 인용구 수 `{book_id: n}` — 서재 [책] "인용 많은 순" 정렬. 서재 새로고침
+/// 때 함께 invalidate.
+final myQuoteCountsByBookProvider =
+    FutureProvider.autoDispose<Map<String, int>>((ref) async {
+  return ref.read(quoteRepositoryProvider).countMyQuotesByBook();
+});
+
 /// 단건 조회 — 카드 에디터(`/quote/:id/card`) 등.
 final quoteByIdProvider =
     FutureProvider.autoDispose.family<Quote?, String>((ref, id) async {

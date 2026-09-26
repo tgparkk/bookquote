@@ -1,7 +1,8 @@
 // 서재 책 카드 long-press 액션시트 (PR6 — 2026-05-28).
 //
 // Letterboxd 패턴: 표지 길게 누르면 책 상세로 가지 않고 바로 액션시트가 떠
-// 인용구 추가·읽기 시작·다 읽음·공유 4개 동선을 1탭으로 처리.
+// 인용구 추가·읽기 시작·다 읽음·공유 4개 동선을 1탭으로 처리. 읽기 날짜가 없는
+// 책엔 [읽고 싶은 책으로]도(서재 상태 필터 정리용, 2026-09-26).
 // 서재 4뷰(shelf/grid/list/stack)에서 공통 호출.
 //
 // 시각 정렬: ListTile 아이콘 + 라벨 + (필요 시) subtitle. dense·zero padding로
@@ -46,6 +47,17 @@ class _BookQuickActionsSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
+    // [읽고 싶은 책으로]는 읽기 날짜가 없는 책에만 — 날짜가 있으면 상태 판정은
+    // 날짜가 우선이라(libraryStatusOf) 눌러도 서재 필터에 반영되지 않는다.
+    final entry = ref
+        .watch(myLibraryProvider)
+        .value
+        ?.where((e) => e.book.id == book.id)
+        .firstOrNull;
+    final canMarkWishlist = entry != null &&
+        entry.startedAt == null &&
+        entry.finishedAt == null &&
+        entry.readingStatus != ReadingStatus.wishlist.name;
     return SafeArea(
       top: false,
       child: Padding(
@@ -91,6 +103,12 @@ class _BookQuickActionsSheet extends ConsumerWidget {
               onTap: () =>
                   _setReadingDate(context, ref, ReadingDateKind.finished),
             ),
+            if (canMarkWishlist)
+              _ActionTile(
+                icon: Icons.bookmark_add_outlined,
+                label: '읽고 싶은 책으로',
+                onTap: () => _markWishlist(context, ref),
+              ),
             _ActionTile(
               icon: Icons.ios_share_rounded,
               label: '공유',
@@ -124,6 +142,22 @@ class _BookQuickActionsSheet extends ConsumerWidget {
         messenger,
         kind == ReadingDateKind.started ? '읽기 시작에 표시했어요.' : '다 읽음으로 표시했어요.',
       );
+    } catch (_) {
+      navigator.pop();
+      showAppSnackBarOn(messenger, '표시하지 못했어요. 다시 시도해 주세요.');
+    }
+  }
+
+  Future<void> _markWishlist(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    try {
+      await ref
+          .read(bookRepositoryProvider)
+          .setReadingStatus(book.id, ReadingStatus.wishlist);
+      ref.invalidate(myLibraryProvider);
+      navigator.pop();
+      showAppSnackBarOn(messenger, '읽고 싶은 책으로 표시했어요.');
     } catch (_) {
       navigator.pop();
       showAppSnackBarOn(messenger, '표시하지 못했어요. 다시 시도해 주세요.');

@@ -139,12 +139,13 @@ class _BookRow extends ConsumerWidget {
                   padding: 2,
                   child: BookCover(url: book.coverUrl, title: book.title),
                 ),
-                // 읽는 중 — 표지 오른쪽 모서리 경계 윗변에 걸친 가름끈.
+                // 읽는 중 — 표지 오른쪽 모서리 경계 윗변에 걸친 가름끈(표지엔 2px만,
+                // 나머지는 표지·본문 사이 여백 위라 ⋮ 힌트와 안 겹친다).
                 if (reading)
                   const Positioned(
                     top: 0,
-                    right: -4,
-                    child: ReadingRibbon(width: 6, height: 20),
+                    right: -7,
+                    child: ReadingRibbon(width: 9, height: 28),
                   ),
               ],
             ),
