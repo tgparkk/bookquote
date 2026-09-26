@@ -60,6 +60,12 @@ void main() {
     // 어느 chip도 노출 안 됨
     expect(find.textContaining('친구'), findsNothing);
     expect(find.text('위로'), findsNothing);
+    expect(find.textContaining('인용'), findsNothing);
+  });
+
+  testWidgets('인용구 N개 → "인용 N" chip 노출', (tester) async {
+    await pump(tester, quotes: [_quote('q1'), _quote('q2')]);
+    expect(find.text('인용 2'), findsOneWidget);
   });
 
   testWidgets('친구 평균 N=2 → 친구 chip 숨김(N<3 가드)', (tester) async {

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/book_repository.dart';
 import '../domain/book.dart';
+import '../domain/library_entry.dart';
 import '../domain/reading_dates.dart';
 
 /// `/book/:id` 라우트의 :id로 단건 조회. 캐시는 Riverpod 기본(autoDispose).
@@ -20,9 +21,10 @@ final bookByIsbnProvider =
   return repo.getByIsbn(isbn13);
 });
 
-/// 내 서재 책 목록 (added_at desc). `ref.invalidate(myLibraryProvider)`로
-/// 추가/삭제 후 갱신.
-final myLibraryProvider = FutureProvider.autoDispose<List<Book>>((ref) async {
+/// 내 서재 목록 (added_at desc) — 책 + 읽기 날짜·상태·별점([LibraryEntry]).
+/// `ref.invalidate(myLibraryProvider)`로 추가/삭제/상태 변경 후 갱신.
+final myLibraryProvider =
+    FutureProvider.autoDispose<List<LibraryEntry>>((ref) async {
   final repo = ref.read(bookRepositoryProvider);
   return repo.listMyLibrary();
 });
@@ -49,10 +51,11 @@ final readingDatesProvider =
   return ref.read(bookRepositoryProvider).getReadingDates(bookId);
 });
 
-/// PR23: 지금 읽고 있는 책 (홈 NowReadingRow). 시작/완독 변경 시
-/// `ref.invalidate(currentlyReadingProvider)`. 홈은 BottomNav 첫 슬롯이라
-/// 캐시 유지가 자연(autoDispose 안 둠).
+/// PR23: 지금 읽고 있는 책 (started_at 최근순). 홈 책 목록이 이 책들을 맨 위에
+/// "읽는 중"으로 고정한다(2026-09-26) — 전부 표시해야 해서 repo 기본 7권 대신
+/// 넉넉한 상한. 시작/완독 변경 시 `ref.invalidate(currentlyReadingProvider)`.
+/// 홈은 BottomNav 첫 슬롯이라 캐시 유지가 자연(autoDispose 안 둠).
 final currentlyReadingProvider =
     FutureProvider<List<CurrentlyReading>>((ref) async {
-  return ref.read(bookRepositoryProvider).listCurrentlyReading();
+  return ref.read(bookRepositoryProvider).listCurrentlyReading(limit: 50);
 });

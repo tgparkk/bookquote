@@ -4,6 +4,7 @@
 // 저장해 다음 진입 시 복원. 기본값은 list — 데이터 무관하게 즉시 표시 가능하고
 // 가장 친숙한 형태. stack/shelf는 page_count가 있는 책만 위쪽에 노출되고 없는
 // 책은 "두께 미수집" 섹션에 모인다.
+// 홈 책 목록은 같은 enum을 별도 키로 저장한다([homeViewModeProvider]).
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,28 +39,47 @@ enum LibraryViewMode {
       };
 }
 
-const String _kPrefsKey = 'lib.viewMode';
-
 class LibraryViewModeNotifier extends AsyncNotifier<LibraryViewMode> {
+  LibraryViewModeNotifier({
+    this.prefsKey = 'lib.viewMode',
+    this.fallback = LibraryViewMode.list,
+  });
+
+  /// 저장 키 — 서재와 홈이 서로 다른 키를 쓴다.
+  final String prefsKey;
+
+  /// 저장값이 없거나 알 수 없을 때의 기본 모드.
+  final LibraryViewMode fallback;
+
   @override
   Future<LibraryViewMode> build() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_kPrefsKey);
-    if (raw == null) return LibraryViewMode.list;
+    final raw = prefs.getString(prefsKey);
+    if (raw == null) return fallback;
     for (final m in LibraryViewMode.values) {
       if (m.name == raw) return m;
     }
-    return LibraryViewMode.list;
+    return fallback;
   }
 
   Future<void> set(LibraryViewMode mode) async {
     state = AsyncData(mode);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kPrefsKey, mode.name);
+    await prefs.setString(prefsKey, mode.name);
   }
 }
 
 final libraryViewModeProvider =
     AsyncNotifierProvider<LibraryViewModeNotifier, LibraryViewMode>(
   LibraryViewModeNotifier.new,
+);
+
+/// 홈 "내 책 목록"의 보기 — 서재와 독립 키, 기본 쌓아 보기(2026-09-26 사용자
+/// 결정). 홈은 AppBar 토글로 list ⇄ stack 2종만 오간다.
+final homeViewModeProvider =
+    AsyncNotifierProvider<LibraryViewModeNotifier, LibraryViewMode>(
+  () => LibraryViewModeNotifier(
+    prefsKey: 'home.viewMode',
+    fallback: LibraryViewMode.stack,
+  ),
 );

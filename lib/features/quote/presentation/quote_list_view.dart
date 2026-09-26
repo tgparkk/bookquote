@@ -3,6 +3,8 @@
 // 상단 무드 필터 칩(전체 N · 무드별 개수) + cursor-after 무한스크롤 카드 목록 +
 // pull-to-refresh. "사진은 찍는데 다시 안 봄" 페인의 답 = 테마 단위 다시 보기
 // (차별화 ④). 정렬·검색은 PR4 후속(PR3에서 [수정]/[무드 변경] 인라인은 추가).
+// 무드 hub 모드에선 헤더 [전체 보기]로 무드 구분 없는 시간순 목록 진입(2026-09-26 —
+// 홈이 책 목록으로 바뀌며 인용구 시간순 흐름을 여기로 이관).
 //
 // Scaffold 없음 — library_screen의 Scaffold/AppBar/FAB 안에 들어간다.
 // 설계: docs/design/screens/quote-list.md
@@ -53,11 +55,17 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
   /// null인 동안). 단면 진입(_mood != null)은 스냅샷 유지하되 단면 데이터 별도 fetch.
   List<MoodHubSnapshot>? _snapshots;
 
+  /// hub 헤더 [전체 보기]로 들어온 무드 구분 없는 시간순 목록. 홈이 책 목록으로
+  /// 바뀌며(2026-09-26) 인용구 시간순 흐름의 유일한 진입점 — 무드 없는 인용구도
+  /// 여기서 보인다.
+  bool _showAll = false;
+
   /// hub 진입 결정 + 시간순 fallback 선택은 무드 종류 ≥3 기준. 진입 화면 차이가
   /// 큰 변화이므로 외부에서 명확히 가늠하기 위해 게터로 노출.
   bool get _hubMode =>
       widget.initialMood == null &&
       _mood == null &&
+      !_showAll &&
       _snapshots != null &&
       _snapshots!.length >= 3;
 
@@ -100,6 +108,8 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
           _loading = false;
           _error = null;
         });
+        // 단면·전체 목록을 보던 중 외부 갱신이 오면 그 목록도 새로 받는다.
+        if (!_hubMode) await _reload();
       } else {
         // 시간순 fallback — 신규 D1~D7 또는 무드 종류 적은 사용자.
         setState(() => _snapshots = null);
@@ -193,6 +203,23 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
     // 살아있고 MoodHubGrid가 직접 그린다. 단면 진입·단면 간 전환만 _reload.
     if (_hubMode) return;
     _reload();
+  }
+
+  void _openAll() {
+    setState(() {
+      _showAll = true;
+      _expandedId = null;
+    });
+    _reload();
+  }
+
+  /// 단면·전체 목록 → hub 복귀. snapshots는 살아있어 reload 불필요.
+  void _backToHub() {
+    setState(() {
+      _showAll = false;
+      _mood = null;
+      _expandedId = null;
+    });
   }
 
   /// PR3 (2026-05-28): 인라인 무드 변경. 시트 결과 있을 때만 로컬 카드 새로고침.
@@ -306,7 +333,10 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
                       // hub 모드 진입 시 "무엇을 모은 묶음들인지" 첫 진입 신호.
                       // 필터 칩이 hub 모드에선 숨겨져 상단이 비어 보이는 문제도
                       // 함께 해소(PR29). 카운트는 사용자에게 *수집 진척* 신호.
-                      _MoodHubHeader(snapshots: _snapshots!),
+                      _MoodHubHeader(
+                        snapshots: _snapshots!,
+                        onShowAll: _openAll,
+                      ),
                       Expanded(
                         child: MoodHubGrid(
                           snapshots: _snapshots!,
@@ -318,12 +348,12 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
                 )
               : Column(
                   children: [
-                    // 단면 모드 → hub 복귀 affordance. 무드 종류 ≥3일 때만 의미가
-                    // 있어 노출. "전체" 칩이 hub 복귀임을 사용자가 명시적으로 인지.
-                    if (_mood != null &&
+                    // 단면·전체 모드 → hub 복귀 affordance. 무드 종류 ≥3일 때만
+                    // 의미가 있어 노출.
+                    if ((_mood != null || _showAll) &&
                         _snapshots != null &&
                         _snapshots!.length >= 3)
-                      _HubBreadcrumb(onTap: () => _selectMood(null)),
+                      _HubBreadcrumb(onTap: _backToHub),
                     Expanded(
                       child: RefreshIndicator(
                         onRefresh: () async {
@@ -454,8 +484,11 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
 }
 
 class _MoodHubHeader extends StatelessWidget {
-  const _MoodHubHeader({required this.snapshots});
+  const _MoodHubHeader({required this.snapshots, required this.onShowAll});
   final List<MoodHubSnapshot> snapshots;
+
+  /// [전체 보기] — 무드 구분 없는 시간순 목록으로.
+  final VoidCallback onShowAll;
 
   @override
   Widget build(BuildContext context) {
@@ -506,6 +539,20 @@ class _MoodHubHeader extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+          TextButton(
+            onPressed: onShowAll,
+            style: TextButton.styleFrom(
+              foregroundColor: colors.accentDefault,
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s2),
+              textStyle: const TextStyle(
+                fontFamily: AppFonts.ui,
+                fontSize: AppFontSize.sm,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            child: const Text('전체 보기'),
           ),
         ],
       ),

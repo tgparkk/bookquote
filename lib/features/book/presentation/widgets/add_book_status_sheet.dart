@@ -6,15 +6,15 @@
 //   reading  → addToLibrary + setReadingDate(started_at=today)
 //   finished → addToLibrary만 (날짜는 사용자가 책 상세에서 직접 입력)
 // 로 분기한다. finished 선택 시 dates를 채우지 않는 건 캘린더가 가짜 데이터로
-// 더럽혀지지 않게 하기 위해서다.
+// 더럽혀지지 않게 하기 위해서다. 고른 상태는 `user_books.reading_status`에도 저장돼
+// 서재 [책] 상태 필터가 쓴다(2026-09-26).
 
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../domain/book.dart';
-
-enum ReadingStatus { wishlist, reading, finished }
+import '../../domain/reading_dates.dart';
 
 extension ReadingStatusUi on ReadingStatus {
   String get emoji => switch (this) {

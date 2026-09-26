@@ -1,5 +1,6 @@
-// PR29: 서재 [책] 탭의 리스트 view (기본 모드).
+// PR29: 서재 [책] 탭의 리스트 view (기본 모드). 홈 "내 책 목록"도 이 위젯(2026-09-26).
 //
+// 책 행 시그널: 인용 수 + 친구 평균 별점(N≥3) + 무드 top 2 mini chip.
 // PR30-D: 책 카드에 친구 평균 별점(N≥3) + 무드 top 2 mini chip 흡수 — 책 상세
 // (PR30-C)와 같은 시그널을 목록에서도 조회 가능하게. 좁은 공간 고려해 무드는
 // top 2(상세는 top 3), 친구 평균 라벨은 컴팩트("★4.2 친구 3").
@@ -16,32 +17,93 @@ import '../../../follow/state/follow_providers.dart';
 import '../../../quote/domain/quote.dart';
 import '../../../quote/domain/quote_mood.dart';
 import '../../../quote/state/quote_providers.dart';
+import '_spine.dart';
 import 'book_quick_actions_sheet.dart';
 import 'long_press_hint.dart';
 
 class BookListView extends StatelessWidget {
-  const BookListView({super.key, required this.books});
+  const BookListView({
+    super.key,
+    required this.books,
+    this.header,
+    this.readingBookIds = const {},
+  });
   final List<Book> books;
+
+  /// 목록 위에 함께 스크롤되는 위젯(홈의 회고 카드 등). 전체 폭.
+  final Widget? header;
+
+  /// 읽는 중인 책 id — "지금 읽는 중 · N권" 묶음으로 맨 위에 모으고, 표지 경계에
+  /// 가름끈 리본 + 행 우측 [✎] 바로 인용구 적기. 묶음 안 순서는 [books] 그대로.
+  /// 홈 전용(2026-09-26).
+  final Set<String> readingBookIds;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.s4,
-        AppSpacing.s4,
-        AppSpacing.s4,
-        AppSpacing.s16,
+    final readingPart = [
+      for (final b in books)
+        if (readingBookIds.contains(b.id)) b,
+    ];
+    final restPart = [
+      for (final b in books)
+        if (!readingBookIds.contains(b.id)) b,
+    ];
+    return CustomScrollView(
+      slivers: [
+        if (header != null) SliverToBoxAdapter(child: header),
+        if (readingPart.isNotEmpty) ...[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.s4,
+              AppSpacing.s4,
+              AppSpacing.s4,
+              AppSpacing.s2,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: ReadingGroupHeader(count: readingPart.length),
+            ),
+          ),
+          _rows(readingPart, reading: true, top: AppSpacing.s2),
+          if (restPart.isNotEmpty)
+            const SliverPadding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.s4,
+                vertical: AppSpacing.s4,
+              ),
+              sliver: SliverToBoxAdapter(child: ReadingGroupDivider()),
+            ),
+        ],
+        _rows(
+          restPart,
+          reading: false,
+          top: readingPart.isEmpty ? AppSpacing.s4 : 0,
+          bottom: AppSpacing.s16,
+        ),
+      ],
+    );
+  }
+
+  Widget _rows(
+    List<Book> part, {
+    required bool reading,
+    double top = 0,
+    double bottom = 0,
+  }) {
+    return SliverPadding(
+      padding: EdgeInsets.fromLTRB(AppSpacing.s4, top, AppSpacing.s4, bottom),
+      sliver: SliverList.separated(
+        itemCount: part.length,
+        separatorBuilder: (_, _) => const Divider(height: AppSpacing.s8),
+        itemBuilder: (context, i) => _BookRow(book: part[i], reading: reading),
       ),
-      itemCount: books.length,
-      separatorBuilder: (_, _) => const Divider(height: AppSpacing.s8),
-      itemBuilder: (context, i) => _BookRow(book: books[i]),
     );
   }
 }
 
 class _BookRow extends ConsumerWidget {
-  const _BookRow({required this.book});
+  const _BookRow({required this.book, required this.reading});
   final Book book;
+  final bool reading;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -56,7 +118,7 @@ class _BookRow extends ConsumerWidget {
         ref.watch(bookQuotesProvider(book.id)).value ?? const <Quote>[];
     final moods = _topMoods(quotes, max: 2);
     final showAvg = avg != null && avg.n >= 3;
-    final showSignal = showAvg || moods.isNotEmpty;
+    final showSignal = quotes.isNotEmpty || showAvg;
 
     return InkWell(
       onTap: () => context.push('/book/${book.id}'),
@@ -70,9 +132,22 @@ class _BookRow extends ConsumerWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            LongPressHintOverlay(
-              padding: 2,
-              child: BookCover(url: book.coverUrl, title: book.title),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                LongPressHintOverlay(
+                  padding: 2,
+                  child: BookCover(url: book.coverUrl, title: book.title),
+                ),
+                // 읽는 중 — 표지 오른쪽 모서리 경계 윗변에 걸친 가름끈(표지엔 2px만,
+                // 나머지는 표지·본문 사이 여백 위라 ⋮ 힌트와 안 겹친다).
+                if (reading)
+                  const Positioned(
+                    top: 0,
+                    right: -7,
+                    child: ReadingRibbon(width: 9, height: 28),
+                  ),
+              ],
             ),
             const SizedBox(width: AppSpacing.s4),
             Expanded(
@@ -95,6 +170,12 @@ class _BookRow extends ConsumerWidget {
                       spacing: 4,
                       runSpacing: 4,
                       children: [
+                        if (quotes.isNotEmpty)
+                          _MiniChip(
+                            icon: Icons.format_quote_rounded,
+                            iconColor: context.colors.accentDefault,
+                            text: quoteCountLabel(quotes.length),
+                          ),
                         if (showAvg)
                           _MiniChip(
                             icon: Icons.star_rounded,
@@ -114,6 +195,16 @@ class _BookRow extends ConsumerWidget {
                 ],
               ),
             ),
+            // 읽는 중 → 그 책 인용구 적기 직진(구 '지금 읽고 있어요' ramp 유지).
+            if (reading)
+              IconButton(
+                tooltip: '이 책 인용구 적기',
+                onPressed: () => context.push('/quote/new?bookId=${book.id}'),
+                icon: Icon(
+                  Icons.edit_outlined,
+                  color: context.colors.accentDefault,
+                ),
+              ),
           ],
         ),
       ),

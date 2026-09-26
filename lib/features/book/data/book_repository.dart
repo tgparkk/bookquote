@@ -16,6 +16,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_init.dart';
 import '../domain/book.dart';
+import '../domain/library_entry.dart';
 import '../domain/reading_dates.dart';
 import '../domain/user_book_on_day.dart';
 import 'aladin_dto.dart';
@@ -151,8 +152,32 @@ class BookRepository {
   // ── 내 서재 ──────────────────────────────────────────
 
   /// 현재 로그인 사용자의 서재에 책을 추가한다. 이미 있으면 idempotent.
+  /// [status]를 주면 `reading_status`에도 기록(담을 때 고른 상태 — 서재 상태
+  /// 필터용). 안 주면 기존 값을 건드리지 않는다.
   /// 비로그인 상태면 [BookRepositoryException] 'NOT_AUTHENTICATED'.
-  Future<void> addToLibrary(String bookId) async {
+  Future<void> addToLibrary(String bookId, {ReadingStatus? status}) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) {
+      throw BookRepositoryException('NOT_AUTHENTICATED', '로그인이 필요해요.');
+    }
+    try {
+      await _client.from(_userBooksTable).upsert(
+        {
+          'user_id': uid,
+          'book_id': bookId,
+          'reading_status': ?status?.name,
+        },
+        onConflict: 'user_id,book_id',
+      );
+    } on PostgrestException catch (e) {
+      throw BookRepositoryException('ADD_LIBRARY_FAILED', e.message);
+    }
+  }
+
+  /// 서재 책의 `reading_status`만 바꾼다(길게 누르기 [읽고 싶은 책으로]).
+  /// 읽기 날짜가 있으면 판정은 날짜가 우선이라(`libraryStatusOf`) 호출자는 날짜 없는
+  /// 책에만 쓴다.
+  Future<void> setReadingStatus(String bookId, ReadingStatus status) async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) {
       throw BookRepositoryException('NOT_AUTHENTICATED', '로그인이 필요해요.');
@@ -160,9 +185,11 @@ class BookRepository {
     try {
       await _client
           .from(_userBooksTable)
-          .upsert({'user_id': uid, 'book_id': bookId}, onConflict: 'user_id,book_id');
+          .update({'reading_status': status.name})
+          .eq('user_id', uid)
+          .eq('book_id', bookId);
     } on PostgrestException catch (e) {
-      throw BookRepositoryException('ADD_LIBRARY_FAILED', e.message);
+      throw BookRepositoryException('SET_STATUS_FAILED', e.message);
     }
   }
 
@@ -181,8 +208,8 @@ class BookRepository {
     }
   }
 
-  /// 이 책이 내 서재에 담겨 있는지 (EXISTS — 한 행만 조회). `listMyLibrary`는 limit 50이라
-  /// 50권 넘는 사용자에선 누락될 수 있어 정확 판정은 이쪽으로. 비로그인이면 false.
+  /// 이 책이 내 서재에 담겨 있는지 (EXISTS — 한 행만 조회). `listMyLibrary`는 상한이 있어
+  /// 아주 큰 서재에선 누락될 수 있으니 정확 판정은 이쪽으로. 비로그인이면 false.
   Future<bool> isInLibrary(String bookId) async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return false;
@@ -199,27 +226,40 @@ class BookRepository {
     }
   }
 
-  /// 내 서재 책 목록. added_at desc.
-  Future<List<Book>> listMyLibrary({int limit = 50}) async {
+  /// 내 서재 목록 — 책 + 담은 시각·읽기 날짜·상태·별점. added_at desc.
+  /// 서재 [책] 탭의 상태 필터 권수·정렬이 전체 기준이어야 해서 상한을 넉넉히
+  /// (구 50 → 500, 2026-09-26).
+  Future<List<LibraryEntry>> listMyLibrary({int limit = 500}) async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return const [];
     try {
       final rows = await _client
           .from(_userBooksTable)
-          .select('book:books(*)')
+          .select(
+            'added_at, started_at, finished_at, reading_status, rating, '
+            'book:books(*)',
+          )
           .eq('user_id', uid)
           .order('added_at', ascending: false)
           .limit(limit);
-      return rows
-          .map((r) => Book.fromJson(r['book'] as Map<String, dynamic>))
-          .toList();
+      return [
+        for (final r in rows)
+          (
+            book: Book.fromJson(r['book'] as Map<String, dynamic>),
+            addedAt: DateTime.parse(r['added_at'] as String),
+            startedAt: parseReadingDate(r['started_at'] as String?),
+            finishedAt: parseReadingDate(r['finished_at'] as String?),
+            readingStatus: (r['reading_status'] as String?) ?? 'reading',
+            rating: (r['rating'] as num?)?.toInt(),
+          ),
+      ];
     } on PostgrestException catch (e) {
       throw BookRepositoryException('LIST_LIBRARY_FAILED', e.message);
     }
   }
 
   /// 내 서재 책 권수. 비로그인이면 0. ('내 정보' 화면 요약용 — `listMyLibrary`는
-  /// limit 50이라 `.length`로는 부정확하니 count 쿼리로.)
+  /// 상한이 있어 `.length`로는 부정확할 수 있으니 count 쿼리로.)
   Future<int> countMyLibrary() async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return 0;
