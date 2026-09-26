@@ -1,4 +1,6 @@
-// 홈 "내 인용 피드" — cursor-after 무한스크롤 누적 상태.
+// 내 인용 피드 — cursor-after 무한스크롤 누적 상태. (2026-09-26 홈이 책 목록으로
+// 바뀌며 화면 렌더 소비자는 없고, 서재 [인용구] 뷰가 `ref.listen`으로 받는 외부
+// 갱신 신호 채널 — 인용구 저장·삭제·잠금 해제 후 `invalidate` 대상 — 로 쓰인다.)
 //
 // `Notifier<AsyncValue<List<QuoteWithBook>>>` — build()에서 첫 페이지를 비동기 로드,
 // loadMore()로 다음 페이지를 append. autoDispose 아님(탭 전환에도 살아있게 — 셸 브랜치

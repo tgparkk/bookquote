@@ -120,7 +120,7 @@ class _BookBody extends ConsumerWidget {
         // 미로그인이면 readingDatesProvider가 빈 결과라 자연 hide.
         ReadingProgressStrip(bookId: book.id),
         const SizedBox(height: AppSpacing.s6),
-        // PR30-A 인용구 hero 카드 — 내 인용 / 알라딘 첫 줄 / 빈 상태 CTA
+        // PR30-A 인용구 hero 카드 — 내 인용 / 빈 상태 CTA
         QuoteHeroCard(book: book),
         // PR30-C 무드 chips — 이 책 인용에 자주 붙인 무드 top 3 (인용구 없으면 hide).
         MoodSummaryChips(bookId: book.id),

@@ -15,11 +15,15 @@ import '../data/quote_outbox.dart';
 import '../data/quote_repository.dart';
 import '../domain/quote.dart';
 
+/// [bookQuotesProvider]가 한 번에 받아오는 최대 개수. 책 목록의 "인용 N" 라벨은
+/// 이 상한이면 "N+"로 표시한다.
+const int kBookQuotesLimit = 20;
+
 /// 책 상세용 — 그 책에서 모은 내 인용구 (최근순 첫 페이지).
 final bookQuotesProvider =
     FutureProvider.autoDispose.family<List<Quote>, String>((ref, bookId) async {
   final repo = ref.read(quoteRepositoryProvider);
-  return repo.listMyQuotes(bookId: bookId, limit: 20);
+  return repo.listMyQuotes(bookId: bookId, limit: kBookQuotesLimit);
 });
 
 /// 단건 조회 — 카드 에디터(`/quote/:id/card`) 등.

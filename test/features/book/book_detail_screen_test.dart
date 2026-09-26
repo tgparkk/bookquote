@@ -234,20 +234,18 @@ void main() {
     });
   });
 
-  group('PR30-A — 인용구 hero 카드 3-state', () {
+  group('PR30-A — 인용구 hero 카드 2-state', () {
     testWidgets('State 1: 내 인용구 있으면 hero 큰 따옴표 카드', (tester) async {
       await pump(tester, quotes: [
         _quote('q1', '가장 깊은 밤에 가장 빛나는 별이 보인다.'),
       ]);
       // hero(1) + 리스트(1) 양쪽 노출
       expect(find.textContaining('가장 깊은 밤에'), findsNWidgets(2));
-      // description fallback도, empty CTA도 안 보임
-      expect(find.text('출판사 소개'), findsNothing);
       expect(find.text('이 책의 첫 인용구를 남겨주세요'), findsNothing);
     });
 
     testWidgets(
-        'State 1: 잠긴 인용구(text=null) 1개 → hero에서 건너뛰고 description fallback',
+        'State 1: 잠긴 인용구(text=null) 1개 → hero에서 건너뛰고 CTA',
         (tester) async {
       final lockedQuote = Quote(
         id: 'q-locked',
@@ -260,29 +258,16 @@ void main() {
         updatedAt: DateTime(2026, 5, 12),
       );
       await pump(tester, quotes: [lockedQuote]);
-      expect(find.text('출판사 소개'), findsOneWidget);
-      expect(find.text('이 책의 첫 인용구를 남겨주세요'), findsNothing);
+      expect(find.text('이 책의 첫 인용구를 남겨주세요'), findsOneWidget);
     });
 
-    testWidgets('State 2: 인용구 없고 description 있으면 "출판사 소개" 미리보기',
+    testWidgets('State 2: 인용구 없으면 description 있어도 "첫 인용구 남겨주세요" CTA',
         (tester) async {
       await pump(tester);
-      expect(find.text('출판사 소개'), findsOneWidget);
-      // hero(1) + 본문 설명(1) 양쪽 노출
-      expect(find.textContaining('미드나잇 라이브러리는 삶과 죽음'),
-          findsNWidgets(2));
-      expect(find.text('이 책의 첫 인용구를 남겨주세요'), findsNothing);
-    });
-
-    testWidgets('State 3: 인용구·description 모두 없으면 "첫 인용구 남겨주세요" CTA',
-        (tester) async {
-      const emptyBook = Book(
-        id: 'b1',
-        isbn13: '9791191056556',
-        title: '제목 없는 책',
-      );
-      await pump(tester, book: emptyBook);
       expect(find.text('이 책의 첫 인용구를 남겨주세요'), findsOneWidget);
+      // description은 하단 "설명" 섹션에만 1회 — hero 미리보기와 중복 노출 금지
+      expect(find.textContaining('미드나잇 라이브러리는 삶과 죽음'),
+          findsOneWidget);
       expect(find.text('출판사 소개'), findsNothing);
     });
   });

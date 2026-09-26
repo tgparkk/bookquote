@@ -1,5 +1,5 @@
-// 책 상세 헤더 직하의 인용구 hero 카드(PR30-A) — 내 인용 / 알라딘 첫 줄 /
-// 빈 상태 CTA 3-state. 본체: `book_detail_screen.dart`.
+// 책 상세 헤더 직하의 인용구 hero 카드(PR30-A) — 내 인용 / 빈 상태 CTA 2-state.
+// 본체: `book_detail_screen.dart`.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,14 +12,15 @@ import '../../../quote/domain/quote.dart';
 import '../../../quote/state/quote_providers.dart';
 import '../../domain/book.dart';
 
-// ── PR30-A: 인용구 hero 카드 (3-state) ─────────────────────────
+// ── PR30-A: 인용구 hero 카드 (2-state) ─────────────────────────
 
 /// 책 상세 헤더 직하의 큰 인용 카드. 우선순위:
 /// (1) 내가 이 책에서 모은 인용구 중 최신 = 큰 따옴표 카드. 잠긴 인용(text==null)은
 ///     건너뛴다.
-/// (2) 알라딘 description의 첫 문단 = 출판사 소개 미리보기 카드(아래 "설명" 섹션과
-///     의도된 중복 — UX-B 권고).
-/// (3) 둘 다 없으면 "이 책의 첫 인용구를 남겨주세요" CTA 카드.
+/// (2) 없으면 "이 책의 첫 인용구를 남겨주세요" CTA 카드.
+///
+/// (구 "출판사 소개" 미리보기 — 알라딘 description 첫 문단 — 는 하단 "설명"
+/// 섹션과 같은 글이 두 번 보여 제거. description은 "설명" 섹션 단일 노출.)
 class QuoteHeroCard extends ConsumerWidget {
   const QuoteHeroCard({super.key, required this.book});
 
@@ -36,22 +37,7 @@ class QuoteHeroCard extends ConsumerWidget {
     if (visible.isNotEmpty) {
       return _HeroQuoteFromUser(quote: visible.first);
     }
-    final description = book.description?.trim();
-    final descPreview = _firstParagraph(description);
-    if (descPreview != null) {
-      return _HeroQuoteFromDescription(text: descPreview);
-    }
     return _HeroQuoteEmpty(bookId: book.id, loggedIn: loggedIn);
-  }
-
-  /// description의 첫 줄·문단 추출. 빈 줄로 끊긴 부분 또는 첫 줄까지.
-  static String? _firstParagraph(String? text) {
-    if (text == null || text.isEmpty) return null;
-    for (final line in text.split('\n')) {
-      final t = line.trim();
-      if (t.isNotEmpty) return t;
-    }
-    return null;
   }
 }
 
@@ -110,46 +96,6 @@ class _HeroQuoteFromUser extends StatelessWidget {
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _HeroQuoteFromDescription extends StatelessWidget {
-  const _HeroQuoteFromDescription({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colors = context.colors;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.s4),
-      decoration: BoxDecoration(
-        color: colors.surface,                        // secondary50 → surface
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: colors.border),    // primary200 → border
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '출판사 소개',
-            style: textTheme.labelSmall?.copyWith(
-                color: colors.onSurfaceMuted), // primary500 → onSurfaceMuted
-          ),
-          const SizedBox(height: AppSpacing.s2),
-          Text(
-            text,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.bodyMedium?.copyWith(
-              height: AppLineHeight.relaxed,
-              color: colors.onSurface, // primary800 → onSurface
-            ),
-          ),
         ],
       ),
     );
