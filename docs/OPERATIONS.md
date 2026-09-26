@@ -113,7 +113,7 @@ Select-String build\app\intermediates\merged_manifests\release\processReleaseMan
 ```
 
 - versionCode는 트랙 무관 전역 단조 증가. 현재 최신: **19 (v1.5.0)** — 18 = v1.4.0
-- **내부 테스트 트랙 자동 업로드**(2026-09-26 셋업): GitHub Actions `play-release.yml` — `gh workflow run play-release.yml --ref main -f release_notes="..."`. 서비스 계정 `play-uploader@bookquote-aa178.iam.gserviceaccount.com`(테스트 트랙 권한만, 프로덕션 승급은 콘솔에서 직접). 키 JSON 원본 `C:\Users\sttgp\keys\`, secret 7개. 절차: `docs/ops/play-release-setup.md`
+- **Play 자동 배포**(2026-09-26 셋업): GitHub Actions `play-release.yml` — `-f action=internal -f release_notes="..."`(빌드→내부 테스트) / `-f action=promote -f rollout=1`(내부 테스트 최신 → 프로덕션, 재빌드 없음, `tool/play_promote.py`). 서비스 계정 `play-uploader@bookquote-aa178.iam.gserviceaccount.com`(테스트 트랙 + 프로덕션 출시 권한, **관리자 아님**). 키 JSON 원본 `C:\Users\sttgp\keys\`, secret 7개. 프로덕션 promote는 매번 확인 후. 절차: `docs/ops/play-release-setup.md`
 - 매 PR마다 release 빌드 실기기 검증 (release-only 함정: INTERNET 권한, `debug*` API, dart-define)
 
 ## 8. 모니터링 (출시 후 안정성)
