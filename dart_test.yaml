@@ -1,0 +1,4 @@
+# 테스트 태그 선언. golden = 카드 골든 스냅샷(로컬 Windows 기준 이미지) —
+# CI(ubuntu)에선 글리프 렌더링 차이로 깨지므로 `--exclude-tags golden`으로 제외.
+tags:
+  golden:

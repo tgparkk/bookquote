@@ -11,7 +11,10 @@
 //
 // 회귀 안정성: OS/Flutter 엔진의 글리프 렌더링 차이로 픽셀이 달라질 수 있어
 // 골든은 main에 push해두고 다른 환경에서 깨지면 `--update-goldens`로 재생성
-// 후 commit하는 워크플로우. CI 도입 전엔 로컬에서만 비교.
+// 후 commit하는 워크플로우. 로컬(Windows)에서만 비교 — `golden` 태그로 CI(ubuntu,
+// play-release.yml)에선 `--exclude-tags golden`으로 제외한다(글리프 렌더링 차이).
+@Tags(['golden'])
+library;
 
 import 'package:bookquote/core/theme/tokens.dart';
 import 'package:bookquote/features/card_editor/domain/card_template.dart';

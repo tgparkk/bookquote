@@ -79,8 +79,10 @@ jobs:
       - name: flutter pub get
         run: flutter pub get
 
+      # 골든(카드 스냅샷)은 로컬 Windows에서 만든 이미지라 ubuntu 글리프 렌더링과
+      # 픽셀이 달라 제외 — 로컬 `flutter test`에서만 비교(dart_test.yaml 참고).
       - name: flutter test
-        run: flutter test
+        run: flutter test --exclude-tags golden
 
       - name: Build app bundle (release)
         run: flutter build appbundle --release --dart-define-from-file=.env.json

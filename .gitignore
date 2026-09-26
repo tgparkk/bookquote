@@ -54,6 +54,9 @@ app.*.map.json
 # Firebase 서비스계정 키 (FCM 발송용 — Edge secret으로만 사용, 절대 커밋 금지)
 *-firebase-adminsdk-*.json
 google-services-account*.json
+# Play Console 업로드용 서비스 계정 키(play-uploader) — GitHub secret으로만 사용.
+# 원본은 저장소 밖(C:\Users\sttgp\keys\)에 둔다. 실수로 들어와도 커밋 안 되게.
+bookquote-aa178-*.json
 
 # 작업용 스크린샷·참고 이미지 (public 저장소 — 기기 캡처·타사 앱 캡처 커밋 금지)
 /*.png
