@@ -24,7 +24,8 @@ Play Console "사용자 및 권한"에 초대**한다.
    - ⚠️ JSON은 비밀번호와 같다. **저장소 폴더 밖**에 보관(공개 저장소). `.gitignore`에 `bookquote-aa178-*.json` 방어 패턴 있음
 4. **Play Console에 초대**: https://play.google.com/console/u/0/developers/7910626417257295631/users-and-permissions
    - [새 사용자 초대] → 서비스 계정 이메일 입력 → **앱 권한**에 책글귀 추가
-   - 체크: **테스트 트랙에 앱 출시**, **테스트 트랙 관리 및 테스터 목록 수정** (프로덕션 자동 출시는 일부러 제외)
+   - 체크: **테스트 트랙에 앱 출시**, **테스트 트랙 관리 및 테스터 목록 수정**, **프로덕션에 앱 출시…**(promote용, 2026-09-26 추가)
+   - ⚠️ **계정 권한 탭의 "관리자(모든 권한)"는 반드시 해제** — 키 유출 시 개발자 계정 전체가 넘어간다
    - 권한 반영까지 몇 시간~하루 걸릴 수 있음 — 첫 업로드 403이면 기다렸다 재시도
 
 ## 2. GitHub Secrets 등록
@@ -73,20 +74,34 @@ flutter build appbundle --release --dart-define-from-file=.env.json
 
 → `build/app/outputs/bundle/release/app-release.aab` 파일을 Play Console → 테스트 → 내부 테스트 → 새 버전 만들기 에 끌어다 놓으면 끝.
 
-## 4. 자동 업로드 실행
+## 4. 워크플로 실행 — `action` 2종
 
-GitHub 저장소 → **Actions** 탭 → 왼쪽 "Play Console — internal upload" → **Run workflow** 버튼.
-또는 CLI: `gh workflow run play-release.yml --ref main -f release_notes="..."` → `gh run watch`.
+GitHub 저장소 → **Actions** 탭 → 왼쪽 "Play Console — release" → **Run workflow** 버튼.
 
-"릴리스 노트" 입력란에 한국어로 변경사항 적고 실행. 5~10분 정도 빌드 후 internal track 에 올라갑니다.
-CI 테스트는 `--exclude-tags golden` — 카드 골든은 로컬 Windows 이미지라 ubuntu에서 깨짐(로컬에서만 비교).
+| action | 하는 일 | 입력 |
+|---|---|---|
+| `internal` | 빌드 → **내부 테스트** 트랙 업로드 (5~10분) | `release_notes` (한국어, 500자) |
+| `promote` | 재빌드 없이 **내부 테스트 최신 버전 → 프로덕션** 승격 (1분) | `rollout` (1 = 전체, 0.2 = 20% 단계적) |
+
+```bash
+gh workflow run play-release.yml --ref main -f action=internal -f release_notes="..."
+gh workflow run play-release.yml --ref main -f action=promote -f rollout=1
+gh run watch   # 진행 확인
+```
+
+- CI 테스트는 `--exclude-tags golden` — 카드 골든은 로컬 Windows 이미지라 ubuntu에서 깨짐(로컬에서만 비교).
+- `promote`는 `tool/play_promote.py`: 출시 노트는 내부 테스트 release 것 복사. 같은 버전 단계적 출시 중이면
+  비율만 올림(낮추기·100% 재출시는 거부). 자동 검토 제출이 막히면 콘솔 게시 개요에서 [검토를 위해 전송].
+- 로컬 확인(반영 없음): `GOOGLE_APPLICATION_CREDENTIALS=<키 JSON> ROLLOUT=1 python tool/play_promote.py --dry-run`
+  (`pip install google-api-python-client google-auth` 필요)
 
 ## 5. 다음에 새 버전 올릴 때
 
 1. `pubspec.yaml` 의 `version: X.Y.Z+N` 에서 `+N` 을 올림 (versionCode는 트랙 무관 전역 단조 증가)
 2. PR → main 머지
-3. Actions → Run workflow(`--ref main`) → 릴리스 노트 적기 → Run
-4. 내부 테스트에서 확인 후 **프로덕션 승급은 Play Console에서 직접**(서비스 계정엔 프로덕션 권한 없음)
+3. `action=internal`로 내부 테스트 업로드 → 폰에서 확인
+4. `action=promote`로 프로덕션 승격 — **사용자에게 나가는 일이라 매번 명시적 확인 후 실행**
+5. Google 검토(몇 시간~1–2일) 후 공개. 게시 관리가 켜져 있으면 승인 후 콘솔에서 [게시]
 
 versionCode 안 올리면 Play Console이 "이미 사용 중인 버전" 으로 거절합니다.
 

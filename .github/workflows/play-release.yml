@@ -1,7 +1,13 @@
-name: Play Console — internal upload
+name: Play Console — release
 
-# 수동 실행 전용. Actions 탭 → "Play Console — internal upload" → Run workflow.
+# 수동 실행 전용. Actions 탭 → "Play Console — release" → Run workflow.
+#   action=internal : 빌드 → 내부 테스트 트랙 업로드 (release_notes 사용)
+#   action=promote  : 재빌드 없이 내부 테스트 최신 버전을 프로덕션으로 승격
+#                     (rollout 사용, 출시 노트는 내부 테스트 것 복사 — tool/play_promote.py)
+# CLI: gh workflow run play-release.yml --ref main -f action=internal -f release_notes="..."
+#      gh workflow run play-release.yml --ref main -f action=promote -f rollout=1
 # 첫 업로드는 Play Console에서 직접 한 번 해야 API 자동화가 풀린다(Google 정책).
+# 서비스 계정 권한: 테스트 트랙 출시 + 프로덕션 출시 (2026-09-26).
 #
 # Required Secrets (Settings → Secrets and variables → Actions):
 #   ENV_JSON_BASE64            — .env.json 전체를 base64로
@@ -17,14 +23,28 @@ name: Play Console — internal upload
 on:
   workflow_dispatch:
     inputs:
+      action:
+        description: 'internal = 빌드해서 내부 테스트 업로드 / promote = 내부 테스트 최신 버전을 프로덕션으로 승격(재빌드 없음)'
+        required: true
+        type: choice
+        options:
+          - internal
+          - promote
+        default: internal
       release_notes:
-        description: '릴리스 노트 (한국어) — Play Console 변경사항에 그대로 표시됨'
+        description: '[internal] 릴리스 노트 (한국어) — Play Console 변경사항에 그대로 표시됨'
         required: false
         type: string
         default: '내부 테스트 빌드.'
+      rollout:
+        description: '[promote] 프로덕션 출시 비율 0~1 (1 = 전체, 0.2 = 20% 단계적). 같은 버전으로 다시 실행하면 비율만 올림'
+        required: false
+        type: string
+        default: '1'
 
 jobs:
   build-and-upload:
+    if: inputs.action == 'internal'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -101,7 +121,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: io.github.tgparkk.bookquote
           releaseFiles: build/app/outputs/bundle/release/app-release.aab
-          track: internal
+          tracks: internal
           status: completed
           whatsNewDirectory: distribution/whatsnew
 
@@ -111,3 +131,33 @@ jobs:
           echo "- packageName: io.github.tgparkk.bookquote" >> $GITHUB_STEP_SUMMARY
           echo "- track: internal" >> $GITHUB_STEP_SUMMARY
           echo "- AAB: build/app/outputs/bundle/release/app-release.aab" >> $GITHUB_STEP_SUMMARY
+
+  # 내부 테스트에서 확인한 바로 그 AAB(versionCode)를 프로덕션으로 — 재빌드·재업로드 없음.
+  promote:
+    if: inputs.action == 'promote'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Google API client
+        run: pip install google-api-python-client google-auth
+
+      - name: Promote internal → production
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          ROLLOUT: ${{ inputs.rollout }}
+        run: python tool/play_promote.py | tee promote.log
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Production promote" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat promote.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
