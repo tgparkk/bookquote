@@ -153,7 +153,10 @@ jobs:
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           ROLLOUT: ${{ inputs.rollout }}
-        run: python tool/play_promote.py | tee promote.log
+        # shell: bash를 명시해야 -o pipefail이 켜진다(기본 셸은 bash -e만 — `| tee`가
+        # 스크립트 실패를 삼켜 403인데도 success로 끝났던 2026-09-26 버그).
+        shell: bash
+        run: python tool/play_promote.py 2>&1 | tee promote.log
 
       - name: Summary
         run: |
