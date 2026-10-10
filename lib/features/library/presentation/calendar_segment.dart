@@ -52,6 +52,7 @@ class _CalendarSegmentState extends ConsumerState<CalendarSegment> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TableCalendar<UserBookOnDay>(
+          locale: 'ko_KR',
           firstDay: DateTime(2010, 1, 1),
           lastDay: DateTime.now().add(const Duration(days: 365)),
           focusedDay: _focusedDay,

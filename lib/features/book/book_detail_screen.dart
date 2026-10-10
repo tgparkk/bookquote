@@ -18,6 +18,7 @@ import '../../core/theme/tokens.dart';
 import '../../core/ui/app_status_view.dart';
 import '../book_review/presentation/book_review_section.dart';
 import 'domain/book.dart';
+import 'domain/html_entities.dart';
 import 'presentation/widgets/book_header.dart';
 import 'presentation/widgets/book_overflow_menu.dart';
 import 'presentation/widgets/book_quotes_section.dart';
@@ -94,7 +95,9 @@ class _BookBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final loggedIn = ref.watch(currentSessionProvider) != null;
     final textTheme = Theme.of(context).textTheme;
-    final description = book.description?.trim();
+    final rawDescription = book.description?.trim();
+    final description =
+        rawDescription == null ? null : decodeHtmlEntities(rawDescription);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(

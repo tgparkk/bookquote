@@ -92,22 +92,24 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
   /// `_snapshots` + `_counts`가 채워지고 `_items`는 비어 있다(필요 시 사용자가
   /// 무드 카드 탭으로 단면 fetch). fallback일 땐 `_snapshots=null` + 기존 시간순.
   Future<void> _resolveEntryMode() async {
+    final repository = ref.read(quoteRepositoryProvider);
+    // 전체 수는 무드 합으로 낼 수 없다(다중 무드 중복 집계 + 무드 없는 인용구
+    // 누락) — RPC `__total__`을 snapshots와 병렬로 받는다. 실패는 best-effort.
+    final countsFuture = repository
+        .getMoodCounts()
+        .then<MoodCounts?>((c) => c, onError: (_) => null);
     try {
-      final snaps = await ref
-          .read(quoteRepositoryProvider)
-          .listMoodHubSnapshots();
+      final snaps = await repository.listMoodHubSnapshots();
+      final counts = await countsFuture;
       if (!mounted) return;
       if (snaps.length >= 3) {
-        // hub 모드 — counts도 snapshots에서 도출(RPC 1회 절약).
-        final byMood = <QuoteMood, int>{};
-        var total = 0;
-        for (final s in snaps) {
-          byMood[s.mood] = s.count;
-          total += s.count;
-        }
         setState(() {
           _snapshots = snaps;
-          _counts = (total: total, byMood: byMood);
+          _counts = counts ??
+              (
+                total: 0,
+                byMood: {for (final s in snaps) s.mood: s.count},
+              );
           _loading = false;
           _error = null;
         });
@@ -115,8 +117,11 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
         if (!_hubMode) await _reload();
       } else {
         // 시간순 fallback — 신규 D1~D7 또는 무드 종류 적은 사용자.
-        setState(() => _snapshots = null);
-        await _loadCounts();
+        setState(() {
+          _snapshots = null;
+          if (counts != null) _counts = counts;
+        });
+        if (counts == null) await _loadCounts();
         await _reload();
       }
     } catch (_) {
@@ -346,6 +351,7 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
                       // 함께 해소(PR29). 카운트는 사용자에게 *수집 진척* 신호.
                       _MoodHubHeader(
                         snapshots: _snapshots!,
+                        totalQuotes: _counts.total,
                         onShowAll: _openAll,
                       ),
                       Expanded(
@@ -503,8 +509,15 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
 }
 
 class _MoodHubHeader extends StatelessWidget {
-  const _MoodHubHeader({required this.snapshots, required this.onShowAll});
+  const _MoodHubHeader({
+    required this.snapshots,
+    required this.totalQuotes,
+    required this.onShowAll,
+  });
   final List<MoodHubSnapshot> snapshots;
+
+  /// 실제 인용구 수(RPC `__total__`). 0이면(조회 실패) 표기 생략.
+  final int totalQuotes;
 
   /// [전체 보기] — 무드 구분 없는 시간순 목록으로.
   final VoidCallback onShowAll;
@@ -513,8 +526,6 @@ class _MoodHubHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final moodCount = snapshots.length;
-    final totalQuotes =
-        snapshots.fold<int>(0, (sum, s) => sum + s.count);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.s4,
@@ -550,7 +561,9 @@ class _MoodHubHeader extends StatelessWidget {
                     ),
                   ),
                   TextSpan(
-                    text: '  ·  $moodCount개 무드 · $totalQuotes개 인용구',
+                    text: totalQuotes > 0
+                        ? '  ·  $moodCount개 무드 · $totalQuotes개 인용구'
+                        : '  ·  $moodCount개 무드',
                     style: TextStyle(
                       color: colors.onSurfaceSubtle,
                     ),
