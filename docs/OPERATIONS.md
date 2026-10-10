@@ -145,5 +145,8 @@ Firebase 콘솔 → 프로젝트 → ⚙️ 프로젝트 설정 → **알림** �
 ### DB 지표 조회 — `tool/launch_metrics.sql`
 가입자·인용구·서재 등 출시 후 지표 쿼리 4종(①요약 ②일별 가입 ③일별 콘텐츠 ④활동 심도). Claude 세션에서 Supabase MCP(`/mcp` 인증)로 바로 실행하거나, 대시보드 SQL Editor에 블록별로 붙여넣기.
 
+### 성장 실험 주간 지표 — `tool/growth_weekly.sql`
+2026-09-28~11-22 성장 실험(DECISIONS 2026-09-26) 동안 매주 월요일 실행. 주별 신규 가입·정착 작성자·인용구(대표 본인 분리)를 8/3~ 기준선과 한 표로 보여준다. 소스별 설치(`utm_source=threads` / `share_card`)는 Play Console → 사용자 획득 → 획득 보고서에서 따로 확인.
+
 ### 이상 발견 시
 크래시 스택/vitals 스크린샷을 Claude 세션에 붙여넣으면 코드와 대조해 진단. Supabase 장애 의심 시 `check_release.ps1` 우선 실행.
