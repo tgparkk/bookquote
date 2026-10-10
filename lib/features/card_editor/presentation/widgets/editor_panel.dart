@@ -11,7 +11,8 @@ import 'preview_box.dart';
 import 'template_strip.dart';
 
 /// 비율별 안전한 인용구 길이 휴리스틱 — 이 임계를 넘으면 카드에 다 안 들어갈 위험.
-/// 1080×{1920/1080/1350} 캔버스에서 NotoSerifKR 15~22px·행간 1.6~1.8 기준 측정값.
+/// 2026-10-10부터 인용구는 영역에 맞춰 줄어들고(`CardQuoteText`, 하한 28px) 그래도
+/// 넘치면 말줄임된다 — 이 임계는 하한 28px 근처에서 말줄임이 시작되는 길이의 근사.
 /// `screens/card-editor.md §7`의 auto-fit 경고 트리거. PR12-D.
 const Map<CardRatio, int> _ratioCharLimit = <CardRatio, int>{
   CardRatio.feed: 300,

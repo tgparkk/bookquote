@@ -28,6 +28,7 @@ void main() {
           'ratio',
           'watermarkEnabled',
           'fontStep',
+          'typeScale',
           'paletteSlotIndex',
         },
       );

@@ -28,8 +28,27 @@ void main() {
       expect(s, CardEditorState.initial);
     });
 
-    test('initial은 fontStep=3 (사용자 요청 baseline)', () {
-      expect(CardEditorState.initial.fontStep, 3);
+    test('initial은 fontStep=0 — 카드 전용 크기 곡선이 기본 크기를 담당', () {
+      expect(CardEditorState.initial.fontStep, 0);
+    });
+
+    test('typeScale 표시 없는 옛 draft의 fontStep은 무시(옛 기본 +3 → 새 곡선 최대)', () {
+      final legacy = CardEditorState.fromJson(<String, Object?>{
+        'templateId': 'warm',
+        'fontStep': 3,
+      });
+      expect(legacy.fontStep, CardEditorState.initial.fontStep);
+      expect(legacy.templateId, 'warm');
+
+      final current = CardEditorState.fromJson(
+        const CardEditorState(
+          templateId: 'warm',
+          ratio: CardRatio.feed,
+          watermarkEnabled: true,
+          fontStep: 2,
+        ).toJson(),
+      );
+      expect(current.fontStep, 2);
     });
 
     test('모르는 ratio name은 story 폴백', () {
@@ -203,14 +222,14 @@ void main() {
     setUp(() => container = ProviderContainer());
     tearDown(() => container.dispose());
 
-    test('setTemplate은 fontStep을 baseline(+3)으로 리셋한다 — 시각 점프 방지', () {
+    test('setTemplate은 fontStep을 baseline(0)으로 리셋한다 — 시각 점프 방지', () {
       final ctrl = container.read(cardEditorControllerProvider.notifier);
       ctrl.attach('q1');
-      // baseline 3에서 두 번 감소 → step=1
+      // baseline 0에서 두 번 감소 → step=-2
       ctrl
         ..decreaseFont()
         ..decreaseFont();
-      expect(container.read(cardEditorControllerProvider).fontStep, 1);
+      expect(container.read(cardEditorControllerProvider).fontStep, -2);
 
       ctrl.setTemplate('warm');
       expect(
@@ -227,13 +246,13 @@ void main() {
       ctrl.attach('q1');
       ctrl
         ..decreaseFont()
-        ..decreaseFont(); // step=1
-      ctrl.setTemplate('warm'); // step=3 + undo 푸시
+        ..decreaseFont(); // step=-2
+      ctrl.setTemplate('warm'); // step=0 + undo 푸시
       expect(container.read(cardEditorControllerProvider).fontStep,
           CardEditorState.initial.fontStep);
 
       ctrl.undo();
-      expect(container.read(cardEditorControllerProvider).fontStep, 1,
+      expect(container.read(cardEditorControllerProvider).fontStep, -2,
           reason: 'undo로 직전 step 복원');
       expect(container.read(cardEditorControllerProvider).templateId,
           'minimal');
@@ -242,9 +261,9 @@ void main() {
     test('동일 templateId 재설정은 fontStep을 흔들지 않는다', () {
       final ctrl = container.read(cardEditorControllerProvider.notifier);
       ctrl.attach('q1');
-      ctrl.decreaseFont(); // step=2
+      ctrl.decreaseFont(); // step=-1
       ctrl.setTemplate('minimal'); // 동일 — no-op
-      expect(container.read(cardEditorControllerProvider).fontStep, 2);
+      expect(container.read(cardEditorControllerProvider).fontStep, -1);
     });
   });
 

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../book/presentation/widgets/book_cover.dart';
 import '../../data/color_utils.dart';
+import '../../domain/card_typography.dart';
 import '../../domain/quote_card_data.dart';
+import 'card_quote_text.dart';
 import 'card_watermark.dart';
 
 /// T2 — 따뜻 카드. `docs/design/templates/02-warm.md`.
@@ -63,8 +65,7 @@ class WarmCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final v = _variants[ratio]!;
     final background = lightenToBackground(palette.dominant);
-    final fontSize = getEffectiveQuoteFontSize(data.charCount, fontStep);
-    final lineHeight = getQuoteLineHeight(fontSize);
+    final targetSize = cardQuoteTargetSize(data.charCount, fontStep);
 
     final cover = _CoverPanel(
       data: data,
@@ -77,8 +78,7 @@ class WarmCard extends StatelessWidget {
       background: background,
       data: data,
       palette: palette,
-      fontSize: fontSize,
-      lineHeight: lineHeight,
+      targetSize: targetSize,
     );
 
     final body = v.mode == _Mode.sideBySide
@@ -191,16 +191,14 @@ class _TextPanel extends StatelessWidget {
     required this.background,
     required this.data,
     required this.palette,
-    required this.fontSize,
-    required this.lineHeight,
+    required this.targetSize,
   });
 
   final _Variant variant;
   final Color background;
   final QuoteCardData data;
   final ExtractedPalette palette;
-  final double fontSize;
-  final double lineHeight;
+  final double targetSize;
 
   @override
   Widget build(BuildContext context) {
@@ -219,6 +217,9 @@ class _TextPanel extends StatelessWidget {
         ensureContrast(background, palette.subtextOnBackground, minRatio: 3.0);
 
     return Container(
+      // 상하 배치(Column)에선 폭이 loose라 짧은 인용구면 글 폭만큼만 칠해지고
+      // 양옆이 투명(PNG에선 검정)으로 남았다 — 항상 패널 전체를 채운다.
+      width: double.infinity,
       color: background,
       padding: EdgeInsets.fromLTRB(48, variant.paddingTop, 48, 120),
       child: Column(
@@ -226,13 +227,12 @@ class _TextPanel extends StatelessWidget {
         mainAxisSize: MainAxisSize.max,
         children: <Widget>[
           Flexible(
-            child: Text(
-              data.quoteText,
+            child: CardQuoteText(
+              text: data.quoteText,
+              targetSize: targetSize,
               style: TextStyle(
                 fontFamily: AppFonts.quote,
                 fontWeight: FontWeight.w500,
-                fontSize: fontSize,
-                height: lineHeight,
                 color: quoteColor,
               ),
             ),

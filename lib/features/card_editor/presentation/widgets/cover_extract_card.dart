@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../book/presentation/widgets/book_cover.dart';
 import '../../data/color_utils.dart';
+import '../../domain/card_typography.dart';
 import '../../domain/quote_card_data.dart';
+import 'card_quote_text.dart';
 import 'card_watermark.dart';
 
 /// T4 — 표지 발췌 카드. `docs/design/templates/04-cover-extract.md`.
 ///
-/// 레이어 0: 표지 blur 배경(`ImageFilter.blur` 35px)
+/// 레이어 0: 표지 blur 배경(16px 디코드 + `ImageFilter.blur` 160 — 명세 35px×4.8)
 /// 레이어 1: `palette.dominant` 72% overlay (PR29: 60→72, 텍스트 대비 보강)
 /// 레이어 2: 인용구 텍스트 (NotoSerifKR Bold, 토큰 하한 15px)
 /// 레이어 3: 그라데이션 overlay (transparent → `darkVibrant` 85%)
@@ -21,6 +23,9 @@ import 'card_watermark.dart';
 ///
 /// 표지가 없으면 (`data.hasCover == false`) `CardTemplate.supports`가 `false`라
 /// 정상 흐름에서는 도달하지 않지만, 도달 시 단색 배경으로 폴백한다.
+/// 인용구 영역 하단과 선명 표지 상단 사이 간격.
+const double _quoteCoverGap = 48;
+
 class CoverExtractCard extends StatelessWidget {
   const CoverExtractCard({
     super.key,
@@ -72,8 +77,7 @@ class CoverExtractCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final v = _variants[ratio]!;
-    final fontSize = getEffectiveQuoteFontSize(data.charCount, fontStep);
-    final lineHeight = getQuoteLineHeight(fontSize);
+    final targetSize = cardQuoteTargetSize(data.charCount, fontStep);
 
     return SizedBox(
       width: v.width,
@@ -107,17 +111,19 @@ class CoverExtractCard extends StatelessWidget {
               ),
             ),
           ),
+          // 인용구는 선명 표지 위쪽까지만 — 길어도 표지·책 정보와 겹치지 않게
+          // 그 높이 안에서 맞춘다(CardQuoteText).
           Positioned(
             left: 80,
             right: 80,
             top: 200,
-            child: Text(
-              data.quoteText,
+            height: v.coverSharpY - _quoteCoverGap - 200,
+            child: CardQuoteText(
+              text: data.quoteText,
+              targetSize: targetSize,
               style: TextStyle(
                 fontFamily: AppFonts.quote,
                 fontWeight: FontWeight.w700,
-                fontSize: fontSize,
-                height: lineHeight,
                 color: palette.textOnBackground,
               ),
             ),
@@ -186,14 +192,17 @@ class _BlurredBackground extends StatelessWidget {
     if (!data.hasCover) {
       return ColoredBox(color: palette.dominant);
     }
+    // 명세의 "blur 35px"는 225px 폭 목업 기준이라 1080 캔버스에선 ×4.8 ≈ 170.
+    // 35 그대로 두니 표지에 인쇄된 제목·띠가 카드 전체로 늘어난 400px급 덩어리를
+    // 못 지워 "로딩 스켈레톤" 같은 흐린 막대로 남았다(2026-10-10). 16px 폭
+    // 디코드로 인쇄 요소를 먼저 뭉개고(업스케일 보간) 큰 blur로 경계를 지운다.
+    // 저해상도 디코드는 메모리도 절약(B9).
     return ImageFiltered(
-      imageFilter: ui.ImageFilter.blur(sigmaX: 35, sigmaY: 35),
+      imageFilter: ui.ImageFilter.blur(sigmaX: 160, sigmaY: 160),
       child: CachedNetworkImage(
         imageUrl: data.coverUrl!,
         fit: BoxFit.cover,
-        // blur 35px 배경이라 저해상도 디코드로 시각 차이 없음 — 원본 해상도
-        // 디코딩은 순수 메모리 낭비(B9).
-        memCacheWidth: 250,
+        memCacheWidth: 16,
         placeholder: (_, _) => ColoredBox(color: palette.dominant),
         errorWidget: (_, _, _) => ColoredBox(color: palette.dominant),
       ),
