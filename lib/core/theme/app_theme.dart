@@ -37,7 +37,9 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: AppTextStyles.titleLarge,
+        titleTextStyle: AppTextStyles.titleLarge.copyWith(
+          color: s.onSurface,
+        ),
         iconTheme: IconThemeData(color: s.iconPrimary, size: 22),
       ),
 
@@ -166,8 +168,12 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
-        titleTextStyle: AppTextStyles.headlineMedium,
-        contentTextStyle: AppTextStyles.bodyLarge,
+        titleTextStyle: AppTextStyles.headlineMedium.copyWith(
+          color: s.onSurface,
+        ),
+        contentTextStyle: AppTextStyles.bodyLarge.copyWith(
+          color: s.onSurfaceMuted,
+        ),
       ),
 
       snackBarTheme: SnackBarThemeData(
@@ -196,7 +202,9 @@ abstract final class AppTheme {
         backgroundColor: s.chipBg,
         selectedColor: s.chipSelected,
         disabledColor: AppColors.primary100,
-        labelStyle: AppTextStyles.labelMedium,
+        labelStyle: AppTextStyles.labelMedium.copyWith(
+          color: s.onSurfaceMuted,
+        ),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.s3,
           vertical: AppSpacing.s1,
