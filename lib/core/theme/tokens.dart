@@ -340,11 +340,13 @@ double getQuoteLineHeight(double quoteFontSize) {
 
 /// 워터마크 모드 설정
 abstract final class AppWatermark {
-  /// 기본 모드: 거의 안 보임
+  /// 기본 모드(닉네임 없을 때) — 앱 이름만. 카드 캔버스(1080px) 기준 크기.
+  /// 이전 9px·30%는 225px 목업 값을 그대로 옮긴 것이라 공유 PNG에서 사실상
+  /// 보이지 않았다(2026-10-10 실기기 "앱 이름이 거의 안 보임").
   static const WatermarkConfig minimal = WatermarkConfig(
     text: '책글귀',
-    fontSize: AppFontSize.xxs,   // 9px
-    opacity: 0.30,
+    fontSize: 36,
+    opacity: 0.70,
     position: WatermarkPosition.bottomRight,
     fontFamily: AppFonts.ui,
     showIcon: false,
@@ -371,7 +373,8 @@ abstract final class AppWatermark {
     return WatermarkConfig(
       text: '@$name · 책글귀',
       fontSize: 36,
-      opacity: 0.45,
+      // 0.45는 밝은 배경·SNS 재압축에서 거의 안 보였다(2026-10-10).
+      opacity: 0.70,
       position: WatermarkPosition.bottomRight,
       fontFamily: AppFonts.ui,
       showIcon: false,

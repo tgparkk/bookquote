@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
-import '../../../book/presentation/widgets/book_cover.dart';
+import 'card_cover_image.dart';
 import '../../domain/card_typography.dart';
 import '../../domain/quote_card_data.dart';
 import 'card_quote_text.dart';
@@ -130,7 +130,7 @@ class _BookRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-        BookCover(
+        CardCoverImage(
           url: data.coverUrl,
           title: data.bookTitle ?? '',
           width: 60,

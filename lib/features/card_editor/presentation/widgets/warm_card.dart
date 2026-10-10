@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
-import '../../../book/presentation/widgets/book_cover.dart';
+import 'card_cover_image.dart';
 import '../../data/color_utils.dart';
 import '../../domain/card_typography.dart';
 import '../../domain/quote_card_data.dart';
@@ -174,7 +174,7 @@ class _CoverPanel extends StatelessWidget {
     return Container(
       color: palette.dominant,
       alignment: Alignment.center,
-      child: BookCover(
+      child: CardCoverImage(
         url: data.coverUrl,
         title: data.bookTitle ?? '',
         width: coverWidth,

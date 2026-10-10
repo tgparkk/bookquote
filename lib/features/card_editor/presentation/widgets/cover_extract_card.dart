@@ -1,10 +1,9 @@
 import 'dart:ui' as ui;
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
-import '../../../book/presentation/widgets/book_cover.dart';
+import 'card_cover_image.dart';
 import '../../data/color_utils.dart';
 import '../../domain/card_typography.dart';
 import '../../domain/quote_card_data.dart';
@@ -142,7 +141,7 @@ class CoverExtractCard extends StatelessWidget {
                   width: 1,
                 ),
               ),
-              child: BookCover(
+              child: CardCoverImage(
                 url: data.coverUrl,
                 title: data.bookTitle ?? '',
                 width: v.coverSharpW,
@@ -199,12 +198,10 @@ class _BlurredBackground extends StatelessWidget {
     // 저해상도 디코드는 메모리도 절약(B9).
     return ImageFiltered(
       imageFilter: ui.ImageFilter.blur(sigmaX: 160, sigmaY: 160),
-      child: CachedNetworkImage(
-        imageUrl: data.coverUrl!,
-        fit: BoxFit.cover,
-        memCacheWidth: 16,
-        placeholder: (_, _) => ColoredBox(color: palette.dominant),
-        errorWidget: (_, _, _) => ColoredBox(color: palette.dominant),
+      // 16px 디코드 provider는 card_cover_image.dart — 공유 캡처 전 precache 대상.
+      child: CardBackdropImage(
+        url: data.coverUrl!,
+        fallback: palette.dominant,
       ),
     );
   }
