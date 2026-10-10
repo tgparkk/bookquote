@@ -7,9 +7,11 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kDebugMode, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -59,6 +61,8 @@ Future<void> main() async {
   await DeepLinkHandler().start();
   // DM-C: 저장된 테마 모드(시스템/라이트/다크)를 읽어 첫 프레임부터 적용 — 깜빡임 방지.
   final prefs = await SharedPreferences.getInstance();
+  // 캘린더(table_calendar) 월·요일 표기를 한국어로 — DateFormat ko_KR 데이터.
+  await initializeDateFormatting('ko_KR');
   final initialThemeMode =
       themeModeFromString(prefs.getString(themeModePrefsKey));
   runApp(ProviderScope(
@@ -137,6 +141,11 @@ class _BookquoteAppState extends ConsumerState<BookquoteApp>
       darkTheme: AppTheme.dark(),
       // DM-C: 앱 내 선택(시스템/라이트/다크) 영속값을 따른다. 설정 → 화면 테마.
       themeMode: themeMode,
+      // 한국어 전용 앱 — 기기 언어와 무관하게 Material 문구(날짜 선택기·복사/
+      // 붙여넣기 메뉴·툴팁)를 한국어로 고정. 없으면 en_US 기본값이 나온다.
+      locale: const Locale('ko', 'KR'),
+      supportedLocales: const [Locale('ko', 'KR')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       routerConfig: router,
     );
   }
