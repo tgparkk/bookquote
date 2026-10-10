@@ -36,6 +36,9 @@ void showAppSnackBarOn(
       action: action,
       // SnackBar 기본값(4초)과 동일 — duration 미지정 시 기존 동작 유지.
       duration: duration ?? const Duration(milliseconds: 4000),
+      // Flutter 3.41+는 action이 있으면 persist 기본 true → duration 무시하고
+      // 영원히 떠 있다(탭 이동해도 루트 messenger라 따라다님). 항상 시간 만료.
+      persist: false,
     ),
   );
 }

@@ -37,6 +37,9 @@ class QuoteListView extends ConsumerStatefulWidget {
   ConsumerState<QuoteListView> createState() => _QuoteListViewState();
 }
 
+/// 서재 FAB([인용구 추가], 56 + 여백 16)에 마지막 항목이 가리지 않게 둘 하단 여백.
+const double _fabClearance = AppSpacing.s16 + AppSpacing.s8;
+
 class _QuoteListViewState extends ConsumerState<QuoteListView> {
   static const _pageSize = 15;
 
@@ -250,8 +253,14 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
 
   /// 낙관적 제거 + 5초 SnackBar [되돌리기] (PR1, 2026-05-28).
   /// `_items` 로컬 state라 원래 index 캡처 후 undo 시 같은 자리에 재삽입.
+  ///
+  /// 서버 삭제는 SnackBar가 닫힌 뒤 확정한다. 그 사이 이 뷰가 unmount돼도
+  /// (세그먼트 전환·화면 이동) 삭제는 반드시 실행돼야 하므로 repository와
+  /// container를 await 전에 캡처해 둔다 — `mounted` 가드는 UI 갱신에만.
   Future<void> _deleteWithUndo(QuoteWithBook entry) async {
     final messenger = ScaffoldMessenger.of(context);
+    final repository = ref.read(quoteRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
     final originalIndex =
         _items.indexWhere((e) => e.quote.id == entry.quote.id);
     if (originalIndex < 0) return;
@@ -266,6 +275,8 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
       SnackBar(
         content: const Text('인용구를 삭제했어요.'),
         duration: const Duration(seconds: 5),
+        // action이 있으면 persist 기본 true(3.41+) → 안 닫혀 삭제가 영영 미확정.
+        persist: false,
         action: SnackBarAction(
           label: '되돌리기',
           onPressed: () {/* closed.reason=action으로 판정 */},
@@ -273,8 +284,8 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
       ),
     );
     final reason = await controller.closed;
-    if (!mounted) return;
     if (reason == SnackBarClosedReason.action) {
+      if (!mounted) return;
       setState(() {
         final next = List<QuoteWithBook>.of(_items);
         final clamped = originalIndex.clamp(0, next.length);
@@ -284,11 +295,11 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
       return;
     }
     try {
-      await ref.read(quoteRepositoryProvider).deleteQuote(entry.quote.id);
-      if (!mounted) return;
-      ref
+      await repository.deleteQuote(entry.quote.id);
+      container
         ..invalidate(quoteFeedProvider) // 홈 피드도 갱신
         ..invalidate(moodCountsProvider); // RecallCard 카운트 갱신 (PR15-B)
+      if (!mounted) return;
       _loadCounts();
     } catch (_) {
       if (!mounted) return;
@@ -341,6 +352,12 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
                         child: MoodHubGrid(
                           snapshots: _snapshots!,
                           onMoodTap: _selectMood,
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.s4,
+                            AppSpacing.s2,
+                            AppSpacing.s4,
+                            _fabClearance,
+                          ),
                         ),
                       ),
                     ],
@@ -458,7 +475,9 @@ class _QuoteListViewState extends ConsumerState<QuoteListView> {
     }
     return ListView.separated(
       controller: _scrollController,
-      padding: const EdgeInsets.all(AppSpacing.s4),
+      // 아래쪽은 FAB(56+16) 높이만큼 비워 마지막 카드 액션 줄이 가리지 않게.
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.s4, AppSpacing.s4, AppSpacing.s4, _fabClearance),
       itemCount: _items.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.s4),
       itemBuilder: (context, i) {

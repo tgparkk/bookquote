@@ -77,7 +77,8 @@ class BookListView extends StatelessWidget {
           restPart,
           reading: false,
           top: readingPart.isEmpty ? AppSpacing.s4 : 0,
-          bottom: AppSpacing.s16,
+          // FAB(56+16)에 마지막 행이 가리지 않게.
+          bottom: AppSpacing.s16 + AppSpacing.s8,
         ),
       ],
     );

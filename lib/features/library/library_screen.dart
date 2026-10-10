@@ -84,7 +84,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       if (!mounted) return;
       showAppSnackBar(
         context,
-        '💡 표지를 길게 누르면 빠른 액션 시트가 떨어요.',
+        '💡 표지를 길게 누르면 빠른 액션 시트가 떠요.',
         duration: const Duration(seconds: 8),
         action: SnackBarAction(
           label: '알겠어요',
