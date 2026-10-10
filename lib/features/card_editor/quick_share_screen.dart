@@ -23,6 +23,7 @@ import 'domain/card_template.dart';
 import 'domain/quote_card_data.dart';
 import 'presentation/widgets/quote_card.dart';
 import 'presentation/widgets/share_sheet.dart';
+import 'state/card_capture_gate.dart';
 import 'state/card_editor_controller.dart';
 import 'state/palette_providers.dart';
 import 'state/quote_card_data_provider.dart';
@@ -128,6 +129,16 @@ class _QuickShareScreenState extends ConsumerState<QuickShareScreen> {
     setState(() => _sharing = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
+      // 표지·배경·팔레트·닉네임이 다 준비된 뒤 찍는다(진입 직후 자동 공유 경로).
+      await waitForCardInputs(
+        context,
+        ref,
+        data: _data!,
+        templateId: CardTemplate.byId(
+          ref.read(cardEditorControllerProvider).templateId,
+        ).id,
+      );
+      if (!mounted) return;
       // B12: 자동 트리거 케이스 — endOfFrame 2회 후에도 RepaintBoundary가 zero
       // size일 수 있다(폰트/이미지 async, release 마이크로태스크 타이밍). 한 frame
       // 더 기다려 재확인 → 그래도 zero면 renderCardPng가 명확한 CardRenderException.

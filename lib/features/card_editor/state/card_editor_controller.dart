@@ -60,15 +60,21 @@ class CardEditorState {
   /// 첫 진입 default — 사용자 인용구를 보기 전. screen이 데이터 도착 후
   /// `applyRecommended`로 갱신.
   ///
-  /// `fontStep: 3` — 사용자 요청(2026-05-28)으로 인용구 기본 글자 크기를
-  /// max step으로 올림. `[A−]`로 작게 가능. `setTemplate`/`applyRecommended`도
-  /// 같은 baseline으로 리셋.
+  /// `fontStep: 0` — 2026-05-28 사용자 요청의 "기본 크게"(+3)는 카드 전용 크기
+  /// 곡선(`card_typography.dart`, 2026-10-10)에 흡수됐다. 이제 기본값이 가운데라
+  /// `[A−]`·`[A+]` 모두 쓸 수 있다(이전엔 기본=최대라 [A+]가 늘 비활성).
+  /// `setTemplate`/`applyRecommended`도 같은 baseline으로 리셋.
   static const CardEditorState initial = CardEditorState(
     templateId: 'minimal',
     ratio: CardRatio.story,
     watermarkEnabled: true,
-    fontStep: 3,
+    fontStep: 0,
   );
+
+  /// 카드 글자 크기 곡선 버전. 2 = 카드 전용 곡선(2026-10-10). 이 표시가 없는
+  /// 옛 draft의 `fontStep`(기본 +3)은 새 곡선에서 최대 크기가 되므로 무시한다.
+  /// `cards.design` jsonb에도 그대로 실려 공유 기록의 크기 기준을 구분한다.
+  static const int typeScaleVersion = 2;
 
   CardEditorState copyWith({
     String? templateId,
@@ -92,13 +98,17 @@ class CardEditorState {
         'ratio': ratio.name,
         'watermarkEnabled': watermarkEnabled,
         'fontStep': fontStep,
+        'typeScale': typeScaleVersion,
         'paletteSlotIndex': paletteSlotIndex,
         // undoDepth는 영속화 안 함 — 재진입 시 stack은 비어 있음.
       };
 
   factory CardEditorState.fromJson(Map<String, Object?> json) {
     final ratioName = json['ratio'] as String? ?? initial.ratio.name;
-    final rawStep = (json['fontStep'] as num?)?.toInt() ?? initial.fontStep;
+    final currentScale = json['typeScale'] == typeScaleVersion;
+    final rawStep = currentScale
+        ? (json['fontStep'] as num?)?.toInt() ?? initial.fontStep
+        : initial.fontStep;
     final rawSlot =
         (json['paletteSlotIndex'] as num?)?.toInt() ?? initial.paletteSlotIndex;
     return CardEditorState(
@@ -185,7 +195,7 @@ class CardEditorController extends Notifier<CardEditorState> {
     if (state.templateId == templateId) return;
     _pushUndo(state);
     // F8: 템플릿마다 기본 폰트 스케일이 달라 같은 fontStep이라도 시각 점프 발생.
-    // 전환 시 baseline(initial.fontStep = +3)으로 리셋해 일관된 출발점 보장.
+    // 전환 시 baseline(initial.fontStep = 0)으로 리셋해 일관된 출발점 보장.
     // 사용자 조정 손실은 screen이 SnackBar로 안내(전환 직전 != baseline일 때만).
     state = state.copyWith(
       templateId: templateId,

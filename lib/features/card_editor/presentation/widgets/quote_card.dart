@@ -38,6 +38,12 @@ class QuoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 공유 PNG는 보내는 사람 기기의 글꼴 크기 설정과 무관하게 같아야 한다 —
+    // 시스템 글꼴을 키운 기기에서 카드 글자가 커져 넘치던 문제 차단.
+    return MediaQuery.withNoTextScaling(child: _template());
+  }
+
+  Widget _template() {
     return switch (template) {
       MinimalTemplate() => MinimalCard(
           data: data,

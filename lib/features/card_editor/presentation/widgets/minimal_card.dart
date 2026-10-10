@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
-import '../../../book/presentation/widgets/book_cover.dart';
+import 'card_cover_image.dart';
+import '../../domain/card_typography.dart';
 import '../../domain/quote_card_data.dart';
+import 'card_quote_text.dart';
 import 'card_watermark.dart';
 
 /// T1 — 미니멀 카드. `docs/design/templates/01-minimal.md` 명세 기반.
@@ -55,8 +57,7 @@ class MinimalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final v = _variants[ratio]!;
-    final fontSize = getEffectiveQuoteFontSize(data.charCount, fontStep);
-    final lineHeight = getQuoteLineHeight(fontSize);
+    final targetSize = cardQuoteTargetSize(data.charCount, fontStep);
 
     return SizedBox(
       width: v.width,
@@ -76,14 +77,16 @@ class MinimalCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
-                  data.quoteText,
-                  style: TextStyle(
-                    fontFamily: AppFonts.quote,
-                    fontWeight: FontWeight.w500,
-                    fontSize: fontSize,
-                    height: lineHeight,
-                    color: AppColors.primary800,
+                // 책 정보 줄을 남기고 남는 높이 안에서 최대한 크게.
+                Flexible(
+                  child: CardQuoteText(
+                    text: data.quoteText,
+                    targetSize: targetSize,
+                    style: const TextStyle(
+                      fontFamily: AppFonts.quote,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primary800,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 96),
@@ -127,7 +130,7 @@ class _BookRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-        BookCover(
+        CardCoverImage(
           url: data.coverUrl,
           title: data.bookTitle ?? '',
           width: 60,

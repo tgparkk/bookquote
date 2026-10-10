@@ -21,9 +21,11 @@ import '../../core/ui/app_status_view.dart';
 import '../crypto/presentation/lock_dialogs.dart';
 import 'data/card_renderer.dart';
 import 'data/card_repository.dart';
+import 'domain/card_template.dart';
 import 'domain/quote_card_data.dart';
 import 'presentation/widgets/editor_panel.dart';
 import 'presentation/widgets/share_sheet.dart';
+import 'state/card_capture_gate.dart';
 import 'state/card_editor_controller.dart';
 import 'state/quote_card_data_provider.dart';
 
@@ -247,6 +249,16 @@ class _CardEditorScreenState extends ConsumerState<CardEditorScreen> {
     setState(() => _isSharing = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
+      // 표지 로딩·템플릿 전환 페이드 중에 찍히지 않게 입력 준비를 기다린다.
+      await waitForCardInputs(
+        context,
+        ref,
+        data: data,
+        templateId: CardTemplate.byId(
+          ref.read(cardEditorControllerProvider).templateId,
+        ).id,
+      );
+      if (!mounted) return;
       final file = await renderCardPng(
         boundaryKey: _captureKey,
         ratio: ratio,
